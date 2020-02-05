@@ -79,7 +79,7 @@ class FaceFeatureDetector
         //расчет WidthChange и WidthChangeForce для right_eye_width
         self::Dmoves($theFaceData["eye"]["right_eye_width"], "Width", $right_eye_width_max, $right_eye_width_min, $right_eye_width_nat);
 
-        return 1;
+        return $theFaceData["eye"];
     }
 
     public function AddOneDimDistance(& $theOutput, $theOutputKey, $theArray1, $theArrayKey1, $theArray2, $theArrayKey2)
@@ -227,13 +227,12 @@ class FaceFeatureDetector
         return $res;
     }
 
-    public function mouthDetector($FaceData_)
-    {
+    public function mouthDetector($FaceData_){
         //first frame for standard (norm values)
         //get initial values
         //echo $FaceData_['normmask'][0][48][X];
-
-        for($ii = 1; $ii < count($FaceData_['normmask'][0]); $ii++){
+        //$FacePoints = array(array(),array());
+        for($ii = 0; $ii < count($FaceData_['normmask'][0]); $ii++){
             $FacePoints[$ii] = array(array($FaceData_['normmask'][0][$ii]['X'], 500, 0, 0),
                 array($FaceData_['normmask'][0][$ii]['Y'], 500, 0, 0));
         }

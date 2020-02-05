@@ -39,8 +39,9 @@ AppAsset::register($this);
             'options' => ['class' => 'navbar-nav navbar-left'],
             'encodeLabels' => false,
             'items' => [
-                ['label' => 'Определение признаков', 'url' => ['/main/default/face-feature-detection']],
-                ['label' => 'Редактор цифровой маски', 'url' => 'http://84.201.129.65:9999/HRRMaskEditor/MaskDrawIvan_3_ext.html']
+                ['label' => 'Определение признаков', 'url' => ['face-feature-detection']],
+                ['label' => 'Редактор цифровой маски',
+                    'url' => 'http://84.201.129.65:9999/HRRMaskEditor/MaskDrawIvan_3_ext.html']
             ],
         ]);
         NavBar::end();
