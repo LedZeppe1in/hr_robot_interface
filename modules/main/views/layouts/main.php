@@ -4,8 +4,8 @@
 /* @var $content string */
 
 use app\widgets\Alert;
-use yii\helpers\Html;
 use yii\bootstrap\Nav;
+use yii\helpers\Html;
 use yii\bootstrap\NavBar;
 use yii\widgets\Breadcrumbs;
 use app\assets\AppAsset;
@@ -33,6 +33,14 @@ AppAsset::register($this);
             'brandUrl' => Yii::$app->homeUrl,
             'options' => [
                 'class' => 'navbar-inverse navbar-fixed-top',
+            ],
+        ]);
+        echo Nav::widget([
+            'options' => ['class' => 'navbar-nav navbar-left'],
+            'encodeLabels' => false,
+            'items' => [
+                ['label' => 'Определение признаков', 'url' => ['/main/default/face-feature-detection']],
+                ['label' => 'Редактор цифровой маски', 'url' => 'http://84.201.129.65:9999/HRRMaskEditor/MaskDrawIvan_3_ext.html']
             ],
         ]);
         NavBar::end();

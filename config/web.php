@@ -21,6 +21,8 @@ $config = [
         ],
     ],
 
+    'language' => 'ru_RU',
+
     'components' => [
         'language' => 'ru-RU',
         'request' => [
@@ -35,6 +37,8 @@ $config = [
             //'class' => 'app\components\LangUrlManager',
             'rules' => [
                 '/' => 'main/default/index',
+                'face-feature-detection' => 'main/default/face-feature-detection',
+                'face-feature-detection-result' => 'main/default/face-feature-detection-result',
             ],
         ],
         'cache' => [
