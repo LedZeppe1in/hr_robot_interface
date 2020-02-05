@@ -363,6 +363,35 @@ class FaceFeatureDetector
                 $FaceData["mouth"]["mouth_form"][$i]["Val"] = 'line';
             }
         }
+
+        //движение уголков рта
+//NORM_POINTS 48 54
+        for($i = 0; $i < count($FaceData_['normmask']); $i++) {
+            if (isset($FacePoints[48]) && isset($FaceData_['normmask'][$i][48]))
+                $y = abs($FacePoints[48][1][0] - $FaceData_['normmask'][$i][48]['Y']);
+
+            $left_corner_mouth_MovmentForce = self::getForce($FacePoints[48][1][3],$y);
+
+            if (isset($FacePoints[54]) && isset($FaceData_['normmask'][$i][54]))
+                $y1 = abs($FacePoints[54][1][0] - $FaceData_['normmask'][$i][54]['Y']);
+
+            $right_corner_mouth_MovmentForce = self::getForce($FacePoints[54][1][3],$y1);
+
+            //get min force
+            if ($left_corner_mouth_MovmentForce>$right_corner_mouth_MovmentForce){
+                $left_corner_mouth_MovmentForce=$right_corner_mouth_MovmentForce;}
+
+            $FaceData["mouth"]["mouth_corner_movement"][$i]["MovmentForce"] =
+                $left_corner_mouth_MovmentForce;
+
+            if (($right_corner_mouth_MovmentForce == 0)or($left_corner_mouth_MovmentForce == 0)) {
+                $FaceData["mouth"]["mouth_corner_movement"][$i]["MovmentDirection"]='none';
+            } else {
+                if (($y>0)and($y1>0)) {$FaceData["mouth"]["mouth_corner_movement"][$i]["MovmentDirection"]='up';}
+                else {$FaceData["mouth"]["mouth_corner_movement"][$i]["MovmentDirection"]='down';}
+            }
+        }
+
 //движение уголков рта
 //NORM_POINTS 48 54
         return $FaceData;
