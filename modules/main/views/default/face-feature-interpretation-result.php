@@ -28,7 +28,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="row">
         <div class="col-md-12">
             <div class="well">
-                <?php echo $emotionDetector->name . ' ' . $emotionDetector->firedRule; ?>
+                <?php echo '<b>Эмоция:</b> ' . $emotionDetector->name ?><br/>
+                <?php echo '<b>Активированное правило:</b> ' . $emotionDetector->firedRule ?>
             </div>
         </div>
     </div>
