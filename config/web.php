@@ -39,6 +39,8 @@ $config = [
                 '/' => 'main/default/index',
                 'face-feature-detection' => 'main/default/face-feature-detection',
                 'face-feature-detection-result' => 'main/default/face-feature-detection-result',
+                'face-feature-interpretation' => 'main/default/face-feature-interpretation',
+                'face-feature-interpretation-result' => 'main/default/face-feature-interpretation-result',
             ],
         ],
         'cache' => [

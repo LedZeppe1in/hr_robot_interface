@@ -15,27 +15,25 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <div class="main-default-face-feature-detection-result">
     <h1><?= Html::encode($this->title) ?></h1>
-    <div class="container">
-        <?php echo Tabs::widget([
-            'items' => [
-                [
-                    'label' => 'Признаки для лба',
-                    'content' => $this->render('_forehead_features'),
-                    'active' => true
-                ],
-                [
-                    'label' => 'Признаки для глаз',
-                    'content' => $this->render('_eye_features', [
-                        'eyeFeatures' => $eyeFeatures
-                    ]),
-                ],
-                [
-                    'label' => 'Признаки для рта',
-                    'content' => $this->render('_mouth_features', [
-                        'mouthFeatures' => $mouthFeatures
-                    ]),
-                ]
+    <?php echo Tabs::widget([
+        'items' => [
+            [
+                'label' => 'Признаки для лба',
+                'content' => $this->render('_forehead_features'),
+                'active' => true
+            ],
+            [
+                'label' => 'Признаки для глаз',
+                'content' => $this->render('_eye_features', [
+                    'eyeFeatures' => $eyeFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для рта',
+                'content' => $this->render('_mouth_features', [
+                    'mouthFeatures' => $mouthFeatures
+                ]),
             ]
-        ]); ?>
-    </div>
+        ]
+    ]); ?>
 </div>

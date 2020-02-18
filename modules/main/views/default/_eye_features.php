@@ -5,9 +5,11 @@
 ?>
 
 <div class="row">
-    <?php
-        echo '<pre>';
-        print_r($eyeFeatures);
-        echo '</pre>';
-    ?>
+    <div class="col-md-12">
+        <?php
+            echo '<pre>';
+            print_r($eyeFeatures);
+            echo '</pre>';
+        ?>
+    </div>
 </div>

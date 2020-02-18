@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\components\EmotionDetector;
 use Yii;
 use yii\web\Controller;
 use yii\web\UploadedFile;
@@ -51,9 +52,9 @@ class DefaultController extends Controller
     }
 
     /**
-     * Страница загрузки данных JSON.
+     * Страница загрузки данных с точками в формате JSON.
      *
-     * @return string
+     * @return string|\yii\web\Response
      */
     public function actionFaceFeatureDetection()
     {
@@ -64,7 +65,7 @@ class DefaultController extends Controller
             $jsonFileForm->jsonFile = UploadedFile::getInstance($jsonFileForm, 'jsonFile');
             if ($jsonFileForm->validate()) {
                 // Сохранение загруженного файла JSON
-                $jsonFileForm->jsonFile->saveAs('uploads/uploaded-json-data.json');
+                $jsonFileForm->jsonFile->saveAs('uploads/json-facial-landmark-data.json');
                 // Вывод сообщения об успехной загрузке файла JSON
                 Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили JSON-файл');
 
@@ -85,7 +86,7 @@ class DefaultController extends Controller
     public function actionFaceFeatureDetectionResult()
     {
         // Получение загруженного файла JSON
-        $json = file_get_contents(Yii::$app->basePath . '/web/uploads/uploaded-json-data.json',
+        $json = file_get_contents(Yii::$app->basePath . '/web/uploads/json-facial-landmark-data.json',
             true);
         $faceData = json_decode($json, true);
         // Создание объекта обнаружения лицевых признаков
@@ -98,6 +99,55 @@ class DefaultController extends Controller
         return $this->render('face-feature-detection-result', [
             'eyeFeatures' => $eyeFeatures,
             'mouthFeatures' => $mouthFeatures,
+        ]);
+    }
+
+    /**
+     * Страница загрузки данных с тестовыми признаками в формате JSON.
+     *
+     * @return string|\yii\web\Response
+     */
+    public function actionFaceFeatureInterpretation()
+    {
+        // Создание формы файла JSON
+        $jsonFileForm = new JsonFileForm();
+        // Если POST-запрос
+        if (Yii::$app->request->isPost) {
+            $jsonFileForm->jsonFile = UploadedFile::getInstance($jsonFileForm, 'jsonFile');
+            if ($jsonFileForm->validate()) {
+                // Сохранение загруженного файла JSON
+                $jsonFileForm->jsonFile->saveAs('uploads/json-facial-feature-data.json');
+                // Вывод сообщения об успехной загрузке файла JSON
+                Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили JSON-файл');
+
+                return $this->redirect('face-feature-interpretation-result');
+            }
+        }
+
+        return $this->render('face-feature-interpretation', [
+            'jsonFileForm' => $jsonFileForm,
+        ]);
+    }
+
+    /**
+     * Страница с результатами интерпретации лицивых признаков.
+     *
+     * @return string
+     */
+    public function actionFaceFeatureInterpretationResult()
+    {
+        // Получение загруженного файла JSON
+        $json = file_get_contents(Yii::$app->basePath . '/web/uploads/json-facial-feature-data.json',
+            true);
+        $faceData = json_decode($json, true);
+        // Создание объекта обнаружения эмоций
+        $emotionDetector = new EmotionDetector();
+        // Выявление эмоций по признакам
+        $emotionDetector->runKB($faceData);
+
+        return $this->render('face-feature-interpretation-result', [
+            'faceData' => $faceData,
+            'emotionDetector' => $emotionDetector,
         ]);
     }
 }
