@@ -41,10 +41,12 @@ AppAsset::register($this);
             'items' => [
                 ['label' => 'Определение признаков', 'url' => ['face-feature-detection']],
                 ['label' => 'Интерпретация признаков 1', 'url' =>
-                    'http://84.201.129.65:9999/Drools/Test.html'],
+                    'http://84.201.129.65:9999/Drools/Test.php'],
                 ['label' => 'Интерпретация признаков 2', 'url' => ['face-feature-interpretation']],
                 ['label' => 'Редактор цифровой маски',
                     'url' => 'http://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan_3_ext.html'],
+                ['label' => 'Тест Герчикова',
+                    'url' => 'http://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
             ],
         ]);
         NavBar::end();
