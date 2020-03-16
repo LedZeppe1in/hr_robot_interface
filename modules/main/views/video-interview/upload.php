@@ -5,12 +5,12 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\VideoInterview */
 
-$this->title = 'Создать';
-$this->params['breadcrumbs'][] = ['label' => 'Видеоинтервью', 'url' => ['index']];
+$this->title = 'Загрузка файлов';
+$this->params['breadcrumbs'][] = ['label' => 'Видеоинтервью', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div class="video-interview-create">
+<div class="video-interview-upload">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

@@ -15,16 +15,27 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Создать', ['create'], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Загрузить', ['upload'], ['class' => 'btn btn-success']) ?>
     </p>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
+            [
+                'attribute'=>'respondent_id',
+                'label' => 'Респондент',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return $data->respondent->name;
+                },
+            ],
             'name',
-            'respondent_id',
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'action-column'],
+                'template' => '{view} {delete}',
+            ],
         ],
     ]); ?>
 

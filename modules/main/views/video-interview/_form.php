@@ -13,11 +13,12 @@ use yii\widgets\ActiveForm;
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
+    <?= $form->field($model, 'respondent_id')->dropDownList(Respondent::getRespondents())
+        ->label('Респондент') ?>
 
-    <?= $form->field($model, 'respondent_id')->dropDownList(Respondent::getRespondents()) ?>
+    <?= $form->field($model, 'videoInterviewFile')->fileInput() ?>
 
-    <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
+    <?= $form->field($model, 'landmarkFile')->fileInput() ?>
 
     <div class="form-group">
         <?= Html::submitButton('Сохранить', ['class' => 'btn btn-success']) ?>

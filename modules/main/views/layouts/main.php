@@ -42,7 +42,7 @@ AppAsset::register($this);
                 ['label' => 'Администирование', 'url' => '#',
                     'items' => [
                         ['label' => 'Респонденты', 'url' => ['/respondent/list']],
-                        ['label' => 'Клиенты', 'url' => ['/customer/list']],
+                        ['label' => 'Заказчики', 'url' => ['/customer/list']],
                         ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
                         ['label' => 'Результаты анализа', 'url' => ['/analysis-result/list']],
                     ],

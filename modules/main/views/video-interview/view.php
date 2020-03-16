@@ -14,10 +14,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <div class="video-interview-view">
 
-    <h1><?= Html::encode($this->title) ?></h1>
+    <h1>Видеоинтервью: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
@@ -31,9 +30,22 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'attributes' => [
             'id',
+            [
+                'attribute' => 'respondent_id',
+                'label' => 'Респондент',
+                'value' => $model->respondent->name,
+            ],
             'name',
-            'respondent_id',
-            'description:ntext',
+            [
+                'label' => 'Файл видеоинтервью',
+                'value' => Html::a($model->video_file, $model->video_file, ['target' => '_blank']),
+                'format' => 'raw'
+            ],
+            [
+                'label' => 'Файл с лицевыми точками',
+                'value' => Html::a($model->landmark_file, $model->landmark_file, ['target' => '_blank']),
+                'format' => 'raw'
+            ],
         ],
     ]) ?>
 

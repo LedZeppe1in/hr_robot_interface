@@ -6,7 +6,7 @@ use yii\helpers\Html;
 /* @var $model app\modules\main\models\Customer */
 
 $this->title = 'Создать';
-$this->params['breadcrumbs'][] = ['label' => 'Клиенты', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Заказчики', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
