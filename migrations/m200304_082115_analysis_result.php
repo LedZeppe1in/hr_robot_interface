@@ -15,7 +15,6 @@ class m200304_082115_analysis_result extends Migration
 
         $this->createTable('{{%analysis_result}}', [
             'id' => $this->primaryKey(),
-            'name' => $this->string()->notNull(),
             'video_interview_id' => $this->integer()->notNull(),
             'feature_detection_result' => $this->text(),
             'feature_interpretation_result' => $this->text(),

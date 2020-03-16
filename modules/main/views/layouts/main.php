@@ -39,10 +39,17 @@ AppAsset::register($this);
             'options' => ['class' => 'navbar-nav navbar-left'],
             'encodeLabels' => false,
             'items' => [
+                ['label' => 'Администирование', 'url' => '#',
+                    'items' => [
+                        ['label' => 'Респонденты', 'url' => ['/respondent/list']],
+                        ['label' => 'Клиенты', 'url' => ['/customer/list']],
+                        ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
+                        ['label' => 'Результаты анализа', 'url' => ['/analysis-result/list']],
+                    ],
+                ],
                 ['label' => 'Определение признаков', 'url' => ['face-feature-detection']],
-                ['label' => 'Интерпретация признаков 1', 'url' =>
+                ['label' => 'Интерпретация признаков', 'url' =>
                     'http://84.201.129.65:9999/Drools/Test.php'],
-                ['label' => 'Интерпретация признаков 2', 'url' => ['face-feature-interpretation']],
                 ['label' => 'Редактор цифровой маски',
                     'url' => 'http://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan_3_ext.html'],
                 ['label' => 'Тест Герчикова',

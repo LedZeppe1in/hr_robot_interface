@@ -128,26 +128,4 @@ class DefaultController extends Controller
             'jsonFileForm' => $jsonFileForm,
         ]);
     }
-
-    /**
-     * Страница с результатами интерпретации лицивых признаков.
-     *
-     * @return string
-     */
-    public function actionFaceFeatureInterpretationResult()
-    {
-        // Получение загруженного файла JSON
-        $json = file_get_contents(Yii::$app->basePath . '/web/uploads/json-facial-feature-data.json',
-            true);
-        $faceData = json_decode($json, true);
-        // Создание объекта обнаружения эмоций
-        $emotionDetector = new EmotionDetector();
-        // Выявление эмоций по признакам
-        $emotionDetector->runKB($faceData);
-
-        return $this->render('face-feature-interpretation-result', [
-            'faceData' => $faceData,
-            'emotionDetector' => $emotionDetector,
-        ]);
-    }
 }
