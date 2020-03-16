@@ -47,7 +47,7 @@ AppAsset::register($this);
                         ['label' => 'Результаты анализа', 'url' => ['/analysis-result/list']],
                     ],
                 ],
-                ['label' => 'Определение признаков', 'url' => ['face-feature-detection']],
+                ['label' => 'Определение признаков', 'url' => ['/facial-features/detection']],
                 ['label' => 'Интерпретация признаков', 'url' =>
                     'http://84.201.129.65:9999/Drools/Test.php'],
                 ['label' => 'Редактор цифровой маски',
