@@ -2,16 +2,18 @@
 
 namespace app\modules\main\models;
 
-use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "{{%video_interview}}".
  *
  * @property int $id
- * @property int $respondent_id
+ * @property int $created_at
+ * @property int $updated_at
  * @property string $name
  * @property string $video_file
  * @property string $landmark_file
+ * @property int $respondent_id
  *
  * @property AddressedInterview[] $addressedInterviews
  * @property AnalysisResult[] $analysisResults
@@ -23,7 +25,7 @@ class VideoInterview extends \yii\db\ActiveRecord
     public $landmarkFile;       // Файл с лицевыми точками
 
     /**
-     * {@inheritdoc}
+     * @return string table name
      */
     public static function tableName()
     {
@@ -31,7 +33,7 @@ class VideoInterview extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array the validation rules
      */
     public function rules()
     {
@@ -47,18 +49,27 @@ class VideoInterview extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array customized attribute labels
      */
     public function attributeLabels()
     {
         return [
             'id' => 'ID',
-            'respondent_id' => 'ID респондента',
+            'created_at' => 'Создано',
+            'updated_at' => 'Обновлено',
             'name' => 'Название',
             'video_file' => 'Файл видеоинтервью',
             'landmark_file' => 'Файл с лицевыми точками',
+            'respondent_id' => 'ID респондента',
             'videoInterviewFile' => 'Файл видеоинтервью',
             'landmarkFile' => 'Файл с лицевыми точками',
+        ];
+    }
+
+    public function behaviors()
+    {
+        return [
+            TimestampBehavior::className(),
         ];
     }
 

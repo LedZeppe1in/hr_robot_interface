@@ -15,10 +15,12 @@ class m200304_081655_video_interview extends Migration
 
         $this->createTable('{{%video_interview}}', [
             'id' => $this->primaryKey(),
-            'respondent_id' => $this->integer()->notNull(),
+            'created_at' => $this->integer()->notNull(),
+            'updated_at' => $this->integer()->notNull(),
             'name' => $this->string()->notNull(),
             'video_file' => $this->text()->notNull(),
             'landmark_file' => $this->text()->notNull(),
+            'respondent_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
         $this->addForeignKey("video_interview_respondent_fk",

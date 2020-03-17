@@ -2,13 +2,15 @@
 
 namespace app\modules\main\models;
 
-use Yii;
 use yii\helpers\ArrayHelper;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "{{%respondent}}".
  *
  * @property int $id
+ * @property int $created_at
+ * @property int $updated_at
  * @property string $name
  *
  * @property VideoInterview[] $videoInterviews
@@ -16,7 +18,7 @@ use yii\helpers\ArrayHelper;
 class Respondent extends \yii\db\ActiveRecord
 {
     /**
-     * {@inheritdoc}
+     * @return string table name
      */
     public static function tableName()
     {
@@ -24,7 +26,7 @@ class Respondent extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array the validation rules
      */
     public function rules()
     {
@@ -35,13 +37,22 @@ class Respondent extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array customized attribute labels
      */
     public function attributeLabels()
     {
         return [
             'id' => 'ID',
+            'created_at' => 'Создан',
+            'updated_at' => 'Обновлен',
             'name' => 'Имя',
+        ];
+    }
+
+    public function behaviors()
+    {
+        return [
+            TimestampBehavior::className(),
         ];
     }
 

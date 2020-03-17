@@ -15,9 +15,11 @@ class m200304_082115_analysis_result extends Migration
 
         $this->createTable('{{%analysis_result}}', [
             'id' => $this->primaryKey(),
+            'created_at' => $this->integer()->notNull(),
+            'updated_at' => $this->integer()->notNull(),
+            'detection_result_file' => $this->text(),
+            'interpretation_result_file' => $this->text(),
             'video_interview_id' => $this->integer()->notNull(),
-            'feature_detection_result' => $this->text(),
-            'feature_interpretation_result' => $this->text(),
         ], $tableOptions);
 
         $this->addForeignKey("analysis_result_video_interview_fk",

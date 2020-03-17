@@ -15,6 +15,8 @@ class m200304_075955_respondent extends Migration
 
         $this->createTable('{{%respondent}}', [
             'id' => $this->primaryKey(),
+            'created_at' => $this->integer()->notNull(),
+            'updated_at' => $this->integer()->notNull(),
             'name' => $this->string()->notNull(),
         ], $tableOptions);
 

@@ -2,22 +2,24 @@
 
 namespace app\modules\main\models;
 
-use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "{{%analysis_result}}".
  *
  * @property int $id
+ * @property int $created_at
+ * @property int $updated_at
+ * @property string|null $detection_result_file
+ * @property string|null $interpretation_result_file
  * @property int $video_interview_id
- * @property string|null $feature_detection_result
- * @property string|null $feature_interpretation_result
  *
  * @property VideoInterview $videoInterview
  */
 class AnalysisResult extends \yii\db\ActiveRecord
 {
     /**
-     * {@inheritdoc}
+     * @return string table name
      */
     public static function tableName()
     {
@@ -25,29 +27,38 @@ class AnalysisResult extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array the validation rules
      */
     public function rules()
     {
         return [
             [['video_interview_id'], 'required'],
             [['video_interview_id'], 'integer'],
-            [['feature_detection_result', 'feature_interpretation_result'], 'string'],
+            [['detection_result_file', 'interpretation_result_file'], 'string'],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
         ];
     }
 
     /**
-     * {@inheritdoc}
+     * @return array customized attribute labels
      */
     public function attributeLabels()
     {
         return [
             'id' => 'ID',
-            'video_interview_id' => 'ID видео-интервью',
-            'feature_detection_result' => 'Описание результатов определения признаков',
-            'feature_interpretation_result' => 'Описание результатов интерпретации признаков',
+            'created_at' => 'Создан',
+            'updated_at' => 'Обновлен',
+            'detection_result_file' => 'Файл результатов определения признаков',
+            'interpretation_result_file' => 'Файл результатов интерпретации признаков',
+            'video_interview_id' => 'ID видеоинтервью',
+        ];
+    }
+
+    public function behaviors()
+    {
+        return [
+            TimestampBehavior::className(),
         ];
     }
 

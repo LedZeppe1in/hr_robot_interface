@@ -2,12 +2,14 @@
 
 namespace app\modules\main\models;
 
-use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "{{%addressed_interview}}".
  *
  * @property int $id
+ * @property int $created_at
+ * @property int $updated_at
  * @property int $video_interview_id
  * @property int $customer_id
  *
@@ -17,7 +19,7 @@ use Yii;
 class AddressedInterview extends \yii\db\ActiveRecord
 {
     /**
-     * {@inheritdoc}
+     * @return string table name
      */
     public static function tableName()
     {
@@ -25,7 +27,7 @@ class AddressedInterview extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array the validation rules
      */
     public function rules()
     {
@@ -40,14 +42,23 @@ class AddressedInterview extends \yii\db\ActiveRecord
     }
 
     /**
-     * {@inheritdoc}
+     * @return array customized attribute labels
      */
     public function attributeLabels()
     {
         return [
             'id' => 'ID',
+            'created_at' => 'Создан',
+            'updated_at' => 'Обновлен',
             'video_interview_id' => 'ID видео-интервью',
             'customer_id' => 'ID заказчика',
+        ];
+    }
+
+    public function behaviors()
+    {
+        return [
+            TimestampBehavior::className(),
         ];
     }
 

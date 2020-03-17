@@ -15,6 +15,8 @@ class m200304_082249_customer extends Migration
 
         $this->createTable('{{%customer}}', [
             'id' => $this->primaryKey(),
+            'created_at' => $this->integer()->notNull(),
+            'updated_at' => $this->integer()->notNull(),
             'name' => $this->string()->notNull(),
         ], $tableOptions);
 

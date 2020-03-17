@@ -15,6 +15,8 @@ class m200304_082335_addressed_interview extends Migration
 
         $this->createTable('{{%addressed_interview}}', [
             'id' => $this->primaryKey(),
+            'created_at' => $this->integer()->notNull(),
+            'updated_at' => $this->integer()->notNull(),
             'video_interview_id' => $this->integer()->notNull(),
             'customer_id' => $this->integer()->notNull(),
         ], $tableOptions);
