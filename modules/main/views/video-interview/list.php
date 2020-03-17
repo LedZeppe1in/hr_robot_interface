@@ -22,6 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
+            'name',
             [
                 'attribute'=>'respondent_id',
                 'label' => 'Респондент',
@@ -30,11 +31,17 @@ $this->params['breadcrumbs'][] = $this->title;
                     return $data->respondent->name;
                 },
             ],
-            'name',
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {delete}',
+                'template' => '{view} {detection} {delete}',
+                'buttons' => [
+                    'detection' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => "glyphicon glyphicon-save-file"]);
+                        $url = ['/analysis-result/detection/' . $model->id];
+                        return Html::a($icon, $url);
+                    },
+                ],
             ],
         ],
     ]); ?>

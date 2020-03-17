@@ -17,6 +17,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Видеоинтервью: <?= Html::encode($this->title) ?></h1>
 
     <p>
+        <?= Html::a('Определить признаки', ['/analysis-result/detection/' . $model->id],
+            ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
@@ -31,11 +33,19 @@ $this->params['breadcrumbs'][] = $this->title;
         'attributes' => [
             'id',
             [
+                'attribute' => 'created_at',
+                'format' => ['date', 'dd.MM.Y HH:mm:ss']
+            ],
+            [
+                'attribute' => 'updated_at',
+                'format' => ['date', 'dd.MM.Y HH:mm:ss']
+            ],
+            'name',
+            [
                 'attribute' => 'respondent_id',
                 'label' => 'Респондент',
                 'value' => $model->respondent->name,
             ],
-            'name',
             [
                 'label' => 'Файл видеоинтервью',
                 'value' => Html::a($model->video_file, $model->video_file, ['target' => '_blank']),

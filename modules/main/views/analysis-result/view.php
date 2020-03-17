@@ -1,10 +1,13 @@
 <?php
 
+use yii\bootstrap\Tabs;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\AnalysisResult */
+/* @var $eyeFeatures app\modules\main\controllers\DefaultController */
+/* @var $mouthFeatures app\modules\main\controllers\DefaultController */
 
 $this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты анализа', 'url' => ['list']];
@@ -30,10 +33,36 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'attributes' => [
             'id',
-            'video_interview_id',
-            'feature_detection_result:ntext',
-            'feature_interpretation_result:ntext',
+            [
+                'attribute' => 'created_at',
+                'format' => ['date', 'dd.MM.Y HH:mm:ss']
+            ],
+            [
+                'attribute' => 'updated_at',
+                'format' => ['date', 'dd.MM.Y HH:mm:ss']
+            ],
+            [
+                'attribute' => 'video_interview_id',
+                'label' => 'Видеоинтервью',
+                'value' => $model->videoInterview->name,
+            ],
         ],
     ]) ?>
 
+    <?php echo Tabs::widget([
+        'items' => [
+            [
+                'label' => 'Признаки для глаз',
+                'content' => $this->render('_eye_features', [
+                    'eyeFeatures' => $eyeFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для рта',
+                'content' => $this->render('_mouth_features', [
+                    'mouthFeatures' => $mouthFeatures
+                ]),
+            ]
+        ]
+    ]); ?>
 </div>

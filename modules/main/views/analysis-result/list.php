@@ -18,8 +18,19 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'video_interview_id',
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'attribute'=>'video_interview_id',
+                'label' => 'Видеоинтервью',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return $data->videoInterview->name;
+                },
+            ],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'action-column'],
+                'template' => '{view} {delete}',
+            ],
         ],
     ]); ?>
 

@@ -128,13 +128,11 @@ class VideoInterviewController extends Controller
         // Определение директории где расположен файл видеоинтервью
         $pos = strrpos($model->video_file, '/');
         $dir = substr($model->video_file, 0, $pos);
-        // Удаление файла видеоинтервью и директории где он хранился
+        // Удаление директории где хранился файл видеоинтервью
         FileHelper::removeDirectory($dir);
         // Удалние записи из БД
         $model->delete();
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
-
-        $this->findModel($id)->delete();
 
         return $this->redirect(['list']);
     }

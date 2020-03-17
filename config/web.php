@@ -37,8 +37,6 @@ $config = [
             //'class' => 'app\components\LangUrlManager',
             'rules' => [
                 '/' => 'main/default/index',
-                '/facial-features/detection' => 'main/facial-features/detection',
-                '/facial-features/detection-result' => 'main/facial-features/detection-result',
                 '/respondent/<_res:(list|create)>' => 'main/respondent/<_res>',
                 '/respondent/<_res:(view|update|delete)>/<id:\d+>' => 'main/respondent/<_res>',
                 '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',
@@ -46,7 +44,7 @@ $config = [
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
                 '/video-interview/<_vi:(view|delete)>/<id:\d+>' => 'main/video-interview/<_vi>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
-                '/analysis-result/<_ar:(view|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(view|detection|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
             ],
         ],
         'cache' => [
