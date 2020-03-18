@@ -1,6 +1,6 @@
 <?php
 
-/* @var $mouthFeatures app\modules\main\controllers\DefaultController */
+/* @var $mouthFeatures app\modules\main\controllers\AnalysisResultController */
 
 ?>
 

@@ -1,6 +1,6 @@
 <?php
 
-/* @var $eyeFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $mouthFeatures app\modules\main\controllers\DetectionResultController */
 
 ?>
 
@@ -8,7 +8,7 @@
     <div class="col-md-12">
         <?php
             echo '<pre>';
-            print_r($eyeFeatures);
+            print_r($mouthFeatures);
             echo '</pre>';
         ?>
     </div>

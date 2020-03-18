@@ -45,6 +45,8 @@ $config = [
                 '/video-interview/<_vi:(view|delete|video-download|landmark-download)>/<id:\d+>' => 'main/video-interview/<_vi>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
                 '/analysis-result/<_ar:(view|detection|detection-file-download|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
+                '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
+                '/detection-result/<_dr:(view|file-download|delete)>/<id:\d+>' => 'main/detection-result/<_dr>',
             ],
         ],
         'cache' => [

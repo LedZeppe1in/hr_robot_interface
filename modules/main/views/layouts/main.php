@@ -47,7 +47,7 @@ AppAsset::register($this);
                         ['label' => 'Результаты анализа', 'url' => ['/analysis-result/list']],
                     ],
                 ],
-                ['label' => 'Определение признаков', 'url' => '#'],
+                ['label' => 'Определение признаков', 'url' => ['/detection-result/list']],
                 ['label' => 'Интерпретация признаков', 'url' => 'http://84.201.129.65:9999/Drools/Test.php'],
                 ['label' => 'Редактор цифровой маски',
                     'url' => 'http://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan_3_ext.html'],

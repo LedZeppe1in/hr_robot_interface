@@ -1,17 +1,16 @@
 <?php
 
-use yii\bootstrap\ButtonDropdown;
 use yii\bootstrap\Tabs;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\AnalysisResult */
-/* @var $eyeFeatures app\modules\main\controllers\AnalysisResultController */
-/* @var $mouthFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $eyeFeatures app\modules\main\controllers\DetectionResultController */
+/* @var $mouthFeatures app\modules\main\controllers\DetectionResultController */
 
 $this->title = $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Результаты анализа', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Результаты определения признаков', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
@@ -22,8 +21,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?= Html::a('Скачать результаты определения признаков',
-            ['detection-file-download', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
-        <?= Html::a('Скачать результаты интерпретации признаков', '#', ['class' => 'btn btn-primary']) ?>
+            ['file-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [

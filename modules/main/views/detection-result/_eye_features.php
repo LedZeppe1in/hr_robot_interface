@@ -1,6 +1,6 @@
 <?php
 
-/* @var $eyeFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $eyeFeatures app\modules\main\controllers\DetectionResultController */
 
 ?>
 

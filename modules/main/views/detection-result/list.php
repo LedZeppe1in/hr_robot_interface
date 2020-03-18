@@ -6,7 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Результаты анализа';
+$this->title = 'Результаты определения признаков';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -29,20 +29,13 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {detection-file-download} {interpretation-file-download} {delete}',
+                'template' => '{view} {detection-file-download} {delete}',
                 'buttons' => [
                     'detection-file-download' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-floppy-save',
                                 'title' => 'Скачать результаты определения признаков']);
-                        $url = ['/analysis-result/detection-file-download/' . $model->id];
-                        return Html::a($icon, $url);
-                    },
-                    'interpretation-file-download' => function ($url, $model, $key) {
-                        $icon = Html::tag('span', '',
-                            ['class' => 'glyphicon glyphicon-export',
-                                'title' => 'Скачать результаты интерпретации признаков']);
-                        $url = '#';
+                        $url = ['/detection-result/file-download/' . $model->id];
                         return Html::a($icon, $url);
                     },
                 ],
