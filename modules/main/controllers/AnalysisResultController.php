@@ -4,6 +4,7 @@ namespace app\modules\main\controllers;
 
 use app\components\FaceFeatureDetector;
 use app\modules\main\models\VideoInterview;
+use Exception;
 use Yii;
 use app\modules\main\models\AnalysisResult;
 use yii\data\ActiveDataProvider;
@@ -188,6 +189,21 @@ class AnalysisResultController extends Controller
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты определения признаков!');
 
         return $this->redirect(['list']);
+    }
+
+    /**
+     * Скачать json-файл с результатами определения признаков.
+     *
+     * @param $id
+     * @return \yii\console\Response|\yii\web\Response
+     * @throws NotFoundHttpException
+     */
+    public function actionDetectionFileDownload($id)
+    {
+        $model = $this->findModel($id);
+        if (file_exists($model->detection_result_file))
+            return Yii::$app->response->sendFile($model->detection_result_file);
+        throw new Exception('Файл не найден!');
     }
 
     /**

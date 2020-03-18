@@ -29,7 +29,16 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {delete}',
+                'template' => '{view} {detection-file-download} {delete}',
+                'buttons' => [
+                    'detection-file-download' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-floppy-save',
+                                'title' => 'Скачать результаты определения признаков']);
+                        $url = ['/analysis-result/detection-file-download/' . $model->id];
+                        return Html::a($icon, $url);
+                    },
+                ],
             ],
         ],
     ]); ?>
