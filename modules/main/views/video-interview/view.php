@@ -48,12 +48,14 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'label' => 'Файл видеоинтервью',
-                'value' => Html::a($model->video_file, $model->video_file, ['target' => '_blank']),
+                'value' => Html::a('скачать', ['/video-interview/video-download/' . $model->id],
+                    ['target' => '_blank']),
                 'format' => 'raw'
             ],
             [
                 'label' => 'Файл с лицевыми точками',
-                'value' => Html::a($model->landmark_file, $model->landmark_file, ['target' => '_blank']),
+                'value' => Html::a('скачать', ['/video-interview/landmark-download/' . $model->id],
+                    ['target' => '_blank']),
                 'format' => 'raw'
             ],
         ],

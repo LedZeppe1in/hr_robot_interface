@@ -37,7 +37,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '{view} {detection} {delete}',
                 'buttons' => [
                     'detection' => function ($url, $model, $key) {
-                        $icon = Html::tag('span', '', ['class' => "glyphicon glyphicon-save-file"]);
+                        $icon = Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-save-file', 'title' => 'Определение признаков']);
                         $url = ['/analysis-result/detection/' . $model->id];
                         return Html::a($icon, $url);
                     },

@@ -43,16 +43,12 @@ AppAsset::register($this);
                     'items' => [
                         ['label' => 'Респонденты', 'url' => ['/respondent/list']],
                         ['label' => 'Заказчики', 'url' => ['/customer/list']],
-                    ],
-                ],
-                ['label' => 'Определение признаков', 'url' => '#',
-                    'items' => [
                         ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
                         ['label' => 'Результаты анализа', 'url' => ['/analysis-result/list']],
                     ],
                 ],
-                ['label' => 'Интерпретация признаков', 'url' =>
-                    'http://84.201.129.65:9999/Drools/Test.php'],
+                ['label' => 'Определение признаков', 'url' => '#'],
+                ['label' => 'Интерпретация признаков', 'url' => 'http://84.201.129.65:9999/Drools/Test.php'],
                 ['label' => 'Редактор цифровой маски',
                     'url' => 'http://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan_3_ext.html'],
                 ['label' => 'Тест Герчикова',

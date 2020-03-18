@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use Exception;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\helpers\FileHelper;
@@ -180,6 +181,36 @@ class VideoInterviewController extends Controller
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
 
         return $this->redirect(['list']);
+    }
+
+    /**
+     * Скачивание файла видеоинтервью.
+     *
+     * @param $id
+     * @return \yii\console\Response|\yii\web\Response
+     * @throws NotFoundHttpException
+     */
+    public function actionVideoDownload($id)
+    {
+        $model = $this->findModel($id);
+        if (file_exists($model->video_file))
+            return Yii::$app->response->sendFile($model->video_file);
+        throw new Exception('Файл не найден!');
+    }
+
+    /**
+     * Скачивание файла с лицевыми точками.
+     *
+     * @param $id
+     * @return \yii\console\Response|\yii\web\Response
+     * @throws NotFoundHttpException
+     */
+    public function actionLandmarkDownload($id)
+    {
+        $model = $this->findModel($id);
+        if (file_exists($model->landmark_file))
+            return Yii::$app->response->sendFile($model->landmark_file);
+        throw new Exception('Файл не найден!');
     }
 
     /**
