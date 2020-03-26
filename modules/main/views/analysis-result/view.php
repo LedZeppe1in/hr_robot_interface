@@ -9,6 +9,8 @@ use yii\widgets\DetailView;
 /* @var $model app\modules\main\models\AnalysisResult */
 /* @var $eyeFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $mouthFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $browFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $eyebrowFeatures app\modules\main\controllers\AnalysisResultController */
 
 $this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты анализа', 'url' => ['list']];
@@ -65,6 +67,18 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Признаки для рта',
                 'content' => $this->render('_mouth_features', [
                     'mouthFeatures' => $mouthFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для лба',
+                'content' => $this->render('_brow_features', [
+                    'browFeatures' => $browFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для бровей',
+                'content' => $this->render('_eyebrow_features', [
+                    'eyebrowFeatures' => $eyebrowFeatures
                 ]),
             ]
         ]

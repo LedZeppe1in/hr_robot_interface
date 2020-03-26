@@ -8,6 +8,8 @@ use yii\widgets\DetailView;
 /* @var $model app\modules\main\models\AnalysisResult */
 /* @var $eyeFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $mouthFeatures app\modules\main\controllers\DetectionResultController */
+/* @var $browFeatures app\modules\main\controllers\DetectionResultController */
+/* @var $eyebrowFeatures app\modules\main\controllers\DetectionResultController */
 
 $this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты определения признаков', 'url' => ['list']];
@@ -63,6 +65,18 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Признаки для рта',
                 'content' => $this->render('_mouth_features', [
                     'mouthFeatures' => $mouthFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для лба',
+                'content' => $this->render('_brow_features', [
+                    'browFeatures' => $browFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для бровей',
+                'content' => $this->render('_eyebrow_features', [
+                    'eyebrowFeatures' => $eyebrowFeatures
                 ]),
             ]
         ]

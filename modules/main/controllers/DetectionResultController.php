@@ -58,19 +58,12 @@ class DetectionResultController extends Controller
     {
         // Массивы для признаков глаза
         $eyeFeatures = array();
-        $leftEyeInner = array();
-        $leftEyeOuter = array();
-        $leftUpperEyelid = array();
-        $leftLowerEyelid = array();
-        $leftEyeWidth = array();
-        $rightEyeInner = array();
-        $rightEyeOuter = array();
-        $rightUpperEyelid = array();
-        $rightLowerEyelid = array();
-        $rightEyeWidth = array();
-        $features = array();
         // Массив для признаков рта
         $mouthFeatures = array();
+        // Массив для признаков лба
+        $browFeatures = array();
+        // Массив для признаков бровей
+        $eyebrowFeatures = array();
         // Поиск записи в БД о результатах определения признаков
         $model = $this->findModel($id);
         // Получение файла JSON c результатами определения признаков
@@ -78,38 +71,26 @@ class DetectionResultController extends Controller
         $faceData = json_decode($jsonFile, true);
         // Обход файла
         foreach ($faceData as $key => $item) {
-            if ($key == 'left_eye_inner')
-                $leftEyeInner = [$key => $item];
-            if ($key == 'left_eye_outer')
-                $leftEyeOuter = [$key => $item];
-            if ($key == 'left_upper_eyelid')
-                $leftUpperEyelid = [$key => $item];
-            if ($key == 'left_lower_eyelid')
-                $leftLowerEyelid = [$key => $item];
-            if ($key == 'left_eye_width')
-                $leftEyeWidth = [$key => $item];
-            if ($key == 'right_eye_inner')
-                $rightEyeInner = [$key => $item];
-            if ($key == 'right_eye_outer')
-                $rightEyeOuter = [$key => $item];
-            if ($key == 'right_upper_eyelid')
-                $rightUpperEyelid = [$key => $item];
-            if ($key == 'right_lower_eyelid')
-                $rightLowerEyelid = [$key => $item];
-            if ($key == 'right_eye_width')
-                $rightEyeWidth = [$key => $item];
             // Сохранение признаков для глаз
-            $features[$key] = $item;
-            $eyeFeatures = ['eye' => $features];
+            if ($key == 'eye')
+                $eyeFeatures = [$key => $item];
             // Сохранение признаков для рта
             if ($key == 'mouth')
                 $mouthFeatures = [$key => $item];
+            // Сохранение признаков для лба
+            if ($key == 'brow')
+                $browFeatures = [$key => $item];
+            // Сохранение признаков для бровей
+            if ($key == 'eyebrow')
+                $eyebrowFeatures = [$key => $item];
         }
 
         return $this->render('view', [
             'model' => $model,
             'eyeFeatures' => $eyeFeatures,
             'mouthFeatures' => $mouthFeatures,
+            'browFeatures' => $browFeatures,
+            'eyebrowFeatures' => $eyebrowFeatures,
         ]);
     }
 
