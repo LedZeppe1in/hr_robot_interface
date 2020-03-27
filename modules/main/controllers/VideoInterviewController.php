@@ -152,8 +152,13 @@ class VideoInterviewController extends Controller
     public function actionVideoDownload($id)
     {
         $model = $this->findModel($id);
-        if (file_exists($model->video_file))
-            return Yii::$app->response->sendFile($model->video_file);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Скачивание файла видеоинтервью на Object Storage
+        if ($model->video_file_name != '') {
+            $dbConnector->getFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                $model->id, $model->video_file_name);
+        }
         throw new Exception('Файл не найден!');
     }
 
@@ -167,8 +172,13 @@ class VideoInterviewController extends Controller
     public function actionLandmarkDownload($id)
     {
         $model = $this->findModel($id);
-        if (file_exists($model->landmark_file))
-            return Yii::$app->response->sendFile($model->landmark_file);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Скачивание файла с лицевыми точками на Object Storage
+        if ($model->landmark_file_name != '') {
+            $dbConnector->getFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                $model->id, $model->landmark_file_name);
+        }
         throw new Exception('Файл не найден!');
     }
 

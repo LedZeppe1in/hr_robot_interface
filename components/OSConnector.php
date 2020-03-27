@@ -95,4 +95,44 @@ class OSConnector
             echo "При удалении файла произошла ошибка.\n";
         }
     }
+
+    /**
+     * Получение (скачивание) объекта файла из Object Storage на Yandex.Cloud.
+     *
+     * @param $bucketName - название бакета (videointerviews или jsonfiles)
+     * @param $path - название папки в бакете (соответствует id записи из БД)
+     * @param $fileName - имя файла (без пути
+     */
+    public function getFileToObjectStorage($bucketName, $path, $fileName)
+    {
+        $sdk = new Sdk($this->sharedConfig);
+        $s3Client = $sdk->createS3();
+        try {
+            // Переменная для возвращаемого результата
+            $result = array();
+            // Если бакет с файлами видеоинтервью
+            if ($bucketName == self::OBJECT_STORAGE_VIDEO_BUCKET)
+                $result = $s3Client->getObject([
+                    'Bucket' => self::OBJECT_STORAGE_VIDEO_BUCKET,
+                    'Key' => $path . '/' . $fileName,
+                ]);
+            // Если бакет с json-файлами результатов определения и интерпретации признаков
+            if ($bucketName == self::OBJECT_STORAGE_JSON_BUCKET)
+                $result = $s3Client->getObject([
+                    'Bucket' => self::OBJECT_STORAGE_JSON_BUCKET,
+                    'Key' => $path . '/' . $fileName,
+                ]);
+            // Установка типа контента при скачивании файла
+            header('Content-Description: File Transfer');
+            header("Content-Type: {$result['ContentType']}");
+            header('Content-Disposition: attachment; filename=' . $fileName);
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            // Отправление файла в браузер для скачивания
+            echo $result["Body"];
+        } catch (S3Exception $e) {
+            echo "При скачивании файла произошла ошибка.\n";
+        }
+    }
 }
