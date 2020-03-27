@@ -17,9 +17,8 @@ class m200304_081655_video_interview extends Migration
             'id' => $this->primaryKey(),
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
-            'name' => $this->string()->notNull(),
-            'video_file' => $this->text()->notNull(),
-            'landmark_file' => $this->text()->notNull(),
+            'video_file_name' => $this->string(),
+            'landmark_file_name' => $this->string(),
             'respondent_id' => $this->integer()->notNull(),
         ], $tableOptions);
 

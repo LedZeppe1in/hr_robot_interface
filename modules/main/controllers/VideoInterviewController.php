@@ -73,45 +73,36 @@ class VideoInterviewController extends Controller
         $model = new VideoInterview();
         // POST-запрос
         if ($model->load(Yii::$app->request->post())) {
+            // Загрузка файлов с формы
             $videoInterviewFile = UploadedFile::getInstance($model, 'videoInterviewFile');
             $landmarkFile = UploadedFile::getInstance($model, 'landmarkFile');
-            if ($videoInterviewFile && $videoInterviewFile->tempName && $landmarkFile && $landmarkFile->tempName) {
-                $model->videoInterviewFile = $videoInterviewFile;
-                $model->landmarkFile = $landmarkFile;
-                if ($model->validate(['videoInterviewFile']) && $model->validate(['landmarkFile'])) {
-                    // Формирование пути к файлам с видеоинтервью и лицевыми точками
-                    $dir = Yii::getAlias('@webroot') . '/uploads/video-interview/';
-                    $videoInterviewFileName = $model->videoInterviewFile->baseName . '.' .
+            $model->videoInterviewFile = $videoInterviewFile;
+            $model->landmarkFile = $landmarkFile;
+            // Валидация полей файлов
+            if ($model->validate(['videoInterviewFile']) && $model->validate(['landmarkFile'])) {
+                // Если пользователь загрузил файл видеоинтервью
+                if ($videoInterviewFile && $videoInterviewFile->tempName)
+                    $model->video_file_name = $model->videoInterviewFile->baseName . '.' .
                         $model->videoInterviewFile->extension;
-                    $model->video_file = $dir . $videoInterviewFileName;
-                    $landmarkFileName = $model->landmarkFile->baseName . '.' . $model->landmarkFile->extension;
-                    $model->landmark_file = $dir . $landmarkFileName;
-                    // Формирование названия видеоинтервью
-                    $model->name = $videoInterviewFileName;
-                    // Сохранение данных о видео-интервью
-                    if ($model->save()) {
-                        // Формирование новой директории для файлов с видеоинтервью и лицевыми точками
-                        $dir .= $model->id . '/';
-                        // Создание новой директории для файлов с видеоинтервью и лицевыми точками
-                        FileHelper::createDirectory($dir);
-                        // Обновление пути к для файлов с видеоинтервью и лицевыми точками
-                        $model->updateAttributes(['video_file' => $dir . $videoInterviewFileName]);
-                        $model->updateAttributes(['landmark_file' => $dir . $landmarkFileName]);
-                        // Сохранение файлов с видеоинтервью и лицевыми точками
-                        $model->videoInterviewFile->saveAs($dir . $videoInterviewFileName);
-                        $model->landmarkFile->saveAs($dir . $landmarkFileName);
-                        //
-                        $dbConnector = new OSConnector();
-                        //
+                // Если пользователь загрузил файл с лицевыми точками
+                if ($landmarkFile && $landmarkFile->tempName)
+                    $model->landmark_file_name = $model->landmarkFile->baseName . '.' . $model->landmarkFile->extension;
+                // Сохранение данных о видео-интервью в БД
+                if ($model->save()) {
+                    // Создание объекта коннектора с Yandex.Cloud Object Storage
+                    $dbConnector = new OSConnector();
+                    // Сохранение файла видеоинтервью на Object Storage
+                    if ($model->video_file_name != '')
                         $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-                            $model->id, $videoInterviewFileName, $model->video_file);
-                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-                            $model->id, $landmarkFileName, $model->landmark_file);
-                        // Вывод сообщения
-                        Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили видеоинтервью!');
+                            $model->id, $model->video_file_name, $videoInterviewFile->tempName);
+                    // Сохранение файла с лицевыми точками на Object Storage
+                    if ($model->landmark_file_name != '')
+                    $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                        $model->id, $model->landmark_file_name, $landmarkFile->tempName);
+                    // Вывод сообщения об удачной загрузке
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили видеоинтервью!');
 
-                        return $this->redirect(['view', 'id' => $model->id]);
-                    }
+                    return $this->redirect(['view', 'id' => $model->id]);
                 }
             }
         }
@@ -124,32 +115,28 @@ class VideoInterviewController extends Controller
     /**
      * Deletes an existing VideoInterview model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException if the model cannot be found
+     * @param $id
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
      */
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        // Удаление файла с видеоинтервью
-        unlink($model->video_file);
-        // Удаление файла с лицевыми точками
-        unlink($model->landmark_file);
-        // Определение директории где расположен файл видеоинтервью
-        $pos = strrpos($model->video_file, '/');
-        $dir = substr($model->video_file, 0, $pos);
-        // Удаление директории где хранился файл видеоинтервью
-        FileHelper::removeDirectory($dir);
         // Удалние записи из БД
         $model->delete();
-        //
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
-        //
-        $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-            $model->id, basename($model->video_file));
-        $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-            $model->id, basename($model->landmark_file));
-        // Вывод сообщения
+        // Удаление файла видеоинтервью на Object Storage
+        if ($model->video_file_name != '')
+            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                $model->id, $model->video_file_name);
+        // Удаление файла с лицевыми точками на Object Storage
+        if ($model->landmark_file_name != '')
+            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                $model->id, $model->landmark_file_name);
+        // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
 
         return $this->redirect(['list']);

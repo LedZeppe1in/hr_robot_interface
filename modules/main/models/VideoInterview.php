@@ -10,9 +10,8 @@ use yii\behaviors\TimestampBehavior;
  * @property int $id
  * @property int $created_at
  * @property int $updated_at
- * @property string $name
- * @property string $video_file
- * @property string $landmark_file
+ * @property string $video_file_name
+ * @property string $landmark_file_name
  * @property int $respondent_id
  *
  * @property AddressedInterview[] $addressedInterviews
@@ -38,9 +37,9 @@ class VideoInterview extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['respondent_id', 'video_file', 'landmark_file'], 'required'],
+            [['respondent_id'], 'required'],
             [['respondent_id'], 'integer'],
-            [['name', 'video_file', 'landmark_file'], 'string', 'max' => 255],
+            [['video_file_name', 'landmark_file_name'], 'string'],
             [['videoInterviewFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => Respondent::className(),
@@ -57,9 +56,8 @@ class VideoInterview extends \yii\db\ActiveRecord
             'id' => 'ID',
             'created_at' => 'Создано',
             'updated_at' => 'Обновлено',
-            'name' => 'Название',
-            'video_file' => 'Файл видеоинтервью',
-            'landmark_file' => 'Файл с лицевыми точками',
+            'video_file_name' => 'Название файла видеоинтервью',
+            'landmark_file_name' => 'Название файла с лицевыми точками',
             'respondent_id' => 'ID респондента',
             'videoInterviewFile' => 'Файл видеоинтервью',
             'landmarkFile' => 'Файл с лицевыми точками',

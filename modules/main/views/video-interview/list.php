@@ -22,7 +22,6 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'name',
             [
                 'attribute'=>'respondent_id',
                 'label' => 'Респондент',
@@ -40,7 +39,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         $icon = Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-save-file', 'title' => 'Определение признаков']);
                         $url = ['/analysis-result/detection/' . $model->id];
-                        return Html::a($icon, $url);
+                        return ($model->landmark_file_name != '') ? Html::a($icon, $url) : null;
                     },
                 ],
             ],
