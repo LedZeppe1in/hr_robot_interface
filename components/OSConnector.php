@@ -12,8 +12,10 @@ class OSConnector
 {
     // Название бакета для файлов видеоинтервью в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_VIDEO_BUCKET = 'videointerviews';
-    // Название бакета для json-файлов результатов определения и интерпретации признаков в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_JSON_BUCKET = 'jsonfiles';
+    // Название бакета для json-файлов результатов определения признаков в Object Storage на Yandex.Cloud
+    const OBJECT_STORAGE_DETECTION_RESULT_BUCKET = 'detectionresults';
+    // Название бакета для json-файлов результатов интерпретации признаков в Object Storage на Yandex.Cloud
+    const OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET = 'interpretationresults';
     // Ключ для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_KEY    = 'IZnZSrNDYYbkZRDyAtZ9';
     // Шифр для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
@@ -48,20 +50,11 @@ class OSConnector
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();
         try {
-            // Если бакет с файлами видеоинтервью
-            if ($bucketName == self::OBJECT_STORAGE_VIDEO_BUCKET)
-                $s3Client->putObject([
-                    'Bucket' => self::OBJECT_STORAGE_VIDEO_BUCKET,
-                    'Key' => $path . '/' . $fileName,
-                    'Body' => fopen($file, 'r')
-                ]);
-            // Если бакет с json-файлами результатов определения и интерпретации признаков
-            if ($bucketName == self::OBJECT_STORAGE_JSON_BUCKET)
-                $s3Client->putObject([
-                    'Bucket' => self::OBJECT_STORAGE_JSON_BUCKET,
-                    'Key' => $path . '/' . $fileName,
-                    'Body' => fopen($file, 'r')
-                ]);
+            $s3Client->putObject([
+                'Bucket' => $bucketName,
+                'Key' => $path . '/' . $fileName,
+                'Body' => (is_array($file)) ? json_encode($file, true) : fopen($file, 'r'),
+            ]);
         } catch (S3Exception $e) {
             echo "При загрузке файла произошла ошибка.\n";
         }
@@ -79,49 +72,57 @@ class OSConnector
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();
         try {
-            // Если бакет с файлами видеоинтервью
-            if ($bucketName == self::OBJECT_STORAGE_VIDEO_BUCKET)
-                $s3Client->deleteObject([
-                    'Bucket' => self::OBJECT_STORAGE_VIDEO_BUCKET,
-                    'Key' => $path . '/' . $fileName,
-                ]);
-            // Если бакет с json-файлами результатов определения и интерпретации признаков
-            if ($bucketName == self::OBJECT_STORAGE_JSON_BUCKET)
-                $s3Client->deleteObject([
-                    'Bucket' => self::OBJECT_STORAGE_JSON_BUCKET,
-                    'Key' => $path . '/' . $fileName,
-                ]);
+            $s3Client->deleteObject([
+                'Bucket' => $bucketName,
+                'Key' => $path . '/' . $fileName,
+            ]);
         } catch (S3Exception $e) {
             echo "При удалении файла произошла ошибка.\n";
         }
     }
 
     /**
-     * Получение (скачивание) объекта файла из Object Storage на Yandex.Cloud.
+     * Получение содержимого объекта файла из Object Storage на Yandex.Cloud.
+     *
+     * @param $bucketName - название бакета (videointerviews или jsonfiles)
+     * @param $path - название папки в бакете (соответствует id записи из БД)
+     * @param $fileName - имя файла (без пути
+     * @return bool|mixed - содержимое объекта файла
+     */
+    public function getFileContentToObjectStorage($bucketName, $path, $fileName)
+    {
+        $sdk = new Sdk($this->sharedConfig);
+        $s3Client = $sdk->createS3();
+        try {
+            $result = $s3Client->getObject([
+                'Bucket' => $bucketName,
+                'Key' => $path . '/' . $fileName,
+            ]);
+
+            return $result["Body"];
+        } catch (S3Exception $e) {
+            echo "При получении файла произошла ошибка.\n";
+        }
+
+        return false;
+    }
+
+    /**
+     * Скачивание объекта файла из Object Storage на Yandex.Cloud.
      *
      * @param $bucketName - название бакета (videointerviews или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути
      */
-    public function getFileToObjectStorage($bucketName, $path, $fileName)
+    public function downloadFileToObjectStorage($bucketName, $path, $fileName)
     {
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();
         try {
-            // Переменная для возвращаемого результата
-            $result = array();
-            // Если бакет с файлами видеоинтервью
-            if ($bucketName == self::OBJECT_STORAGE_VIDEO_BUCKET)
-                $result = $s3Client->getObject([
-                    'Bucket' => self::OBJECT_STORAGE_VIDEO_BUCKET,
-                    'Key' => $path . '/' . $fileName,
-                ]);
-            // Если бакет с json-файлами результатов определения и интерпретации признаков
-            if ($bucketName == self::OBJECT_STORAGE_JSON_BUCKET)
-                $result = $s3Client->getObject([
-                    'Bucket' => self::OBJECT_STORAGE_JSON_BUCKET,
-                    'Key' => $path . '/' . $fileName,
-                ]);
+            $result = $s3Client->getObject([
+                'Bucket' => $bucketName,
+                'Key' => $path . '/' . $fileName,
+            ]);
             // Установка типа контента при скачивании файла
             header('Content-Description: File Transfer');
             header("Content-Type: {$result['ContentType']}");

@@ -1036,29 +1036,26 @@ class FacialFeatureDetector
     }
 
     /**
-     * Обнаружение признаков на основе анализа входных данных
+     * Обнаружение признаков на основе анализа входных данных.
      *
      * @param $sourceFile - входной файл в формате json с лицевыми точками (landmarks)
      * @return array - выходной массив с опредеделенными признаками
      */
     public function detectFeatures($sourceFile)
     {
-        //load data
-        $json = file_get_contents($sourceFile, true);
-        $FaceData_=json_decode($json, true);
-        //check input format
-        //convert the I format to AB
-        if(strpos($json,'NORM_POINTS') !== false){
-         $FaceData = $this->convertIJson($FaceData_);
-        } else{
-            //use the AB format
-            $FaceData =  $FaceData_;
-        }
+        // load data
+        $FaceData_ = json_decode($sourceFile, true);
+        // check input format and convert the I format to AB
+        if(strpos($sourceFile,'NORM_POINTS') !== false)
+            $FaceData = $this->convertIJson($FaceData_);
+        else
+            $FaceData =  $FaceData_; // use the AB format
         $detectedFeatures['eye'] = $this->detectEyeFeatures($FaceData);
         $detectedFeatures['mouth'] = $this->detectMouthFeatures($FaceData);
         $detectedFeatures['brow'] = $this->detectBrowFeatures($FaceData);
         $detectedFeatures['eyebrow'] = $this->detectEyeBrowFeatures($FaceData);
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
-     return $detectedFeaturesWithTrends;
+
+        return $detectedFeaturesWithTrends;
     }
 }

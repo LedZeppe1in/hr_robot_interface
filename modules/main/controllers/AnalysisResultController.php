@@ -3,6 +3,7 @@
 namespace app\modules\main\controllers;
 
 use app\components\FacialFeatureDetector;
+use app\components\OSConnector;
 use app\modules\main\models\VideoInterview;
 use Exception;
 use Yii;
@@ -58,41 +59,24 @@ class AnalysisResultController extends Controller
      */
     public function actionView($id)
     {
-        // Массивы для признаков глаза
-        $eyeFeatures = array();
-        // Массив для признаков рта
-        $mouthFeatures = array();
-        // Массив для признаков лба
-        $browFeatures = array();
-        // Массив для признаков бровей
-        $eyebrowFeatures = array();
         // Поиск записи в БД о результатах определения признаков
         $model = $this->findModel($id);
-        // Получение файла JSON c результатами определения признаков
-        $jsonFile = file_get_contents($model->detection_result_file, true);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Получение json-файла c результатами определения признаков
+        $jsonFile = $dbConnector->getFileContentToObjectStorage(
+            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $model->id,
+            $model->detection_result_file_name
+        );
         $faceData = json_decode($jsonFile, true);
-        // Обход файла
-        foreach ($faceData as $key => $item) {
-            // Сохранение признаков для глаз
-            if ($key == 'eye')
-                $eyeFeatures = [$key => $item];
-            // Сохранение признаков для рта
-            if ($key == 'mouth')
-                $mouthFeatures = [$key => $item];
-            // Сохранение признаков для лба
-            if ($key == 'brow')
-                $browFeatures = [$key => $item];
-            // Сохранение признаков для бровей
-            if ($key == 'eyebrow')
-                $eyebrowFeatures = [$key => $item];
-        }
 
         return $this->render('view', [
             'model' => $model,
-            'eyeFeatures' => $eyeFeatures,
-            'mouthFeatures' => $mouthFeatures,
-            'browFeatures' => $browFeatures,
-            'eyebrowFeatures' => $eyebrowFeatures,
+            'eyeFeatures' => $faceData['eye'],
+            'mouthFeatures' => $faceData['mouth'],
+            'browFeatures' => $faceData['brow'],
+            'eyebrowFeatures' => $faceData['eyebrow'],
         ]);
     }
 
@@ -107,27 +91,24 @@ class AnalysisResultController extends Controller
         // Создание модели для результатов определения признаков
         $model = new AnalysisResult();
         $model->video_interview_id = $id;
+        $model->detection_result_file_name = 'feature-detection-result.json';
         $model->save();
-        // Поиск видеоинтервью по его id
+        // Поиск видеоинтервью по его id в БД
         $videoInterview = VideoInterview::findOne($id);
-        // Получение имени файла
-        $fileName = basename($videoInterview->landmark_file);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Получение содержимого json-файла с лицевыми точками из Object Storage
+        $faceData = $dbConnector->getFileContentToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $videoInterview->id, $videoInterview->landmark_file_name);
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица
-        $facialFeatures = $facialFeatureDetector->detectFeatures(Yii::$app->basePath .
-            '/web/uploads/video-interview/' . $id . '/' . $fileName);
-        // Формирование пути к файлу результатов определения признаков
-        $dir = Yii::getAlias('@webroot') . '/uploads/detection-results/' . $model->id . '/';
-        // Создание новой директории для файла с результатами определения признаков
-        FileHelper::createDirectory($dir);
-        // Файл результатов определения признаков
-        $targetJsonFile = $dir . 'detection-result.json';
-        // Создание файла JSON с результатами определения признаков
-        file_put_contents($targetJsonFile, json_encode($facialFeatures));
-        // Сохранение результатов определения признаков в БД
-        $model->detection_result_file = $targetJsonFile;
-        $model->updateAttributes(['detection_result_file']);
+        $facialFeatures = $facialFeatureDetector->detectFeatures($faceData);
+        // Сохранение json-файла с результатами определения признаков на Object Storage
+        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $model->id, $model->detection_result_file_name, $facialFeatures);
+        // Вывод сообщения об успешном обнаружении признаков
+        Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
 
         return $this->render('view', [
             'model' => $model,
@@ -140,29 +121,30 @@ class AnalysisResultController extends Controller
 
     /**
      * Deletes an existing AnalysisResult model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException if the model cannot be found
+     * If deletion is successful, the browser will be redirected to the 'list' page.
+     * @param $id
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
      */
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        // Удаление файла с результатами определения признаков
-        if ($model->detection_result_file != '')
-            unlink($model->detection_result_file);
-        // Удаление файла с результатами интерпретации признаков
-        if ($model->interpretation_result_file != '')
-            unlink($model->interpretation_result_file);
-        // Определение директории где расположен файл с результатами определения признаков
-        $pos = strrpos($model->detection_result_file, '/');
-        $dir = substr($model->detection_result_file, 0, $pos);
-        // Удаление директории где хранился файл с результатами определения признаков
-        FileHelper::removeDirectory($dir);
         // Удалние записи из БД
         $model->delete();
-        // Вывод сообщения
-        Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты определения признаков!');
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Удаление файла с результатами определения признаков на Object Storage
+        if ($model->detection_result_file_name != '')
+            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $model->id, $model->detection_result_file_name);
+        // Удаление файла с результатами интерпретации признаков на Object Storage
+        if ($model->interpretation_result_file_name != '')
+            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                $model->id, $model->interpretation_result_file_name);
+        // Вывод сообщения об успешном удалении
+        Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты анализа интервью!');
 
         return $this->redirect(['list']);
     }
@@ -177,8 +159,13 @@ class AnalysisResultController extends Controller
     public function actionDetectionFileDownload($id)
     {
         $model = $this->findModel($id);
-        if (file_exists($model->detection_result_file))
-            return Yii::$app->response->sendFile($model->detection_result_file);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Скачивание файла с результатами определения признаков на Object Storage
+        if ($model->detection_result_file_name != '') {
+            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $model->id, $model->detection_result_file_name);
+        }
         throw new Exception('Файл не найден!');
     }
 

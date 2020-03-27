@@ -23,7 +23,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Видеоинтервью',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return $data->videoInterview->name;
+                    return $data->videoInterview->video_file_name;
                 },
             ],
             [

@@ -10,8 +10,8 @@ use yii\behaviors\TimestampBehavior;
  * @property int $id
  * @property int $created_at
  * @property int $updated_at
- * @property string|null $detection_result_file
- * @property string|null $interpretation_result_file
+ * @property string $detection_result_file_name
+ * @property string $interpretation_result_file_name
  * @property int $video_interview_id
  *
  * @property VideoInterview $videoInterview
@@ -34,7 +34,7 @@ class AnalysisResult extends \yii\db\ActiveRecord
         return [
             [['video_interview_id'], 'required'],
             [['video_interview_id'], 'integer'],
-            [['detection_result_file', 'interpretation_result_file'], 'string'],
+            [['detection_result_file_name', 'interpretation_result_file_name'], 'string'],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
         ];
@@ -49,8 +49,8 @@ class AnalysisResult extends \yii\db\ActiveRecord
             'id' => 'ID',
             'created_at' => 'Создан',
             'updated_at' => 'Обновлен',
-            'detection_result_file' => 'Файл результатов определения признаков',
-            'interpretation_result_file' => 'Файл результатов интерпретации признаков',
+            'detection_result_file_name' => 'Название файла результатов определения признаков',
+            'interpretation_result_file_name' => 'Название файла результатов интерпретации признаков',
             'video_interview_id' => 'ID видеоинтервью',
         ];
     }

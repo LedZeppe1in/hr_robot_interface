@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\components\OSConnector;
 use Exception;
 use Yii;
 use app\modules\main\models\AnalysisResult;
@@ -56,65 +57,48 @@ class DetectionResultController extends Controller
      */
     public function actionView($id)
     {
-        // Массивы для признаков глаза
-        $eyeFeatures = array();
-        // Массив для признаков рта
-        $mouthFeatures = array();
-        // Массив для признаков лба
-        $browFeatures = array();
-        // Массив для признаков бровей
-        $eyebrowFeatures = array();
         // Поиск записи в БД о результатах определения признаков
         $model = $this->findModel($id);
-        // Получение файла JSON c результатами определения признаков
-        $jsonFile = file_get_contents($model->detection_result_file, true);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Получение json-файла c результатами определения признаков
+        $jsonFile = $dbConnector->getFileContentToObjectStorage(
+            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $model->id,
+            $model->detection_result_file_name
+        );
         $faceData = json_decode($jsonFile, true);
-        // Обход файла
-        foreach ($faceData as $key => $item) {
-            // Сохранение признаков для глаз
-            if ($key == 'eye')
-                $eyeFeatures = [$key => $item];
-            // Сохранение признаков для рта
-            if ($key == 'mouth')
-                $mouthFeatures = [$key => $item];
-            // Сохранение признаков для лба
-            if ($key == 'brow')
-                $browFeatures = [$key => $item];
-            // Сохранение признаков для бровей
-            if ($key == 'eyebrow')
-                $eyebrowFeatures = [$key => $item];
-        }
 
         return $this->render('view', [
             'model' => $model,
-            'eyeFeatures' => $eyeFeatures,
-            'mouthFeatures' => $mouthFeatures,
-            'browFeatures' => $browFeatures,
-            'eyebrowFeatures' => $eyebrowFeatures,
+            'eyeFeatures' => $faceData['eye'],
+            'mouthFeatures' => $faceData['mouth'],
+            'browFeatures' => $faceData['brow'],
+            'eyebrowFeatures' => $faceData['eyebrow'],
         ]);
     }
 
     /**
      * Deletes an existing AnalysisResult model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException if the model cannot be found
+     * If deletion is successful, the browser will be redirected to the 'list' page.
+     * @param $id
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
      */
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-        // Удаление файла с результатами определения признаков
-        if ($model->detection_result_file != '')
-            unlink($model->detection_result_file);
-        // Определение директории где расположен файл с результатами определения признаков
-        $pos = strrpos($model->detection_result_file, '/');
-        $dir = substr($model->detection_result_file, 0, $pos);
-        // Удаление директории где хранился файл с результатами определения признаков
-        FileHelper::removeDirectory($dir);
         // Удалние записи из БД
         $model->delete();
-        // Вывод сообщения
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Удаление файла с результатами определения признаков на Object Storage
+        if ($model->detection_result_file_name != '')
+            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $model->id, $model->detection_result_file_name);
+        // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты определения признаков!');
 
         return $this->redirect(['list']);
@@ -130,8 +114,13 @@ class DetectionResultController extends Controller
     public function actionFileDownload($id)
     {
         $model = $this->findModel($id);
-        if (file_exists($model->detection_result_file))
-            return Yii::$app->response->sendFile($model->detection_result_file);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Скачивание файла с результатами определения признаков на Object Storage
+        if ($model->detection_result_file_name != '') {
+            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $model->id, $model->detection_result_file_name);
+        }
         throw new Exception('Файл не найден!');
     }
 

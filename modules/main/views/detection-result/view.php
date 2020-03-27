@@ -48,7 +48,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'video_interview_id',
                 'label' => 'Видеоинтервью',
-                'value' => $model->videoInterview->name,
+                'value' => $model->videoInterview->video_file_name,
             ],
         ],
     ]) ?>

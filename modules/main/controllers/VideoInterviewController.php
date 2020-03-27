@@ -114,7 +114,7 @@ class VideoInterviewController extends Controller
 
     /**
      * Deletes an existing VideoInterview model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * If deletion is successful, the browser will be redirected to the 'list' page.
      * @param $id
      * @return \yii\web\Response
      * @throws NotFoundHttpException
@@ -156,7 +156,7 @@ class VideoInterviewController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла видеоинтервью на Object Storage
         if ($model->video_file_name != '') {
-            $dbConnector->getFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
         }
         throw new Exception('Файл не найден!');
@@ -176,7 +176,7 @@ class VideoInterviewController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с лицевыми точками на Object Storage
         if ($model->landmark_file_name != '') {
-            $dbConnector->getFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->landmark_file_name);
         }
         throw new Exception('Файл не найден!');
