@@ -112,10 +112,6 @@ class AnalysisResultController extends Controller
         $videoInterview = VideoInterview::findOne($id);
         // Получение имени файла
         $fileName = basename($videoInterview->landmark_file);
-//        // Получение загруженного файла JSON
-//        $sourceJsonFile = file_get_contents(Yii::$app->basePath . '/web/uploads/video-interview/' . $id . '/' .
-//            $fileName, true);
-//        $faceData = json_decode($sourceJsonFile, true);
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица

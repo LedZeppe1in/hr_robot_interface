@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\components\OSConnector;
 use Exception;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -10,8 +11,6 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
-use Aws\Sdk;
-use Aws\S3\Exception\S3Exception;
 use app\modules\main\models\VideoInterview;
 
 /**
@@ -101,27 +100,13 @@ class VideoInterviewController extends Controller
                         // Сохранение файлов с видеоинтервью и лицевыми точками
                         $model->videoInterviewFile->saveAs($dir . $videoInterviewFileName);
                         $model->landmarkFile->saveAs($dir . $landmarkFileName);
-                        // Создание объекта файла видеоинтервью в Object Storage на Yandex.Cloud
-                        $sharedConfig = [
-                            'credentials' => [
-                                'key'      => 'IZnZSrNDYYbkZRDyAtZ9',
-                                'secret'   => 'EsbUgm4uGMnBtwc5bTqBsfbhSgnesPQrX6YGVAHH',
-                            ],
-                            'region'   => 'us-east-1',
-                            'endpoint' => 'http://storage.yandexcloud.net/',
-                            'version'  => 'latest',
-                        ];
-                        $sdk = new Sdk($sharedConfig);
-                        $s3Client = $sdk->createS3();
-                        try {
-                            $s3Client->putObject([
-                                'Bucket' => 'videointerview',
-                                'Key'    => $model->id . '/' . $videoInterviewFileName,
-                                'Body'   => fopen($model->video_file, 'r')
-                            ]);
-                        } catch (S3Exception $e) {
-                            echo "При загрузке файла произошла ошибка.\n";
-                        }
+                        //
+                        $dbConnector = new OSConnector();
+                        //
+                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                            $model->id, $videoInterviewFileName, $model->video_file);
+                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                            $model->id, $landmarkFileName, $model->landmark_file);
                         // Вывод сообщения
                         Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили видеоинтервью!');
 
@@ -157,26 +142,13 @@ class VideoInterviewController extends Controller
         FileHelper::removeDirectory($dir);
         // Удалние записи из БД
         $model->delete();
-        // Удаление объекта файла видеоинтервью в Object Storage на Yandex.Cloud
-        $sharedConfig = [
-            'credentials' => [
-                'key'      => 'IZnZSrNDYYbkZRDyAtZ9',
-                'secret'   => 'EsbUgm4uGMnBtwc5bTqBsfbhSgnesPQrX6YGVAHH',
-            ],
-            'region'   => 'us-east-1',
-            'endpoint' => 'http://storage.yandexcloud.net/',
-            'version'  => 'latest',
-        ];
-        $sdk = new Sdk($sharedConfig);
-        $s3Client = $sdk->createS3();
-        try {
-            $s3Client->deleteObject([
-                'Bucket' => 'videointerview',
-                'Key'    => $model->id . '/' . basename($model->video_file),
-            ]);
-        } catch (S3Exception $e) {
-            echo "При загрузке файла произошла ошибка.\n";
-        }
+        //
+        $dbConnector = new OSConnector();
+        //
+        $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $model->id, basename($model->video_file));
+        $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $model->id, basename($model->landmark_file));
         // Вывод сообщения
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
 
