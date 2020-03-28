@@ -2,16 +2,15 @@
 
 namespace app\modules\main\controllers;
 
-use app\components\OSConnector;
-use Exception;
 use Yii;
+use Exception;
 use yii\data\ActiveDataProvider;
-use yii\helpers\FileHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
 use app\modules\main\models\VideoInterview;
+use app\components\OSConnector;
 
 /**
  * VideoInterviewController implements the CRUD actions for VideoInterview model.

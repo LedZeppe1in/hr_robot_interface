@@ -37,6 +37,7 @@ $config = [
             //'class' => 'app\components\LangUrlManager',
             'rules' => [
                 '/' => 'main/default/index',
+                'analysis' => 'main/default/analysis',
                 '/respondent/<_res:(list|create)>' => 'main/respondent/<_res>',
                 '/respondent/<_res:(view|update|delete)>/<id:\d+>' => 'main/respondent/<_res>',
                 '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',

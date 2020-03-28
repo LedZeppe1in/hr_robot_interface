@@ -6,7 +6,7 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\VideoInterview */
 
-$this->title = $model->video_file_name;
+$this->title = ($model->video_file_name != '') ? $model->video_file_name : 'не загружено';
 $this->params['breadcrumbs'][] = ['label' => 'Видеоинтервью', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);

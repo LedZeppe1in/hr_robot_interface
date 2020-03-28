@@ -2,15 +2,14 @@
 
 namespace app\modules\main\controllers;
 
-use app\components\OSConnector;
-use Exception;
 use Yii;
-use app\modules\main\models\AnalysisResult;
+use Exception;
 use yii\data\ActiveDataProvider;
-use yii\helpers\FileHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use app\components\OSConnector;
+use app\modules\main\models\AnalysisResult;
 
 /**
  * DetectionResultController implements the CRUD actions for AnalysisResult model.

@@ -2,17 +2,16 @@
 
 namespace app\modules\main\controllers;
 
-use app\components\FacialFeatureDetector;
-use app\components\OSConnector;
-use app\modules\main\models\VideoInterview;
-use Exception;
 use Yii;
-use app\modules\main\models\AnalysisResult;
+use Exception;
 use yii\data\ActiveDataProvider;
-use yii\helpers\FileHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use app\components\OSConnector;
+use app\components\FacialFeatureDetector;
+use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\VideoInterview;
 
 /**
  * AnalysisResultController implements the CRUD actions for AnalysisResult model.
