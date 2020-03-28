@@ -12,6 +12,7 @@ use yii\behaviors\TimestampBehavior;
  * @property int $updated_at
  * @property string $video_file_name
  * @property string $landmark_file_name
+ * @property string $advanced_landmark_file_name
  * @property int $respondent_id
  *
  * @property AddressedInterview[] $addressedInterviews
