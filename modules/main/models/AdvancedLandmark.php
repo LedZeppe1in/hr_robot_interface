@@ -17,6 +17,8 @@ use yii\behaviors\TimestampBehavior;
  */
 class AdvancedLandmark extends \yii\db\ActiveRecord
 {
+    public $landmarkFile; // Файл с лицевыми точками
+
     /**
      * @return string table name
      */
@@ -34,6 +36,7 @@ class AdvancedLandmark extends \yii\db\ActiveRecord
             [['video_interview_id'], 'required'],
             [['video_interview_id'], 'integer'],
             [['file_name'], 'string',],
+            [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
         ];
@@ -50,6 +53,7 @@ class AdvancedLandmark extends \yii\db\ActiveRecord
             'updated_at' => 'Обновлен',
             'file_name' => 'Название файла с лицевыми точками',
             'video_interview_id' => 'ID видеоинтервью',
+            'landmarkFile' => 'Файл с лицевыми точками',
         ];
     }
 

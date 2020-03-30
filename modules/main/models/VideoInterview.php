@@ -3,6 +3,7 @@
 namespace app\modules\main\models;
 
 use yii\behaviors\TimestampBehavior;
+use yii\helpers\ArrayHelper;
 
 /**
  * This is the model class for table "{{%video_interview}}".
@@ -99,5 +100,14 @@ class VideoInterview extends \yii\db\ActiveRecord
     public function getRespondent()
     {
         return $this->hasOne(Respondent::className(), ['id' => 'respondent_id']);
+    }
+
+    /**
+     * Получение списка видеоинтервью.
+     * @return array - массив всех видеоинтервью
+     */
+    public static function getVideoInterviews()
+    {
+        return ArrayHelper::map(self::find()->all(), 'id', 'id');
     }
 }
