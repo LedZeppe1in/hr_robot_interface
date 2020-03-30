@@ -40,7 +40,7 @@ class OSConnector
     /**
      * Сохранение объекта файла в Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути)
      * @param $file - файл
@@ -63,7 +63,7 @@ class OSConnector
     /**
      * Удаление объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути)
      */
@@ -84,7 +84,7 @@ class OSConnector
     /**
      * Получение содержимого объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути
      * @return bool|mixed - содержимое объекта файла
@@ -110,9 +110,10 @@ class OSConnector
     /**
      * Скачивание объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути
+     * @return mixed - файл с Object Storage
      */
     public function downloadFileToObjectStorage($bucketName, $path, $fileName)
     {
@@ -131,7 +132,7 @@ class OSConnector
             header('Cache-Control: must-revalidate');
             header('Pragma: public');
             // Отправление файла в браузер для скачивания
-            echo $result["Body"];
+            return $result["Body"];
         } catch (S3Exception $e) {
             echo "При скачивании файла произошла ошибка.\n";
         }
