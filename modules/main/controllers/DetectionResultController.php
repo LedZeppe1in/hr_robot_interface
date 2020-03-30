@@ -117,8 +117,9 @@ class DetectionResultController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков на Object Storage
         if ($model->detection_result_file_name != '') {
-            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $result = $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
+            return $result;
         }
         throw new Exception('Файл не найден!');
     }

@@ -12,7 +12,6 @@ use yii\behaviors\TimestampBehavior;
  * @property int $updated_at
  * @property string $video_file_name
  * @property string $landmark_file_name
- * @property string $advanced_landmark_file_name
  * @property int $respondent_id
  *
  * @property AddressedInterview[] $addressedInterviews
@@ -40,7 +39,7 @@ class VideoInterview extends \yii\db\ActiveRecord
         return [
             [['respondent_id'], 'required'],
             [['respondent_id'], 'integer'],
-            [['video_file_name', 'landmark_file_name', 'advanced_landmark_file_name'], 'string'],
+            [['video_file_name', 'landmark_file_name'], 'string'],
             [['videoInterviewFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => Respondent::className(),
@@ -59,7 +58,6 @@ class VideoInterview extends \yii\db\ActiveRecord
             'updated_at' => 'Обновлено',
             'video_file_name' => 'Название файла видеоинтервью',
             'landmark_file_name' => 'Название файла с лицевыми точками',
-            'advanced_landmark_file_name' => 'Название файла Столбова с лицевыми точками',
             'respondent_id' => 'ID респондента',
             'videoInterviewFile' => 'Файл видеоинтервью',
             'landmarkFile' => 'Файл с лицевыми точками',

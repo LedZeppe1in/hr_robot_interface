@@ -97,11 +97,8 @@ class AnalysisResultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение содержимого json-файла с лицевыми точками из Object Storage
-        $faceData = $dbConnector->getFileContentToObjectStorage(
-            OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-            $videoInterview->id,
-            ($videoInterview->advanced_landmark_file_name != '') ?
-                $videoInterview->advanced_landmark_file_name : $videoInterview->landmark_file_name);
+        $faceData = $dbConnector->getFileContentToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $videoInterview->id, $videoInterview->landmark_file_name);
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица

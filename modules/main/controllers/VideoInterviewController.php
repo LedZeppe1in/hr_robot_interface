@@ -155,8 +155,9 @@ class VideoInterviewController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла видеоинтервью на Object Storage
         if ($model->video_file_name != '') {
-            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $result = $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
+            return $result;
         }
         throw new Exception('Файл не найден!');
     }
@@ -175,8 +176,9 @@ class VideoInterviewController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с лицевыми точками на Object Storage
         if ($model->landmark_file_name != '') {
-            $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $result = $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->landmark_file_name);
+            return $result;
         }
         throw new Exception('Файл не найден!');
     }
