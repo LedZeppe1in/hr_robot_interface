@@ -10,12 +10,12 @@ class FacialFeatureDetector
     /** определение интенсивности проявления признака
      * @param $val1 - диапазон значений
      * @param $val2 - текущее значение
-     * @return float|int - интенсивность проявления по относительной шкале от 1 до 5
+     * @return float|int - интенсивность проявления по относительной шкале от 1 до 100%
      */
     public function getForce($val1, $val2)
     {
 //        $af = $val1 / (10);
-        $res = abs(round(($val2 / $val1),2));
+        $res = abs(round((100*$val2 / $val1)));
         return $res;
     }
 
@@ -128,6 +128,7 @@ class FacialFeatureDetector
      * @param $characteristics - максимальное, минимальное и нормальное положение по Y
      * @return bool - возвращаемое значение
      */
+    /*
     public function moveY($facialLandmarkCharacteristics, $characteristics)
     {
         $facialLandmarkCharacteristicsNumber = count($facialLandmarkCharacteristics);
@@ -175,7 +176,7 @@ class FacialFeatureDetector
         }
 
         return $targetFaceData;
-    }
+    }*/
 
     /**
      * Вычисление среднего значения характеристики лица за время наблюдений.
@@ -198,33 +199,7 @@ class FacialFeatureDetector
         return round($avr / $facialCharacteristicsNumber, 0);
     }
 
-    /**
-     * Вычисление максимального значения характеристики лица за время наблюдений.
-     *
-     * @param $facialCharacteristics - массив с характеристикой лица
-     * @param $key - название характеристики
-     * @return array|bool - возвращаемое значение
-     */
-    public function getFaceDataMaxForKey($facialCharacteristics, $key)
-    {
-        $facialCharacteristicsNumber = count($facialCharacteristics);
-        if ($facialCharacteristicsNumber <= 0)
-            return false;
-
-        $max = $facialCharacteristics[0][$key];
-        $maxFrame = 0;
-        for ($i = 0; $i < $facialCharacteristicsNumber; $i++)
-            if ($facialCharacteristics[$i] && $facialCharacteristics[$i][$key])
-                if ($facialCharacteristics[$i][$key] > $max) {
-                    $max = $facialCharacteristics[$i][$key];
-                    $maxFrame = $i;
-                }
-
-//        return array(0 => $max, 1 => $maxFrame);
-        return $max;
-    }
-
-    /**
+     /**
      * Вычисление максимального значения характеристики лица за время наблюдений.
      *
      * @param $facialCharacteristics - массив с характеристикой лица
@@ -270,33 +245,6 @@ class FacialFeatureDetector
             if (isset($facialCharacteristics[$i][$pointNum]) && isset($facialCharacteristics[$i][$pointNum][$key]))
                 if ($facialCharacteristics[$i][$pointNum][$key] < $min) {
                     $min = $facialCharacteristics[$i][$pointNum][$key];
-                    $minFrame = $i;
-                }
-
-//        return array(0 => $min, 1 => $minFrame);
-        return $min;
-    }
-
-    /**
-     * Вычисление минимального значения характеристики лица за время наблюдений.
-     *
-     * @param $facialCharacteristics - массив с характеристикой лица
-     * @param $key - название характеристики
-     * @return array|bool - возвращаемое значение
-     */
-    public function getFaceDataMinForKey($facialCharacteristics, $key)
-    {
-        $facialCharacteristicsNumber = count($facialCharacteristics);
-        if ($facialCharacteristicsNumber <= 0)
-            return false;
-
-        $min = $facialCharacteristics[0][$key];
-        $minFrame = 0;
-
-        for ($i = 0; $i < $facialCharacteristicsNumber; $i++)
-            if ($facialCharacteristics[$i] && $facialCharacteristics[$i][$key])
-                if ($facialCharacteristics[$i][$key] < $min) {
-                    $min = $facialCharacteristics[$i][$key];
                     $minFrame = $i;
                 }
 
@@ -501,42 +449,83 @@ class FacialFeatureDetector
     public function convertIJson($iFaceData)
     {
         $i = 0;
-        foreach ($iFaceData as $k=>$v) {
-            if (strpos(Trim($k), 'frame_') !== false){
-
-              if(isset($v)) {
-                  //norm points processing
-                  if (isset($v['NORM_POINTS'])){
-                  foreach ($v['NORM_POINTS'] as $k1 => $v1) {
-//                for ($i1 = 0; $i1 < count($v['NORM_POINTS']); $i1++) {
-//                   $pointName = $k1;
-//                   echo $pointName.'<br>';
-                      $FaceData_['normmask'][$i][$k1]['X'] = $v1[0];
-                      $FaceData_['normmask'][$i][$k1]['Y'] = $v1[1];
-                  }}
-                  //brow points processing
-                  if (isset($v['brow'])){
-                  foreach ($v['brow'] as $k1 => $v1) {
-                      $FaceData_['brow'][$i][$k1]['X'] = $v1[0];
-                      $FaceData_['brow'][$i][$k1]['Y'] = $v1[1];
-                  }}
-                  //eyebrow points processing
-                  if (isset($v['eyebrow'])){
-                  foreach ($v['eyebrow'] as $k1 => $v1) {
-                      $FaceData_['eyebrow'][$i][$k1]['X'] = $v1[0];
-                      $FaceData_['eyebrow'][$i][$k1]['Y'] = $v1[1];
-                  }}
-                  //eye points processing
-                  if (isset($v['eye'])){
-                  foreach ($v['eye'] as $k1 => $v1) {
-                      $FaceData_['eye'][$i][$k1]['X'] = $v1[0];
-                      $FaceData_['eye'][$i][$k1]['Y'] = $v1[1];
-                  }}
-              }
-             ++$i;
+        foreach ($iFaceData as $k=>$v)
+            if (strpos(Trim($k), 'frame_') !== false) {
+                if(isset($v)) {
+                    //norm points processing
+                    if (isset($v['NORM_POINTS']))
+                        foreach ($v['NORM_POINTS'] as $k1 => $v1) {
+//                  for ($i1 = 0; $i1 < count($v['NORM_POINTS']); $i1++) {
+//                      $pointName = $k1;
+//                      echo $pointName.'<br>';
+                            $FaceData_['normmask'][$i][$k1]['X'] = $v1[0];
+                            $FaceData_['normmask'][$i][$k1]['Y'] = $v1[1];
+                        }
+                    //brow points processing
+                    if (isset($v['brow']))
+                        foreach ($v['brow'] as $k1 => $v1) {
+                            $FaceData_['brow'][$i][$k1]['X'] = $v1[0];
+                            $FaceData_['brow'][$i][$k1]['Y'] = $v1[1];
+                        }
+                    //eyebrow points processing
+                    if (isset($v['eyebrow']))
+                        foreach ($v['eyebrow'] as $k1 => $v1) {
+                            $FaceData_['eyebrow'][$i][$k1]['X'] = $v1[0];
+                            $FaceData_['eyebrow'][$i][$k1]['Y'] = $v1[1];
+                        }
+                    //eye points processing
+                    if (isset($v['eye']))
+                        foreach ($v['eye'] as $k1 => $v1) {
+                            $FaceData_['eye'][$i][$k1]['X'] = $v1[0];
+                            $FaceData_['eye'][$i][$k1]['Y'] = $v1[1];
+                        }
+                }
+                $i++;
             }
-        }
+
         return $FaceData_;
+    }
+
+    /**
+     * Обнаружение признаков носа
+     *
+     * @param $sourceFaceData - входной массив с лицевыми точками (landmarks)
+     * @return array - выходной массив с обработанным массивом для лба
+     */
+    public function detectNoseFeatures($sourceFaceData){
+        //анализируемые точки ерза носа
+        // 31 (left_nose_wing),
+        // 35 (right_nose_wing),
+        // получение нормированного значения по кадру 0
+
+        if (isset($sourceFaceData['normmask'][0][31])
+            && isset($sourceFaceData['normmask'][0][35])
+        ) {
+            $yN31 = $sourceFaceData['normmask'][0][31]['Y'];
+            $yN35 = $sourceFaceData['normmask'][0][35]['Y'];
+            $maxY31 = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 31,"Y");
+            $minY31 = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'],31, "Y");
+            $scaleY31 = $maxY31 - $minY31;
+            $maxY35 = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 35,"Y");
+            $minY35 = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'],35, "Y");
+            $scaleY35 = $maxY35 - $minY35;
+        }
+
+        for ($i = 0; $i < count($sourceFaceData['normmask']); $i++) {
+            if (isset($sourceFaceData['normmask'][$i][31]) && $sourceFaceData['normmask'][$i][35]){
+                $leftNoseWingMovement = $sourceFaceData['normmask'][$i][31]['Y'] - $yN31;
+                $rightNoseWingMovement = $sourceFaceData['normmask'][$i][35]['Y'] - $yN35;
+
+                $leftNoseWingMovementForce = $this->getForce($scaleY31, abs($leftNoseWingMovement));
+                $rightNoseWingMovementForce = $this->getForce($scaleY35, abs($rightNoseWingMovement));
+                $noseWingsMovementForce = round(($leftNoseWingMovementForce+$rightNoseWingMovementForce)/2); //среднее значение
+            }
+            $targetFaceData["nose"]["nose_wing_movement"][$i]["force"] = $noseWingsMovementForce;
+            if (($leftNoseWingMovement < 0)or($rightNoseWingMovement < 0)) $targetFaceData["nose"]["nose_wing_movement"][$i]["val"] = 'up';
+            if (($leftNoseWingMovement > 0)or($rightNoseWingMovement > 0)) $targetFaceData["nose"]["nose_wing_movement"][$i]["val"] = 'down';
+            if (($leftNoseWingMovement == 0)and($rightNoseWingMovement == 0)) $targetFaceData["nose"]["nose_wing_movement"][$i]["val"] = 'none';
+        }
+        return $targetFaceData["nose"];
     }
 
     /**
@@ -549,60 +538,35 @@ class FacialFeatureDetector
         //анализируемые точки:
         // 19 (left_eyebrow_center),
         // 24 (right_eyebrow_center),
-        // 71 (left brow), 72 (right brow)
-        //Ширина лба-H = крайние точки лба-Y – крайние точки бровей-Y (определяется по точкам 19-71, 24-72)
-        //Ширина лба-H < Ширина лба-HN → уменьшение
-        //Ширина лба-HN – ширина лба в нормальном состоянии
+        //изменение ширины лба по движению бровей
         // получение нормированного значения по кадру 0
 
         if (isset($sourceFaceData['normmask'][0][19])
             && isset($sourceFaceData['normmask'][0][24])
-            && isset($sourceFaceData['normmask'][0][71])
-            && isset($sourceFaceData['normmask'][0][72])
         ) {
-            //h1 = y19 - y71
-            $h1 = abs($sourceFaceData['normmask'][0][19]['Y']-
-                $sourceFaceData['normmask'][0][71]['Y']);
-            //h2 = y24 - y72
-            $h2 = abs($sourceFaceData['normmask'][0][24]['Y']-
-                $sourceFaceData['normmask'][0][72]['Y']);
-            $natH = round(($h1+$h2)/2); //среднее значение
+            $yN19 = $sourceFaceData['normmask'][0][19]['Y'];
+            $yN24 = $sourceFaceData['normmask'][0][24]['Y'];
+            $maxY19 = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 19,"Y");
+            $minY19 = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'],19, "Y");
+            $scaleY19 = $maxY19 - $minY19;
+            $maxY24 = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 24,"Y");
+            $minY24 = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'],24, "Y");
+            $scaleY24 = $maxY24 - $minY24;
         }
-        $maxHForLeftBrow = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 71,"Y");
-        $minHForLeftBrow = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'],71, "Y");
-        $maxHForRightBrow = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 72,"Y");
-        $minHForRightBrow = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'],72, "Y");
-        $maxHForLeftEyebrowCenter = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 19,"Y");
-        $minHForLeftEyebrowCenter = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'], 19,"Y");
-        $maxHForRightEyebrowCenter = $this->getFaceDataMaxForKeyV2($sourceFaceData['normmask'], 24,"Y");
-        $minHForRightEyebrowCenter = $this->getFaceDataMinForKeyV2($sourceFaceData['normmask'], 24,"Y");
-
-        $minH1 = abs($minHForLeftEyebrowCenter-$minHForLeftBrow);
-        $minH2 = abs($minHForRightEyebrowCenter-$minHForRightBrow);
-        $minHAv = round(($minH1+$minH2)/2); //min среднее значение
-
-        $maxH1 = abs($maxHForLeftEyebrowCenter-$maxHForLeftBrow);
-        $maxH2 = abs($maxHForRightEyebrowCenter-$maxHForRightBrow);
-        $maxHAv = round(($maxH1+$maxH2)/2); //max среднее значение
-        //
-        $scale = $maxHAv - $minHAv;
 
         for ($i = 0; $i < count($sourceFaceData['normmask']); $i++) {
-            if (isset($sourceFaceData['normmask'][$i][19]) && $sourceFaceData['normmask'][$i][71])
-                $h1 = abs($sourceFaceData['normmask'][$i][19]['Y']-
-                    $sourceFaceData['normmask'][$i][71]['Y']);
-            if (isset($sourceFaceData['normmask'][$i][24]) && $sourceFaceData['normmask'][$i][72])
-                $h2 = abs($sourceFaceData['normmask'][$i][24]['Y']-
-                    $sourceFaceData['normmask'][$i][72]['Y']);
-            $h = round(($h1+$h2)/2); //среднее значение
+            if (isset($sourceFaceData['normmask'][$i][19]) && $sourceFaceData['normmask'][$i][24]){
+                $leftEyebrowMovement = $sourceFaceData['normmask'][$i][19]['Y'] - $yN19;
+                $rightEyebrowMovement = $sourceFaceData['normmask'][$i][24]['Y'] - $yN24;
 
-            $targetFaceData["brow"]["brow_width"][$i]["force"] = $this->getForce(
-                $scale, abs($h - $natH)
-            );
-
-            if ($h > $natH) $targetFaceData["brow"]["brow_width"][$i]["val"] = '+';
-            if ($h <= $natH) $targetFaceData["brow"]["brow_width"][$i]["val"] = '-';
-            if ($h == $natH) $targetFaceData["brow"]["brow_width"][$i]["val"] = 'none';
+                $leftEyebrowMovementForce = $this->getForce($scaleY19, abs($leftEyebrowMovement));
+                $rightEyebrowMovementForce = $this->getForce($scaleY24, abs($rightEyebrowMovement));
+                $eyebrowMovementForce = round(($leftEyebrowMovementForce+$rightEyebrowMovementForce)/2); //среднее значение
+            }
+            $targetFaceData["brow"]["brow_width"][$i]["force"] = $eyebrowMovementForce;
+            if (($leftEyebrowMovement < 0)or($rightEyebrowMovement < 0)) $targetFaceData["brow"]["brow_width"][$i]["val"] = '-';
+            if (($leftEyebrowMovement > 0)or($rightEyebrowMovement > 0)) $targetFaceData["brow"]["brow_width"][$i]["val"] = '+';
+            if (($leftEyebrowMovement == 0)and($rightEyebrowMovement == 0)) $targetFaceData["brow"]["brow_width"][$i]["val"] = 'none';
         }
         return $targetFaceData["brow"];
     }
@@ -748,7 +712,7 @@ class FacialFeatureDetector
             if (isset($sourceFaceData['normmask'][$i][22]))
                 $rightEyebrowMovementLIn =  $sourceFaceData['normmask'][$i][22]['X'] - $xN22;
             if($leftEyebrowMovementLIn > 0) $targetFaceData["eyebrow"]["left_eyebrow_movement"][$i]["val"] =
-             trim($targetFaceData["eyebrow"]["left_eyebrow_movement"][$i]["val"].' to center');
+                trim($targetFaceData["eyebrow"]["left_eyebrow_movement"][$i]["val"].' to center');
             if($rightEyebrowMovementLIn < 0) $targetFaceData["eyebrow"]["right_eyebrow_movement"][$i]["val"] =
                 trim($targetFaceData["eyebrow"]["right_eyebrow_movement"][$i]["val"].' to center');
         }
@@ -777,27 +741,27 @@ class FacialFeatureDetector
 
         // get min and max values
         for ($i = 1; $i < count($sourceFaceData['normmask']); $i++)
-            for ($j = 0; $j < count($sourceFaceData['normmask'][$i]); $j++) {
+            if (isset($sourceFaceData['normmask'][$i]))
+                for ($j = 0; $j < count($sourceFaceData['normmask'][$i]); $j++) {
+                    // min
+                    // x
+                    // echo $facePoints[$j][0][1].' :: '.$FaceData_['frame_#'.$i]['NORM_POINTS'][$j][0].'<br>';
+                    if (($sourceFaceData['normmask'][$i][$j]['X'] < $facePoints[$j][0][1]) and
+                        ($sourceFaceData['normmask'][$i][$j]['X'] != 0))
+                        $facePoints[$j][0][1] = $sourceFaceData['normmask'][$i][$j]['X'];
+                    // y
+                    if (($sourceFaceData['normmask'][$i][$j]['Y'] < $facePoints[$j][1][1]) and
+                        ($sourceFaceData['normmask'][$i][$j]['Y'] != 0))
+                        $facePoints[$j][1][1] = $sourceFaceData['normmask'][$i][$j]['Y'];
 
-                // min
-                // x
-                // echo $facePoints[$j][0][1].' :: '.$FaceData_['frame_#'.$i]['NORM_POINTS'][$j][0].'<br>';
-                if (($sourceFaceData['normmask'][$i][$j]['X'] < $facePoints[$j][0][1]) and
-                    ($sourceFaceData['normmask'][$i][$j]['X'] != 0))
-                    $facePoints[$j][0][1] = $sourceFaceData['normmask'][$i][$j]['X'];
-                // y
-                if (($sourceFaceData['normmask'][$i][$j]['Y'] < $facePoints[$j][1][1]) and
-                    ($sourceFaceData['normmask'][$i][$j]['Y'] != 0))
-                    $facePoints[$j][1][1] = $sourceFaceData['normmask'][$i][$j]['Y'];
-
-                // max
-                // x
-                if ($sourceFaceData['normmask'][$i][$j]['X'] > $facePoints[$j][0][2])
-                    $facePoints[$j][0][2] = $sourceFaceData['normmask'][$i][$j]['X'];
-                // y
-                if ($sourceFaceData['normmask'][$i][$j]['Y'] > $facePoints[$j][1][2])
-                    $facePoints[$j][1][2] = $sourceFaceData['normmask'][$i][$j]['Y'];
-            }
+                    // max
+                    // x
+                    if ($sourceFaceData['normmask'][$i][$j]['X'] > $facePoints[$j][0][2])
+                        $facePoints[$j][0][2] = $sourceFaceData['normmask'][$i][$j]['X'];
+                    // y
+                    if ($sourceFaceData['normmask'][$i][$j]['Y'] > $facePoints[$j][1][2])
+                        $facePoints[$j][1][2] = $sourceFaceData['normmask'][$i][$j]['Y'];
+                }
 
         // get scale for x and y
         // length of the scale for power detection
@@ -869,19 +833,17 @@ class FacialFeatureDetector
             $targetFaceData["mouth"]["mouth_corners_movement"][$i]["force"] = $forceAv;
 
             $targetFaceData["mouth"]["mouth_corners_movement"][$i]["val"] = trim($xMov.' '.$yMov);
-            if( $targetFaceData["mouth"]["mouth_corners_movement"][$i]["val"] == '')
+            if ($targetFaceData["mouth"]["mouth_corners_movement"][$i]["val"] == '')
                $targetFaceData["mouth"]["mouth_corners_movement"][$i]["val"] = 'none';
 
             $targetFaceData["mouth"]["mouth_length"][$i]["force"] = $forceAv;
             $targetFaceData["mouth"]["mouth_length"][$i]["val"] = 'none';
-            if(($targetFaceData["mouth"]["left_corner_mouth"][$i]["movmentDirection"] = 'left')and
-                ($targetFaceData["mouth"]["right_corner_mouth"][$i]["movmentDirection"] = 'right')){
+            if (($targetFaceData["mouth"]["left_corner_mouth"][$i]["movmentDirection"] = 'left') and
+                ($targetFaceData["mouth"]["right_corner_mouth"][$i]["movmentDirection"] = 'right'))
                 $targetFaceData["mouth"]["mouth_length"][$i]["val"] = '+';
-            }
-            if(($targetFaceData["mouth"]["left_corner_mouth"][$i]["movmentDirection"] = 'right')and
-                ($targetFaceData["mouth"]["right_corner_mouth"][$i]["movmentDirection"] = 'left')){
+            if (($targetFaceData["mouth"]["left_corner_mouth"][$i]["movmentDirection"] = 'right') and
+                ($targetFaceData["mouth"]["right_corner_mouth"][$i]["movmentDirection"] = 'left'))
                 $targetFaceData["mouth"]["mouth_length"][$i]["val"] = '-';
-            }
         }
 
         // изменение ширины рта
@@ -994,9 +956,9 @@ class FacialFeatureDetector
     }
 
     /**
-     * Обнаружение трендов (универсальная функция)
+     * Обнаружение трендов (универсальная функция).
      *
-     * @param $sourceFaceData - входной массив с лицевыми точками (landmarks)
+     * @param $sourceFaceData1 - входной массив с лицевыми точками (landmarks)
      * @return array - выходной массив с обработанным массивом
      */
     public function detectTrends($sourceFaceData1, $trendLength)
@@ -1038,15 +1000,15 @@ class FacialFeatureDetector
     /**
      * Обнаружение признаков на основе анализа входных данных.
      *
-     * @param $sourceFile - входной файл в формате json с лицевыми точками (landmarks)
+     * @param $json - содержимое файла в формате json с лицевыми точками (landmarks)
      * @return array - выходной массив с опредеделенными признаками
      */
-    public function detectFeatures($sourceFile)
+    public function detectFeatures($json)
     {
         // load data
-        $FaceData_ = json_decode($sourceFile, true);
+        $FaceData_ = json_decode($json, true);
         // check input format and convert the I format to AB
-        if(strpos($sourceFile,'NORM_POINTS') !== false)
+        if(strpos($json,'NORM_POINTS') !== false)
             $FaceData = $this->convertIJson($FaceData_);
         else
             $FaceData =  $FaceData_; // use the AB format
@@ -1054,6 +1016,7 @@ class FacialFeatureDetector
         $detectedFeatures['mouth'] = $this->detectMouthFeatures($FaceData);
         $detectedFeatures['brow'] = $this->detectBrowFeatures($FaceData);
         $detectedFeatures['eyebrow'] = $this->detectEyeBrowFeatures($FaceData);
+        $detectedFeatures['nose'] = $this->detectNoseFeatures($FaceData);
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
 
         return $detectedFeaturesWithTrends;
