@@ -42,7 +42,7 @@ class OSConnector
     /**
      * Сохранение объекта файла в Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути)
      * @param $file - файл
@@ -65,7 +65,7 @@ class OSConnector
     /**
      * Удаление объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути)
      */
@@ -86,7 +86,7 @@ class OSConnector
     /**
      * Получение содержимого объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути
      * @return bool|mixed - содержимое объекта файла
@@ -112,7 +112,7 @@ class OSConnector
     /**
      * Скачивание объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути
      * @return mixed - файл с Object Storage
