@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use SoapClient;
 use Yii;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
@@ -93,6 +94,7 @@ class DefaultController extends Controller
                         $analysisResultModel = new AnalysisResult();
                         $analysisResultModel->video_interview_id = $model->id;
                         $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
+                        $analysisResultModel->interpretation_result_file_name = 'feature-interpretation-result.json';
                         $analysisResultModel->save();
                         // Получение содержимого json-файла с лицевыми точками из Object Storage
                         $faceData = $dbConnector->getFileContentToObjectStorage(
@@ -111,6 +113,56 @@ class DefaultController extends Controller
                             $analysisResultModel->detection_result_file_name,
                             $facialFeatures
                         );
+                        //  Преобразование массива с результатами функции определения признаков в массив шаблонов фактов
+                        $factTemplates = $facialFeatureDetector->convertFeaturesToTemplates($facialFeatures);
+                        // Сохранение json-файла с результатами конвертации определенных признаков в шаблоны фактов на Object Storage
+                        $dbConnector->saveFileToObjectStorage(
+                            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                            $analysisResultModel->id,
+                            'fact-templates.json',
+                            $factTemplates
+                        );
+
+//                        $response = 'none';
+//                        $foo = array();
+//                        // Подключение к web-service’у
+//                        $client = new SoapClient('http://84.201.129.65:8888/RBRWebService?wsdl');
+//                        // Код базы знаний
+//                        $CodeToExecute = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt', true);
+//                        foreach ($templates as $key => $template)
+//                            if ($key < 10) {
+//                                // Начальные условия в виде JSON (в нашем случае данные кадра)
+//                                $InitialConditions = $template;
+//                                // Ответ в читабельном виде
+//                                $ReturnResultsInHumanOrientedFormat = True;
+//                                // Представление исходных по правилам SOAP, если так не сделать — из коробки не работает
+//                                $DataToSend = array('arg0' => $CodeToExecute,
+//                                    'arg1' => $InitialConditions,
+//                                    'arg2' => $ReturnResultsInHumanOrientedFormat);
+//                                // Вызов метода web-service’а (в данном случае LaunchReasoningProcess)
+//                                @$DataOfResponse = $client->LaunchReasoningProcess($DataToSend)->return;
+//                                // Проверка результата на существование
+//                                if ((isset($DataOfResponse) === True) && ($DataOfResponse !== '')) {
+//                                    // В результате что-то есть
+//                                    // Делаем предположение что это JSON текст
+//                                    $ResultOfReasoning = json_decode($DataOfResponse);
+//                                    // Пытаемся найти и использовать свойства  FiredRules и ContentOfWorkingMemory
+//                                    if ((isset($ResultOfReasoning -> FiredRules) === True) &&
+//                                        (isset($ResultOfReasoning -> ContentOfWorkingMemory) === True)) {
+//                                        // На основе содержимого найденных свойств формируем результат работы
+//                                        @$data['rules'] = json_encode($ResultOfReasoning->FiredRules, true);
+//                                        @$data['working_list'] = json_encode($ResultOfReasoning->ContentOfWorkingMemory, true);
+//                                        @$response = $data;
+//                                    }
+//                                    else
+//                                        $response = $ResultOfReasoning; // Свойства не нашли смотрим что пришло
+//                                }
+//                                else // Результата нет, пытаемся извлечь информацию об ошибке с помощью другого метода web-service’а
+//                                    // (RetrieveLastErrorMessage — параметров не имеет)
+//                                    $response = 'Информация об ошибках: '. $client->RetrieveLastErrorMessage()->return;
+//                                array_push($foo, $response);
+//                            }
+
                         // Вывод сообщения об успешном анализе видеоинтервью
                         Yii::$app->getSession()->setFlash('success',
                             'Вы успешно проанализировали видеоинтервью!');
