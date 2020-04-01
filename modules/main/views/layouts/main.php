@@ -51,7 +51,7 @@ AppAsset::register($this);
                 ['label' => 'Определение признаков', 'url' => ['/detection-result/list']],
                 ['label' => 'Интерпретация признаков', 'url' => 'http://84.201.129.65:9999/Drools/Test.php'],
                 ['label' => 'Редактор цифровой маски',
-                    'url' => 'http://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan_3_ext.html'],
+                    'url' => 'http://84.201.129.65:8080'],
                 ['label' => 'Тест Герчикова',
                     'url' => 'http://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
             ],

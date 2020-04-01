@@ -10,12 +10,27 @@ use yii\widgets\DetailView;
 /* @var $mouthFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $browFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $eyebrowFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $knowledgeBase app\modules\main\controllers\AnalysisResultController */
+/* @var $factTemplates app\modules\main\controllers\AnalysisResultController */
 
 $this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты анализа', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
+
+<!-- Подключение js-скрипта -->
+<?php $this->registerJsFile('/js/Integration.js') ?>
+
+<script type="text/javascript">
+    // Переменная для базы знаний
+    //var knowledgeBase = '';
+    var knowledgeBase = <?php echo $knowledgeBase; ?>;
+    //var knowledgeBase = $('#knowledgeBase').text();
+    //console.log(knowledgeBase);
+    // Массив для наборов шаблонов фактов
+    var factTemplates = <?php echo $factTemplates; ?>;
+</script>
 
 <div class="analysis-result-view">
 
@@ -24,6 +39,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a('Скачать результаты определения признаков',
             ['detection-file-download', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Скачать шаблоны фактов',
+            ['fact-templates-download', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
         <?= Html::a('Скачать результаты интерпретации признаков', '#', ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
@@ -53,6 +70,9 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
         ],
     ]) ?>
+
+    <div id = "WebSocketClientDiv"></div>
+    <div id = "knowledgeBase"><?php echo $knowledgeBase; ?>d</div>
 
     <?php echo Tabs::widget([
         'items' => [

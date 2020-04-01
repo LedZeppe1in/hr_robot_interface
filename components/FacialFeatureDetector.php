@@ -531,7 +531,7 @@ class FacialFeatureDetector
      * @return array - выходной массив с обработанным массивом для лба
      */
     public function detectNoseFeatures($sourceFaceData){
-        //анализируемые точки ерза носа
+        //анализируемые точки низа носа
         // 31 (left_nose_wing),
         // 35 (right_nose_wing),
         // получение нормированного значения по кадру 0
@@ -610,7 +610,7 @@ class FacialFeatureDetector
     }
 
     /**
-     * Обнаружение признаков лба.
+     * Обнаружение признаков бровей.
      *
      * @param $sourceFaceData - входной массив с лицевыми точками (landmarks)
      * @return array - выходной массив с обработанным массивом для лба
@@ -811,7 +811,7 @@ class FacialFeatureDetector
         $targetFaceData = array();
 
         // print_r($facePoints);
-        // изменнеие длины рта
+        // изменение длины рта
         // NORM_POINTS 48 54
         // echo $FaceData_['normmask'][0][48][X];
         for ($i = 0; $i < count($sourceFaceData['normmask']); $i++) {
@@ -849,7 +849,7 @@ class FacialFeatureDetector
                     $targetFaceData["mouth"]["right_corner_mouth_movement"][$i]["val"] = 'left';
                 else
                     $targetFaceData["mouth"]["right_corner_mouth_movement"][$i]["val"] = 'right';
-            //движение рта
+            //движение уголков рта
             $xMov = '';
             if (($targetFaceData["mouth"]["right_corner_mouth_movement"][$i]["val"] == 'right') and
                 (isset($targetFaceData["mouth"]["left_corner_mouth_movement"][$i]) &&
@@ -1152,5 +1152,478 @@ class FacialFeatureDetector
 //            $detectedFeaturesWithTrends['eye']["right_eye_blink"],'val',
 //            'yes','5','10');
         return $detectedFeaturesWithTrends;
+    }
+
+    /**
+     * Поиск соответствий между форматами МОП и МИП.
+     *
+     * @param $sourceFacePart - название части лица от МОП
+     * @param $sourceFeatureName - название признака от МОП
+     * @param $sourceValue - значение признака от МОП
+     * @return array - массив значений для МИП
+     */
+    public static function findCorrespondences($sourceFacePart, $sourceFeatureName, $sourceValue)
+    {
+        // Целевой массив с лицевыми признаками
+        $targetValues = array();
+        $targetValues['targetFacePart'] = null;
+        $targetValues['featureChangeType'] = null;
+        $targetValues['changeDirection'] = null;
+        /* Соответствия для лба */
+        if ($sourceFacePart == 'brow')
+            $targetValues['targetFacePart'] = 'Лоб';
+        if ($sourceFeatureName == 'brow_width')
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
+        if ($sourceValue == '-')
+            $targetValues['changeDirection'] = 'Уменьшение';
+        if ($sourceValue == '+')
+            $targetValues['changeDirection'] = 'Увеличение';
+        /* Соответствия для брови */
+        if ($sourceFacePart == 'eyebrow')
+            $targetValues['targetFacePart'] = 'Бровь';
+        if ($sourceFeatureName == 'left_eyebrow_movement')
+            $targetValues['targetFacePart'] = 'Левая бровь';
+        if ($sourceFeatureName == 'right_eyebrow_movement')
+            $targetValues['targetFacePart'] = 'Правая бровь';
+        if ((($sourceFeatureName == 'left_eyebrow_movement') || ($sourceFeatureName == 'right_eyebrow_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_movement') || ($sourceFeatureName == 'right_eyebrow_movement')) &&
+            ($sourceValue == 'to center')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
+            $targetValues['changeDirection'] = 'К центру';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_movement') || ($sourceFeatureName == 'right_eyebrow_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_movement') || ($sourceFeatureName == 'right_eyebrow_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        if ($sourceFeatureName == 'left_eyebrow_inner_movement')
+            $targetValues['targetFacePart'] = 'Внутренний уголок левой брови';
+        if ($sourceFeatureName == 'right_eyebrow_inner_movement')
+            $targetValues['targetFacePart'] = 'Внутренний уголок правой брови';
+        if ((($sourceFeatureName == 'left_eyebrow_inner_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_inner_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_inner_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_inner_movement')) &&
+            ($sourceValue == 'to center')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
+            $targetValues['changeDirection'] = 'К центру';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_inner_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_inner_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_inner_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_inner_movement')) &&
+            ($sourceValue == 'to center and up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'К центру и вверх';
+        }
+        if (($sourceFeatureName == 'right_eyebrow_inner_movement') && ($sourceValue == 'to center and down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'К центру и вниз';
+        }
+        if ($sourceFeatureName == 'left_eyebrow_outer_movement')
+            $targetValues['targetFacePart'] = 'Внешний уголок левой брови';
+        if ($sourceFeatureName == 'right_eyebrow_outer_movement')
+            $targetValues['targetFacePart'] = 'Внешний уголок правой брови';
+        if ((($sourceFeatureName == 'left_eyebrow_outer_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_outer_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_outer_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_outer_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_outer_movement') ||
+                ($sourceFeatureName == 'right_eyebrow_outer_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        /* Соответствия для глаз */
+        // Глаза
+        if ($sourceFeatureName == 'left_eye_width_changing')
+            $targetValues['targetFacePart'] = 'Левый глаз';
+        if ($sourceFeatureName == 'right_eye_width_changing')
+            $targetValues['targetFacePart'] = 'Правый глаз';
+        if ((($sourceFeatureName == 'left_eye_width_changing') || ($sourceFeatureName == 'right_eye_width_changing')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eye_width_changing') || ($sourceFeatureName == 'right_eye_width_changing')) &&
+            ($sourceValue == '+')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
+            $targetValues['changeDirection'] = 'Увеличение';
+        }
+        if ((($sourceFeatureName == 'left_eye_width_changing') || ($sourceFeatureName == 'right_eye_width_changing')) &&
+            ($sourceValue == '-')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
+            $targetValues['changeDirection'] = 'Уменьшение';
+        }
+        // Нижнии веки
+        if ($sourceFeatureName == 'left_eye_lower_eyelid_movement')
+            $targetValues['targetFacePart'] = 'Нижнее веко левого глаза';
+        if ($sourceFeatureName == 'right_eye_lower_eyelid_movement')
+            $targetValues['targetFacePart'] = 'Нижнее веко правого глаза';
+        if ((($sourceFeatureName == 'left_eye_lower_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_lower_eyelid_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eye_lower_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_lower_eyelid_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eye_lower_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_lower_eyelid_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        if ((($sourceFeatureName == 'left_eye_lower_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_lower_eyelid_movement')) &&
+            ($sourceValue == 'to center and up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'К центру и вверх';
+        }
+        // Верхнии веки
+        if ($sourceFeatureName == 'left_eye_upper_eyelid_movement')
+            $targetValues['targetFacePart'] = 'Верхнее веко левого глаза';
+        if ($sourceFeatureName == 'right_eye_upper_eyelid_movement')
+            $targetValues['targetFacePart'] = 'Верхнее веко правого глаза';
+        if ((($sourceFeatureName == 'left_eye_upper_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_upper_eyelid_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eye_upper_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_upper_eyelid_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eye_upper_eyelid_movement') ||
+                ($sourceFeatureName == 'right_eye_upper_eyelid_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        // Зрачки
+        if ($sourceFeatureName == 'left_eye_pupil_movement')
+            $targetValues['targetFacePart'] = 'Левый зрачок';
+        if ($sourceFeatureName == 'right_eye_pupil_movement')
+            $targetValues['targetFacePart'] = 'Правый зрачок';
+        if ((($sourceFeatureName == 'left_eye_pupil_movement') || ($sourceFeatureName == 'right_eye_pupil_movement')) &&
+            ($sourceValue == 'straight ahead')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Прямо перед собой';
+        }
+        if ((($sourceFeatureName == 'left_eye_pupil_movement') || ($sourceFeatureName == 'right_eye_pupil_movement')) &&
+            ($sourceValue == 'straight left')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
+            $targetValues['changeDirection'] = 'Влево';
+        }
+        if ((($sourceFeatureName == 'left_eye_pupil_movement') || ($sourceFeatureName == 'right_eye_pupil_movement')) &&
+            ($sourceValue == 'down right')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'Вниз и вправо';
+        }
+        if ((($sourceFeatureName == 'left_eye_pupil_movement') || ($sourceFeatureName == 'right_eye_pupil_movement')) &&
+            ($sourceValue == 'up left')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'Вверх и влево';
+        }
+        // Уголки глаз
+        if ($sourceFeatureName == 'left_eye_inner_movement')
+            $targetValues['targetFacePart'] = 'Внутренний уголок левого глаза';
+        if ($sourceFeatureName == 'right_eye_inner_movement')
+            $targetValues['targetFacePart'] = 'Внутренний уголок правого глаза';
+        if ((($sourceFeatureName == 'left_eye_inner_movement') || ($sourceFeatureName == 'right_eye_inner_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eye_inner_movement') || ($sourceFeatureName == 'right_eye_inner_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eye_inner_movement') || ($sourceFeatureName == 'right_eye_inner_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        if ($sourceFeatureName == 'left_eye_outer_movement')
+            $targetValues['targetFacePart'] = 'Внешний уголок левого глаза';
+        if ($sourceFeatureName == 'right_eye_outer_movement')
+            $targetValues['targetFacePart'] = 'Внешний уголок правого глаза';
+        if ((($sourceFeatureName == 'left_eye_outer_movement') || ($sourceFeatureName == 'right_eye_outer_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_eye_outer_movement') || ($sourceFeatureName == 'right_eye_outer_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'left_eye_outer_movement') || ($sourceFeatureName == 'right_eye_outer_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        // Закрытие глаз
+        if ($sourceFeatureName == 'left_eye_closed')
+            $targetValues['targetFacePart'] = 'Левый глаз';
+        if ($sourceFeatureName == 'right_eye_closed')
+            $targetValues['targetFacePart'] = 'Правый глаз';
+        if ((($sourceFeatureName == 'left_eye_closed') || ($sourceFeatureName == 'right_eye_closed')) &&
+            ($sourceValue == 'yes')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Глаз закрыт';
+        }
+        if ((($sourceFeatureName == 'left_eye_closed') || ($sourceFeatureName == 'right_eye_closed')) &&
+            ($sourceValue == 'no')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Глаз открыт';
+        }
+        // Моргание
+        if ($sourceFeatureName == 'left_eye_blink')
+            $targetValues['targetFacePart'] = 'Левый глаз';
+        if ($sourceFeatureName == 'right_eye_blink')
+            $targetValues['targetFacePart'] = 'Правый глаз';
+        if ((($sourceFeatureName == 'left_eye_blink') || ($sourceFeatureName == 'right_eye_blink')) &&
+            ($sourceValue == 'yes')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Глаз моргает';
+        }
+        if ((($sourceFeatureName == 'left_eye_blink') || ($sourceFeatureName == 'right_eye_blink')) &&
+            ($sourceValue == 'no')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Глаз не моргает';
+        }
+        /* Соответствия для рта */
+        // Размер и форма рта
+        if ($sourceFacePart == 'mouth')
+            $targetValues['targetFacePart'] = 'Рот';
+        if ($sourceFeatureName == 'mouth_form')
+            $targetValues['targetFacePart'] = 'Рот';
+        if (($sourceFeatureName == 'mouth_form') && ($sourceValue == 'ellipse')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Овал';
+        }
+        if (($sourceFeatureName == 'mouth_form') && ($sourceValue == 'rectangle')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Прямоугольник';
+        }
+        if ($sourceFeatureName == 'mouth_length')
+            $targetValues['targetFacePart'] = 'Рот';
+        if (($sourceFeatureName == 'mouth_length') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if (($sourceFeatureName == 'mouth_length') && ($sourceValue == '-')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по горизонтали';
+            $targetValues['changeDirection'] = 'Уменьшение';
+        }
+        if (($sourceFeatureName == 'mouth_length') && ($sourceValue == '+')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по горизонтали';
+            $targetValues['changeDirection'] = 'Увеличение';
+        }
+        if ($sourceFeatureName == 'mouth_width')
+            $targetValues['targetFacePart'] = 'Рот';
+        if (($sourceFeatureName == 'mouth_width') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if (($sourceFeatureName == 'mouth_width') && ($sourceValue == '-')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
+            $targetValues['changeDirection'] = 'Уменьшение';
+        }
+        if (($sourceFeatureName == 'mouth_width') && ($sourceValue == '+')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
+            $targetValues['changeDirection'] = 'Увеличение';
+        }
+        if (($sourceFeatureName == 'mouth_width') && ($sourceValue == 'compressed')) {
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
+            $targetValues['changeDirection'] = 'Сжатие';
+        }
+        // Уголки рта
+        if ($sourceFeatureName == 'left_corner_mouth_movement')
+            $targetValues['targetFacePart'] = 'Левый уголок рта';
+        if ($sourceFeatureName == 'right_corner_mouth_movement')
+            $targetValues['targetFacePart'] = 'Правый уголок рта';
+        if ((($sourceFeatureName == 'left_corner_mouth_movement') ||
+                ($sourceFeatureName == 'right_corner_mouth_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_corner_mouth_movement') ||
+                ($sourceFeatureName == 'right_corner_mouth_movement')) &&
+            ($sourceValue == 'from center')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
+            $targetValues['changeDirection'] = 'От центра в стороны';
+        }
+        if ((($sourceFeatureName == 'left_corner_mouth_movement') ||
+                ($sourceFeatureName == 'right_corner_mouth_movement')) &&
+            ($sourceValue == 'to center')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
+            $targetValues['changeDirection'] = 'К центру';
+        }
+        if ((($sourceFeatureName == 'left_corner_mouth_movement') ||
+                ($sourceFeatureName == 'right_corner_mouth_movement')) &&
+            ($sourceValue == 'from center and up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'От центра и вверх';
+        }
+        if ((($sourceFeatureName == 'left_corner_mouth_movement') ||
+                ($sourceFeatureName == 'right_corner_mouth_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по диагонали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        // Губы
+        if ($sourceFeatureName == 'mouth_upper_lip_outer_center_movement')
+            $targetValues['targetFacePart'] = 'Верхняя губа';
+        if ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')
+            $targetValues['targetFacePart'] = 'Нижняя губа';
+        if ((($sourceFeatureName == 'mouth_upper_lip_outer_center_movement') ||
+                ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'mouth_upper_lip_outer_center_movement') ||
+                ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')) &&
+            ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        if ((($sourceFeatureName == 'mouth_upper_lip_outer_center_movement') ||
+                ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')) &&
+            ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        /* Соответствия для подбородка */
+        if ($sourceFacePart == 'chin')
+            $targetValues['targetFacePart'] = 'Подбородок';
+        if ($sourceFeatureName == 'chin_movement')
+            $targetValues['targetFacePart'] = 'Подбородок';
+        if (($sourceFeatureName == 'chin_movement') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if (($sourceFeatureName == 'chin_movement') && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вниз';
+        }
+        /* Соответствия для носа */
+        // Крылья носа
+        if ($sourceFacePart == 'nose')
+            $targetValues['targetFacePart'] = 'Нос';
+        if ($sourceFeatureName == 'nose_wing_movement')
+            $targetValues['targetFacePart'] = 'Крылья носа';
+        if (($sourceFeatureName == 'nose_wing_movement') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if (($sourceFeatureName == 'nose_wing_movement') && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
+            $targetValues['changeDirection'] = 'Вверх';
+        }
+        /* Носогубная складка */
+        if ($sourceFacePart == 'left_nasolabial_fold_movement')
+            $targetValues['targetFacePart'] = 'Левая носогубная складка';
+        if ($sourceFeatureName == 'right_nasolabial_fold_movement')
+            $targetValues['targetFacePart'] = 'Правая носогубная складка';
+        if ((($sourceFeatureName == 'left_nasolabial_fold_movement') ||
+                ($sourceFeatureName == 'right_nasolabial_fold_movement')) &&
+            ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['changeDirection'] = 'Отсутствие направления';
+        }
+        if ((($sourceFeatureName == 'left_nasolabial_fold_movement') ||
+                ($sourceFeatureName == 'right_nasolabial_fold_movement')) &&
+            ($sourceValue == 'from center aside')) {
+            $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
+            $targetValues['changeDirection'] = 'От центра в стороны ';
+        }
+
+        return $targetValues;
+    }
+
+    /**
+     * Преобразование массива с результатами функции определения признаков в массив шаблонов фактов.
+     *
+     * @param $detectedFeatures - массив обнаруженных признаков
+     * @return array - массив наборов шаблонов фактов для кадого кадра видеоинтервью
+     */
+    public function convertFeaturesToTemplates($detectedFeatures)
+    {
+        // Массив для наборов шаблонов фактов, сформированных для каждого кадра
+        $factTemplates = array();
+        // Кол-во кадров
+        $numberFrames = count($detectedFeatures['eye']['left_eye_upper_eyelid_movement']);
+        // Цикл от 1 до общего-кол-ва кадров
+        for ($i = 1; $i < $numberFrames; $i++) {
+            // Массив шаблонов фактов для текущего кадра
+            $frameFactTemplates = array();
+            // Обход всех определенных лицевых признаков
+            foreach ($detectedFeatures as $facePart => $features)
+                foreach ($features as $featureName => $frames)
+                    for ($j = 1; $j < count($frames); $j++)
+                        if (isset($frames[$j]["val"]) && isset($frames[$j]["force"]))
+                            if ($i == $j) {
+                                // Поиск соответствий
+                                $targetValues = self::findCorrespondences($facePart, $featureName, $frames[$j]["val"]);
+                                // Если соответсвия найдены
+                                if ($targetValues['targetFacePart'] != null &&
+                                    $targetValues['featureChangeType'] != null &&
+                                    $targetValues['changeDirection'] != null) {
+                                    // Формирование шаблона факта одного признака для текущего кадра
+                                    $factTemplate['NameOfTemplate'] = 'T1986';
+                                    $factTemplate['s861'] = $targetValues['targetFacePart'];
+                                    $factTemplate['s862'] = $targetValues['featureChangeType'];
+                                    $factTemplate['s863'] = $targetValues['changeDirection'];
+                                    $factTemplate['s864'] = $frames[$j]["force"];
+                                    $factTemplate['s869'] = count($frames);
+                                    $factTemplate['s870'] = 1;
+                                    $factTemplate['s871'] = count($frames);
+                                    $factTemplate['s874'] = $j;
+                                    // Добавление шаблона факта одного признака для текущего кадра в набор шаблонов фактов
+                                    array_push($frameFactTemplates, $factTemplate);
+                                }
+                            }
+            // Добавление набора шаблонов фактов для текущего кадра в общий массив
+            array_push($factTemplates, $frameFactTemplates);
+        }
+
+        return $factTemplates;
     }
 }

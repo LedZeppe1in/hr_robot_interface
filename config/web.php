@@ -47,9 +47,9 @@ $config = [
                 '/advanced-landmark/<_al:(list|upload)>' => 'main/advanced-landmark/<_al>',
                 '/advanced-landmark/<_al:(view|delete|file-download)>/<id:\d+>' => 'main/advanced-landmark/<_al>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
-                '/analysis-result/<_ar:(view|detection|detection-file-download|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(view|detection|detection-file-download|fact-templates-download|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
                 '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
-                '/detection-result/<_dr:(view|file-download|delete)>/<id:\d+>' => 'main/detection-result/<_dr>',
+                '/detection-result/<_dr:(view|file-download|fact-templates-download|delete)>/<id:\d+>' => 'main/detection-result/<_dr>',
             ],
         ],
         'cache' => [

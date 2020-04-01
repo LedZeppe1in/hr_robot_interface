@@ -24,6 +24,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a('Скачать результаты определения признаков',
             ['file-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Скачать шаблоны фактов',
+            ['fact-templates-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
