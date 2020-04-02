@@ -12,7 +12,7 @@ use yii\widgets\DetailView;
 /* @var $eyebrowFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $noseFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $knowledgeBase app\modules\main\controllers\DetectionResultController */
-/* @var $factTemplates app\modules\main\controllers\DetectionResultController */
+/* @var $facts app\modules\main\controllers\DetectionResultController */
 
 $this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты определения признаков', 'url' => ['list']];
@@ -27,8 +27,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a('Скачать результаты определения признаков',
             ['file-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
-        <?= Html::a('Скачать шаблоны фактов',
-            ['fact-templates-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Скачать факты', ['facts-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
@@ -91,9 +90,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 ]),
             ],
             [
-                'label' => 'Шаблоны фактов',
-                'content' => $this->render('_fact_templates', [
-                    'factTemplates' => json_decode($factTemplates, true)
+                'label' => 'Факты',
+                'content' => $this->render('_facts', [
+                    'facts' => json_decode($facts, true)
                 ]),
             ]
         ]

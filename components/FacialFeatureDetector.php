@@ -1346,7 +1346,7 @@ class FacialFeatureDetector
      */
     public static function findCorrespondences($sourceFacePart, $sourceFeatureName, $sourceValue)
     {
-        // Целевой массив с лицевыми признаками
+        // Формирование пустого целевого массива с лицевыми признаками для МИП
         $targetValues = array();
         $targetValues['targetFacePart'] = null;
         $targetValues['featureChangeType'] = null;
@@ -1761,21 +1761,21 @@ class FacialFeatureDetector
     }
 
     /**
-     * Преобразование массива с результатами функции определения признаков в массив шаблонов фактов.
+     * Преобразование массива с результатами определения признаков в массив фактов.
      *
      * @param $detectedFeatures - массив обнаруженных признаков
-     * @return array - массив наборов шаблонов фактов для кадого кадра видеоинтервью
+     * @return array - массив наборов фактов для кадого кадра видеоинтервью
      */
-    public function convertFeaturesToTemplates($detectedFeatures)
+    public function convertFeaturesToFacts($detectedFeatures)
     {
-        // Массив для наборов шаблонов фактов, сформированных для каждого кадра
-        $factTemplates = array();
+        // Массив для наборов фактов, сформированных для каждого кадра
+        $facts = array();
         // Кол-во кадров
         $numberFrames = count($detectedFeatures['eye']['left_eye_upper_eyelid_movement']);
         // Цикл от 1 до общего-кол-ва кадров
         for ($i = 1; $i < $numberFrames; $i++) {
-            // Массив шаблонов фактов для текущего кадра
-            $frameFactTemplates = array();
+            // Массив фактов для текущего кадра
+            $frameFacts = array();
             // Обход всех определенных лицевых признаков
             foreach ($detectedFeatures as $facePart => $features)
                 foreach ($features as $featureName => $frames)
@@ -1788,24 +1788,24 @@ class FacialFeatureDetector
                                 if ($targetValues['targetFacePart'] != null &&
                                     $targetValues['featureChangeType'] != null &&
                                     $targetValues['changeDirection'] != null) {
-                                    // Формирование шаблона факта одного признака для текущего кадра
-                                    $factTemplate['NameOfTemplate'] = 'T1986';
-                                    $factTemplate['s861'] = $targetValues['targetFacePart'];
-                                    $factTemplate['s862'] = $targetValues['featureChangeType'];
-                                    $factTemplate['s863'] = $targetValues['changeDirection'];
-                                    $factTemplate['s864'] = $frames[$j]["force"];
-                                    $factTemplate['s869'] = count($frames);
-                                    $factTemplate['s870'] = 1;
-                                    $factTemplate['s871'] = count($frames);
-                                    $factTemplate['s874'] = $j;
-                                    // Добавление шаблона факта одного признака для текущего кадра в набор шаблонов фактов
-                                    array_push($frameFactTemplates, $factTemplate);
+                                    // Формирование факта одного признака для текущего кадра
+                                    $fact['NameOfTemplate'] = 'T1986';
+                                    $fact['s861'] = $targetValues['targetFacePart'];
+                                    $fact['s862'] = $targetValues['featureChangeType'];
+                                    $fact['s863'] = $targetValues['changeDirection'];
+                                    $fact['s864'] = $frames[$j]["force"];
+                                    $fact['s869'] = count($frames);
+                                    $fact['s870'] = 1;
+                                    $fact['s871'] = count($frames);
+                                    $fact['s874'] = $j;
+                                    // Добавление факта одного признака для текущего кадра в набор фактов
+                                    array_push($frameFacts, $fact);
                                 }
                             }
-            // Добавление набора шаблонов фактов для текущего кадра в общий массив
-            array_push($factTemplates, $frameFactTemplates);
+            // Добавление набора фактов для текущего кадра в общий массив
+            array_push($facts, $frameFacts);
         }
 
-        return $factTemplates;
+        return $facts;
     }
 }

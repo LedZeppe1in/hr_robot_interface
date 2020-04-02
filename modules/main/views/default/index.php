@@ -22,7 +22,7 @@ use yii\helpers\Html;
             психологического тестирования.
         </h4><br />
         <p>
-            <?= Html::a('Анализ видео-интервью', ['analysis'], ['class' => 'btn btn-success']) ?>
+            <?= Html::a('Анализ видеоинтервью', ['analysis'], ['class' => 'btn btn-success']) ?>
         </p>
     </div>
 </div>

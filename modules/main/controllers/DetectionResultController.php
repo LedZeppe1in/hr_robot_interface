@@ -67,11 +67,11 @@ class DetectionResultController extends Controller
             $model->detection_result_file_name
         );
         $faceData = json_decode($jsonFile, true);
-        // Получение json-файла c результатами определения признаков в виде массива наборов шаблонов фактов
-        $factTemplates = $dbConnector->getFileContentToObjectStorage(
+        // Получение json-файла c результатами определения признаков в виде массива наборов фактов
+        $facts = $dbConnector->getFileContentToObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
-            'fact-templates.json'
+            'facts.json'
         );
         // Получение кода базы знаний
         $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt',
@@ -84,7 +84,7 @@ class DetectionResultController extends Controller
             'browFeatures' => $faceData['brow'],
             'eyebrowFeatures' => $faceData['eyebrow'],
             'noseFeatures' => $faceData['nose'],
-            'factTemplates' => $factTemplates,
+            'facts' => $facts,
             'knowledgeBase' => $knowledgeBase,
         ]);
     }
@@ -105,12 +105,12 @@ class DetectionResultController extends Controller
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
-        // Удаление файла с результатами определения признаков на Object Storage
+        // Удаление файлов с результатами определения признаков и фактами с Object Storage
         if ($model->detection_result_file_name != '') {
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $model->id, 'fact-templates.json');
+                $model->id, 'facts.json');
         }
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты определения признаков!');
@@ -144,23 +144,23 @@ class DetectionResultController extends Controller
     }
 
     /**
-     * Скачать json-файл с набором шаблонов фактов.
+     * Скачать json-файл с набором фактов.
      *
      * @param $id
      * @return mixed
      * @throws NotFoundHttpException
      */
-    public function actionFactTemplatesDownload($id)
+    public function actionFactsDownload($id)
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
-        // Скачивание файла с результатами определения признаков на Object Storage
+        // Скачивание файла с результатами определения признаков в виде набора фактов с Object Storage
         if ($model->detection_result_file_name != '') {
             $result = $dbConnector->downloadFileToObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
-                'fact-templates.json'
+                'facts.json'
             );
 
             return $result;

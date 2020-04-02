@@ -29,7 +29,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {detection-file-download} {fact-templates-file-download} {delete}',
+                'template' => '{view} {detection-file-download} {facts-file-download} {delete}',
                 'buttons' => [
                     'detection-file-download' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
@@ -38,11 +38,10 @@ $this->params['breadcrumbs'][] = $this->title;
                         $url = ['/detection-result/file-download/' . $model->id];
                         return Html::a($icon, $url);
                     },
-                    'fact-templates-file-download' => function ($url, $model, $key) {
+                    'facts-file-download' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
-                            ['class' => 'glyphicon glyphicon-level-up',
-                                'title' => 'Скачать шаблоны фактов']);
-                        $url = ['/detection-result/fact-templates-download/' . $model->id];
+                            ['class' => 'glyphicon glyphicon-level-up', 'title' => 'Скачать факты']);
+                        $url = ['/detection-result/facts-download/' . $model->id];
                         return Html::a($icon, $url);
                     },
                 ],

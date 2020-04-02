@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use SoapClient;
 use Yii;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
@@ -113,14 +112,14 @@ class DefaultController extends Controller
                             $analysisResultModel->detection_result_file_name,
                             $facialFeatures
                         );
-                        //  Преобразование массива с результатами функции определения признаков в массив шаблонов фактов
-                        $factTemplates = $facialFeatureDetector->convertFeaturesToTemplates($facialFeatures);
-                        // Сохранение json-файла с результатами конвертации определенных признаков в шаблоны фактов на Object Storage
+                        // Преобразование массива с результатами определения признаков в массив фактов
+                        $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
+                        // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
                         $dbConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                             $analysisResultModel->id,
-                            'fact-templates.json',
-                            $factTemplates
+                            'facts.json',
+                            $facts
                         );
                         // Вывод сообщения об успешном анализе видеоинтервью
                         Yii::$app->getSession()->setFlash('success',

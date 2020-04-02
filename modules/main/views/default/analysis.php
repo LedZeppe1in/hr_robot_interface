@@ -5,7 +5,7 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\VideoInterview */
 
-$this->title = 'Загрузка видео-интервью';
+$this->title = 'Загрузка видеоинтервью';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 

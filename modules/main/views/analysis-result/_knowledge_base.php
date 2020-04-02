@@ -6,10 +6,6 @@
 
 <div class="row">
     <div class="col-md-12">
-        <?php
-            echo '<pre>';
-            echo $knowledgeBase;
-            echo '</pre>';
-        ?>
+        <?php echo '<pre>' . $knowledgeBase . '</pre>'; ?>
     </div>
 </div>

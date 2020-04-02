@@ -69,11 +69,11 @@ class AnalysisResultController extends Controller
             $model->detection_result_file_name
         );
         $faceData = json_decode($jsonFile, true);
-        // Получение json-файла c результатами определения признаков в виде массива наборов шаблонов фактов
-        $factTemplates = $dbConnector->getFileContentToObjectStorage(
+        // Получение json-файла c результатами определения признаков в виде массива наборов фактов
+        $facts = $dbConnector->getFileContentToObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
-            'fact-templates.json'
+            'facts.json'
         );
         // Получение кода базы знаний
         $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt');
@@ -85,13 +85,14 @@ class AnalysisResultController extends Controller
             'browFeatures' => $faceData['brow'],
             'eyebrowFeatures' => $faceData['eyebrow'],
             'noseFeatures' => $faceData['nose'],
-            'factTemplates' => $factTemplates,
+            'facts' => $facts,
             'knowledgeBase' => $knowledgeBase,
         ]);
     }
 
     /**
      * Страница с результатами определения лицивых признаков.
+     *
      * @param $id
      * @return string
      * @throws NotFoundHttpException
@@ -117,32 +118,19 @@ class AnalysisResultController extends Controller
         // Сохранение json-файла с результатами определения признаков на Object Storage
         $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->detection_result_file_name, $facialFeatures);
-        //  Преобразование массива с результатами функции определения признаков в массив шаблонов фактов
-        $factTemplates = $facialFeatureDetector->convertFeaturesToTemplates($facialFeatures);
-        // Сохранение json-файла с результатами конвертации определенных признаков в шаблоны фактов на Object Storage
+        // Преобразование массива с результатами функции определения признаков в массив фактов
+        $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
+        // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
         $dbConnector->saveFileToObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
-            'fact-templates.json',
-            $factTemplates
+            'facts.json',
+            $facts
         );
-        // Преобразование массива в формат JSON
-        $factTemplates = json_encode($factTemplates, JSON_UNESCAPED_UNICODE);
-        // Получение кода базы знаний
-        $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt',
-            true);
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
 
-        return $this->render('view', [
-            'model' => $model,
-            'eyeFeatures' => $facialFeatures['eye'],
-            'mouthFeatures' => $facialFeatures['mouth'],
-            'browFeatures' => $facialFeatures['brow'],
-            'eyebrowFeatures' => $facialFeatures['eyebrow'],
-            'factTemplates' => $factTemplates,
-            'knowledgeBase' => $knowledgeBase,
-        ]);
+        return $this->redirect(['/detection-result/view/' . $model->id]);
     }
 
     /**
@@ -161,12 +149,12 @@ class AnalysisResultController extends Controller
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
-        // Удаление файла с результатами определения признаков на Object Storage
+        // Удаление файлов с результатами определения признаков и фактами на Object Storage
         if ($model->detection_result_file_name != '') {
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $model->id, 'fact-templates.json');
+                $model->id, 'facts.json');
         }
         // Удаление файла с результатами интерпретации признаков на Object Storage
         if ($model->interpretation_result_file_name != '')
@@ -190,7 +178,7 @@ class AnalysisResultController extends Controller
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
-        // Скачивание файла с результатами определения признаков на Object Storage
+        // Скачивание файла с результатами определения признаков с Object Storage
         if ($model->detection_result_file_name != '') {
             $result = $dbConnector->downloadFileToObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
@@ -204,23 +192,23 @@ class AnalysisResultController extends Controller
     }
 
     /**
-     * Скачать json-файл с набором шаблонов фактов.
+     * Скачать json-файл с набором фактов.
      *
      * @param $id
      * @return mixed
      * @throws NotFoundHttpException
      */
-    public function actionFactTemplatesDownload($id)
+    public function actionFactsDownload($id)
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
-        // Скачивание файла с результатами определения признаков на Object Storage
+        // Скачивание файла с результатами определения признаков в виде фактов с Object Storage
         if ($model->detection_result_file_name != '') {
             $result = $dbConnector->downloadFileToObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
-                'fact-templates.json'
+                'facts.json'
             );
 
             return $result;

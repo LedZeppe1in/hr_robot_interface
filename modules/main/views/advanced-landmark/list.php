@@ -6,7 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Модифицированные файлы с лицевыми точками';
+$this->title = 'Модифицированные цифровые маски';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="advanced-landmark-index">

@@ -311,7 +311,7 @@
    RBRClient.SendDataButton.jQueryReference.prop('disabled', true);
 
    RBRClient.CodeOfKnowledgeBase = knowledgeBase;
-   RBRClient.CodeOfDataForReasoningProcess = factTemplates;
+   RBRClient.CodeOfDataForReasoningProcess = facts;
 
    // if ((RBRClient.CodeOfKnowledgeBase == undefined) ||
    //     (RBRClient.CodeOfKnowledgeBase == null) ||

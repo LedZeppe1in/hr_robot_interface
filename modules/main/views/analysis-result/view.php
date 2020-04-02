@@ -12,10 +12,10 @@ use yii\widgets\DetailView;
 /* @var $eyebrowFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $noseFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $knowledgeBase app\modules\main\controllers\AnalysisResultController */
-/* @var $factTemplates app\modules\main\controllers\AnalysisResultController */
+/* @var $facts app\modules\main\controllers\AnalysisResultController */
 
 $this->title = $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Результаты анализа', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Итоговые результаты анализа видеоинтервью', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
@@ -25,9 +25,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <script type="text/javascript">
     // Переменная для базы знаний
-    var knowledgeBase = '<?php echo str_replace(array("\r", "\n"), ' ', $knowledgeBase); ?>';
-    // Массив для наборов шаблонов фактов
-    var factTemplates = '<?php echo $factTemplates; ?>';
+    var knowledgeBase = '<?php echo $knowledgeBase;//str_replace(array("\r", "\n"), ' ', $knowledgeBase); ?>';
+    // Массив для наборов фактов
+    var facts = '<?php echo $facts; ?>';
 </script>
 
 <div class="analysis-result-view">
@@ -37,8 +37,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a('Скачать результаты определения признаков',
             ['detection-file-download', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
-        <?= Html::a('Скачать шаблоны фактов',
-            ['fact-templates-download', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Скачать факты', ['facts-download', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
         <?= Html::a('Скачать результаты интерпретации признаков', '#', ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
@@ -102,9 +101,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 ]),
             ],
             [
-                'label' => 'Шаблоны фактов',
-                'content' => $this->render('_fact_templates', [
-                    'factTemplates' => json_decode($factTemplates, true)
+                'label' => 'Факты',
+                'content' => $this->render('_facts', [
+                    'facts' => json_decode($facts, true)
                 ]),
             ],
             [
