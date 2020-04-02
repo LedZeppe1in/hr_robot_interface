@@ -24,12 +24,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <script type="text/javascript">
     // Переменная для базы знаний
-    //var knowledgeBase = '';
-    var knowledgeBase = <?php echo $knowledgeBase; ?>;
-    //var knowledgeBase = $('#knowledgeBase').text();
-    //console.log(knowledgeBase);
+    var knowledgeBase = '<?php echo $knowledgeBase; ?>';
     // Массив для наборов шаблонов фактов
-    var factTemplates = <?php echo $factTemplates; ?>;
+    var factTemplates = '<?php echo $factTemplates; ?>';
 </script>
 
 <div class="analysis-result-view">
@@ -72,7 +69,6 @@ $this->params['breadcrumbs'][] = $this->title;
     ]) ?>
 
     <div id = "WebSocketClientDiv"></div>
-    <div id = "knowledgeBase"><?php echo $knowledgeBase; ?>d</div>
 
     <?php echo Tabs::widget([
         'items' => [
@@ -99,7 +95,13 @@ $this->params['breadcrumbs'][] = $this->title;
                 'content' => $this->render('_eyebrow_features', [
                     'eyebrowFeatures' => $eyebrowFeatures
                 ]),
-            ]
+            ],
+            [
+                'label' => 'Шаблоны фактов',
+                'content' => $this->render('_fact_templates', [
+                    'factTemplates' => json_decode($factTemplates, true)
+                ]),
+            ],
         ]
     ]); ?>
 </div>
