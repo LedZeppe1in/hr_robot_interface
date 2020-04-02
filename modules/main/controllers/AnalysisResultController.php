@@ -76,8 +76,7 @@ class AnalysisResultController extends Controller
             'fact-templates.json'
         );
         // Получение кода базы знаний
-        $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt',
-            true);
+        $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt');
 
         return $this->render('view', [
             'model' => $model,

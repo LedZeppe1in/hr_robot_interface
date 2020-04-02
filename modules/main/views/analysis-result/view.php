@@ -25,7 +25,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <script type="text/javascript">
     // Переменная для базы знаний
-    var knowledgeBase = '<?php echo $knowledgeBase; ?>';
+    var knowledgeBase = '<?php echo str_replace(array("\r", "\n"), ' ', $knowledgeBase); ?>';
     // Массив для наборов шаблонов фактов
     var factTemplates = '<?php echo $factTemplates; ?>';
 </script>
@@ -69,8 +69,6 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]) ?>
 
-    <div id = "WebSocketClientDiv"></div>
-
     <?php echo Tabs::widget([
         'items' => [
             [
@@ -108,6 +106,16 @@ $this->params['breadcrumbs'][] = $this->title;
                 'content' => $this->render('_fact_templates', [
                     'factTemplates' => json_decode($factTemplates, true)
                 ]),
+            ],
+            [
+                'label' => 'База знаний',
+                'content' => $this->render('_knowledge_base', [
+                    'knowledgeBase' => $knowledgeBase
+                ]),
+            ],
+            [
+                'label' => 'Результаты интерпретации',
+                'content' => $this->render('_interpretation_result'),
             ]
         ]
     ]); ?>
