@@ -10,6 +10,7 @@ use yii\widgets\DetailView;
 /* @var $mouthFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $browFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $eyebrowFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $noseFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $knowledgeBase app\modules\main\controllers\AnalysisResultController */
 /* @var $factTemplates app\modules\main\controllers\AnalysisResultController */
 
@@ -97,11 +98,17 @@ $this->params['breadcrumbs'][] = $this->title;
                 ]),
             ],
             [
+                'label' => 'Признаки для носа',
+                'content' => $this->render('_nose_features', [
+                    'noseFeatures' => $noseFeatures
+                ]),
+            ],
+            [
                 'label' => 'Шаблоны фактов',
                 'content' => $this->render('_fact_templates', [
                     'factTemplates' => json_decode($factTemplates, true)
                 ]),
-            ],
+            ]
         ]
     ]); ?>
 </div>

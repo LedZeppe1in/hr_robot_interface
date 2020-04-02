@@ -83,6 +83,7 @@ class DetectionResultController extends Controller
             'mouthFeatures' => $faceData['mouth'],
             'browFeatures' => $faceData['brow'],
             'eyebrowFeatures' => $faceData['eyebrow'],
+            'noseFeatures' => $faceData['nose'],
             'factTemplates' => $factTemplates,
             'knowledgeBase' => $knowledgeBase,
         ]);
