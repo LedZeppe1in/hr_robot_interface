@@ -18,7 +18,9 @@ class m200304_082115_analysis_result extends Migration
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
             'detection_result_file_name' => $this->string(),
+            'facts_file_name' => $this->string(),
             'interpretation_result_file_name' => $this->string(),
+            'description' => $this->text(),
             'video_interview_id' => $this->integer()->notNull(),
         ], $tableOptions);
 

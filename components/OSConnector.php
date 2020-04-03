@@ -10,7 +10,7 @@ use Aws\S3\Exception\S3Exception;
  */
 class OSConnector
 {
-    // Название бакета для файлов видеоинтервью в Object Storage на Yandex.Cloud
+    // Название бакета для файла базы знаний в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET = 'knowledgebase';
     // Название бакета для файлов видеоинтервью в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_VIDEO_BUCKET = 'videointerviews';
