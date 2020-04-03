@@ -45,6 +45,7 @@ AppAsset::register($this);
                         ['label' => 'Заказчики', 'url' => ['/customer/list']],
                         ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
                         ['label' => 'Модифицированные цифровые маски', 'url' => ['/advanced-landmark/list']],
+                        ['label' => 'База знаний', 'url' => ['/default/knowledge-base']],
                     ],
                 ],
                 ['label' => 'Результаты анализа', 'url' => '#',

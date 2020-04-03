@@ -76,7 +76,11 @@ class AnalysisResultController extends Controller
             'facts.json'
         );
         // Получение кода базы знаний
-        $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt');
+        $knowledgeBase = $dbConnector->getFileContentToObjectStorage(
+            OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
+            null,
+            'knowledge-base.txt'
+        );
 
         return $this->render('view', [
             'model' => $model,

@@ -3,6 +3,7 @@
 namespace app\modules\main\controllers;
 
 use Yii;
+use Exception;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
@@ -10,6 +11,7 @@ use app\components\OSConnector;
 use app\components\FacialFeatureDetector;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\KnowledgeBaseFileForm;
 
 class DefaultController extends Controller
 {
@@ -136,5 +138,82 @@ class DefaultController extends Controller
         return $this->render('analysis', [
             'model' => $model,
         ]);
+    }
+
+    /**
+     * Страница просмотра кода базы знаний.
+     *
+     * @return string
+     */
+    public function actionKnowledgeBase()
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Получение кода базы знаний из Object Storage
+        $knowledgeBase = $dbConnector->getFileContentToObjectStorage(
+            OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
+            null,
+            'knowledge-base.txt'
+        );
+
+        return $this->render('knowledge-base', [
+            'knowledgeBase' => $knowledgeBase,
+        ]);
+    }
+
+    /**
+     * Страница загрузки базы знаний.
+     *
+     * @return string|\yii\web\Response
+     */
+    public function actionKnowledgeBaseUpload()
+    {
+        // Создание формы файла базы знаний
+        $knowledgeBaseFileForm = new KnowledgeBaseFileForm();
+        // Если POST-запрос
+        if (Yii::$app->request->isPost) {
+            $knowledgeBaseFileForm->knowledgeBaseFile = UploadedFile::getInstance($knowledgeBaseFileForm,
+                'knowledgeBaseFile');
+            if ($knowledgeBaseFileForm->validate()) {
+                // Создание объекта коннектора с Yandex.Cloud Object Storage
+                $dbConnector = new OSConnector();
+                // Сохранение загруженного файла базы знаний на Object Storage
+                $dbConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
+                    null,
+                    'knowledge-base.txt',
+                    $knowledgeBaseFileForm->knowledgeBaseFile->tempName
+                );
+                // Вывод сообщения об успешной загрузке файла базы знаний
+                Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили базу знаний!');
+
+                return $this->redirect('knowledge-base');
+            }
+        }
+
+        return $this->render('knowledge-base-upload', [
+            'knowledgeBaseFileForm' => $knowledgeBaseFileForm,
+        ]);
+    }
+
+    /**
+     * Скачать файл с базой знаний.
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function actionKnowledgeBaseDownload()
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Скачивание файла базы знаний с Object Storage
+        $result = $dbConnector->downloadFileToObjectStorage(
+            OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
+            null,
+            'knowledge-base.txt'
+        );
+        if ($result != '')
+            return $result;
+        throw new Exception('Файл не найден!');
     }
 }

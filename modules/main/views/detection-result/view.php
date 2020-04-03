@@ -11,7 +11,6 @@ use yii\widgets\DetailView;
 /* @var $browFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $eyebrowFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $noseFeatures app\modules\main\controllers\DetectionResultController */
-/* @var $knowledgeBase app\modules\main\controllers\DetectionResultController */
 /* @var $facts app\modules\main\controllers\DetectionResultController */
 
 $this->title = $model->id;

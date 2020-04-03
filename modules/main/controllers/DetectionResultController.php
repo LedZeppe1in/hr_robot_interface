@@ -73,9 +73,6 @@ class DetectionResultController extends Controller
             $model->id,
             'facts.json'
         );
-        // Получение кода базы знаний
-        $knowledgeBase = file_get_contents(Yii::getAlias('@webroot') . '/rules/hrr-kb.txt',
-            true);
 
         return $this->render('view', [
             'model' => $model,
@@ -85,7 +82,6 @@ class DetectionResultController extends Controller
             'eyebrowFeatures' => $faceData['eyebrow'],
             'noseFeatures' => $faceData['nose'],
             'facts' => $facts,
-            'knowledgeBase' => $knowledgeBase,
         ]);
     }
 
