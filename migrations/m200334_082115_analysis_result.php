@@ -3,9 +3,9 @@
 use yii\db\Migration;
 
 /**
- * Class m200304_082115_analysis_result
+ * Class m200334_082115_analysis_result
  */
-class m200304_082115_analysis_result extends Migration
+class m200334_082115_analysis_result extends Migration
 {
     public function up()
     {
@@ -21,12 +21,11 @@ class m200304_082115_analysis_result extends Migration
             'facts_file_name' => $this->string(),
             'interpretation_result_file_name' => $this->string(),
             'description' => $this->text(),
-            'video_interview_id' => $this->integer()->notNull(),
+            'landmark_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
-        $this->addForeignKey("analysis_result_video_interview_fk",
-            "{{%analysis_result}}", "video_interview_id",
-            "{{%video_interview}}", "id", 'CASCADE');
+        $this->addForeignKey("analysis_result_landmark_fk", "{{%analysis_result}}", "landmark_id",
+            "{{%landmark}}", "id", 'CASCADE');
     }
 
     public function down()

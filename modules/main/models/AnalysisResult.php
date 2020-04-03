@@ -14,9 +14,9 @@ use yii\behaviors\TimestampBehavior;
  * @property string $facts_file_name
  * @property string $interpretation_result_file_name
  * @property string $description
- * @property int $video_interview_id
+ * @property int $landmark_id
  *
- * @property VideoInterview $videoInterview
+ * @property Landmark $landmark
  */
 class AnalysisResult extends \yii\db\ActiveRecord
 {
@@ -34,12 +34,12 @@ class AnalysisResult extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['video_interview_id'], 'required'],
-            [['video_interview_id'], 'integer'],
-            [['detection_result_file_name', 'facts_file_name', 'interpretation_result_file_name'], 'string'],
-            [['description'], 'string', 'max' => 600],
-            [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
-                'targetAttribute' => ['video_interview_id' => 'id']],
+            [['landmark_id'], 'required'],
+            [['landmark_id'], 'integer'],
+            [['detection_result_file_name', 'facts_file_name',
+                'interpretation_result_file_name', 'description'], 'string'],
+            [['landmark_id'], 'exist', 'skipOnError' => true, 'targetClass' => Landmark::className(),
+                'targetAttribute' => ['landmark_id' => 'id']],
         ];
     }
 
@@ -56,7 +56,7 @@ class AnalysisResult extends \yii\db\ActiveRecord
             'facts_file_name' => 'Название файла набора фактов',
             'interpretation_result_file_name' => 'Название файла результатов интерпретации признаков',
             'description' => 'Описание',
-            'video_interview_id' => 'ID видеоинтервью',
+            'landmark_id' => 'ID цифровой маски',
         ];
     }
 
@@ -68,12 +68,12 @@ class AnalysisResult extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[VideoInterview]].
+     * Gets query for [[Landmark]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getVideoInterview()
+    public function getLandmark()
     {
-        return $this->hasOne(VideoInterview::className(), ['id' => 'video_interview_id']);
+        return $this->hasOne(Landmark::className(), ['id' => 'landmark_id']);
     }
 }

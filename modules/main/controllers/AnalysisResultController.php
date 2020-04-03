@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\Landmark;
 use Yii;
 use Exception;
 use yii\data\ActiveDataProvider;
@@ -105,17 +106,17 @@ class AnalysisResultController extends Controller
     {
         // Создание модели для результатов определения признаков
         $model = new AnalysisResult();
-        $model->video_interview_id = $id;
         $model->detection_result_file_name = 'feature-detection-result.json';
         $model->facts_file_name = 'facts.json';
+        $model->landmark_id = $id;
         $model->save();
-        // Поиск видеоинтервью по его id в БД
-        $videoInterview = VideoInterview::findOne($id);
+        // Поиск цифровой маски по id в БД
+        $landmark = Landmark::findOne($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение содержимого json-файла с лицевыми точками из Object Storage
-        $faceData = $dbConnector->getFileContentToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-            $videoInterview->id, $videoInterview->landmark_file_name);
+        $faceData = $dbConnector->getFileContentToObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+            $landmark->id, $landmark->landmark_file_name);
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица

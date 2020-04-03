@@ -5,18 +5,18 @@ namespace app\modules\main\models;
 use yii\behaviors\TimestampBehavior;
 
 /**
- * This is the model class for table "{{%advanced_landmark}}".
+ * This is the model class for table "{{%landmark}}".
  *
  * @property int $id
  * @property int $created_at
  * @property int $updated_at
- * @property string $file_name
+ * @property string $landmark_file_name
  * @property string $description
  * @property int $video_interview_id
  *
  * @property VideoInterview $videoInterview
  */
-class AdvancedLandmark extends \yii\db\ActiveRecord
+class Landmark extends \yii\db\ActiveRecord
 {
     public $landmarkFile; // Файл с лицевыми точками
 
@@ -25,7 +25,7 @@ class AdvancedLandmark extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return '{{%advanced_landmark}}';
+        return '{{%landmark}}';
     }
 
     /**
@@ -36,8 +36,7 @@ class AdvancedLandmark extends \yii\db\ActiveRecord
         return [
             [['video_interview_id'], 'required'],
             [['video_interview_id'], 'integer'],
-            [['file_name'], 'string',],
-            [['description'], 'string', 'max' => 600],
+            [['landmark_file_name', 'description'], 'string',],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
@@ -53,7 +52,7 @@ class AdvancedLandmark extends \yii\db\ActiveRecord
             'id' => 'ID',
             'created_at' => 'Создан',
             'updated_at' => 'Обновлен',
-            'file_name' => 'Название файла с лицевыми точками',
+            'landmark_file_name' => 'Название файла с лицевыми точками',
             'description' => 'Описание',
             'video_interview_id' => 'ID видеоинтервью',
             'landmarkFile' => 'Файл с лицевыми точками',

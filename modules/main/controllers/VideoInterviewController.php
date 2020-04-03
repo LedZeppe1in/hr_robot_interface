@@ -74,19 +74,14 @@ class VideoInterviewController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             // Загрузка файлов с формы
             $videoInterviewFile = UploadedFile::getInstance($model, 'videoInterviewFile');
-            $landmarkFile = UploadedFile::getInstance($model, 'landmarkFile');
             $model->videoInterviewFile = $videoInterviewFile;
-            $model->landmarkFile = $landmarkFile;
-            // Валидация полей файлов
-            if ($model->validate(['videoInterviewFile']) && $model->validate(['landmarkFile'])) {
+            // Валидация поля файла
+            if ($model->validate(['videoInterviewFile'])) {
                 // Если пользователь загрузил файл видеоинтервью
                 if ($videoInterviewFile && $videoInterviewFile->tempName)
                     $model->video_file_name = $model->videoInterviewFile->baseName . '.' .
                         $model->videoInterviewFile->extension;
-                // Если пользователь загрузил файл с лицевыми точками
-                if ($landmarkFile && $landmarkFile->tempName)
-                    $model->landmark_file_name = $model->landmarkFile->baseName . '.' . $model->landmarkFile->extension;
-                // Сохранение данных о видео-интервью в БД
+                // Сохранение данных о видеоинтервью в БД
                 if ($model->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
                     $dbConnector = new OSConnector();
@@ -94,10 +89,6 @@ class VideoInterviewController extends Controller
                     if ($model->video_file_name != '')
                         $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                             $model->id, $model->video_file_name, $videoInterviewFile->tempName);
-                    // Сохранение файла с лицевыми точками на Object Storage
-                    if ($model->landmark_file_name != '')
-                    $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-                        $model->id, $model->landmark_file_name, $landmarkFile->tempName);
                     // Вывод сообщения об удачной загрузке
                     Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили видеоинтервью!');
 
@@ -131,10 +122,6 @@ class VideoInterviewController extends Controller
         if ($model->video_file_name != '')
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
-        // Удаление файла с лицевыми точками на Object Storage
-        if ($model->landmark_file_name != '')
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-                $model->id, $model->landmark_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
 
@@ -163,27 +150,6 @@ class VideoInterviewController extends Controller
     }
 
     /**
-     * Скачивание файла с лицевыми точками.
-     *
-     * @param $id
-     * @return \yii\console\Response|\yii\web\Response
-     * @throws NotFoundHttpException
-     */
-    public function actionLandmarkDownload($id)
-    {
-        $model = $this->findModel($id);
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
-        // Скачивание файла с лицевыми точками с Object Storage
-        if ($model->landmark_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-                $model->id, $model->landmark_file_name);
-            return $result;
-        }
-        throw new Exception('Файл не найден!');
-    }
-
-    /**
      * Finds the VideoInterview model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param integer $id
@@ -192,9 +158,8 @@ class VideoInterviewController extends Controller
      */
     protected function findModel($id)
     {
-        if (($model = VideoInterview::findOne($id)) !== null) {
+        if (($model = VideoInterview::findOne($id)) !== null)
             return $model;
-        }
 
         throw new NotFoundHttpException('Запрашиваемая страница не существует.');
     }

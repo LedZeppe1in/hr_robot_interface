@@ -14,14 +14,14 @@ class OSConnector
     const OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET = 'knowledgebase';
     // Название бакета для файлов видеоинтервью в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_VIDEO_BUCKET = 'videointerviews';
-    // Название бакета для json-файлов модифицированных цифровых масок в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_ADVANCED_LANDMARK_BUCKET = 'advancedlandmarks';
+    // Название бакета для json-файлов цифровых масок в Object Storage на Yandex.Cloud
+    const OBJECT_STORAGE_LANDMARK_BUCKET = 'landmarks';
     // Название бакета для json-файлов результатов определения признаков в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_DETECTION_RESULT_BUCKET = 'detectionresults';
     // Название бакета для json-файлов результатов интерпретации признаков в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET = 'interpretationresults';
     // Ключ для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_KEY    = 'IZnZSrNDYYbkZRDyAtZ9';
+    const OBJECT_STORAGE_KEY = 'IZnZSrNDYYbkZRDyAtZ9';
     // Шифр для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_SECRET = 'EsbUgm4uGMnBtwc5bTqBsfbhSgnesPQrX6YGVAHH';
 

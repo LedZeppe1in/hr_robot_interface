@@ -1,11 +1,11 @@
 <?php
 
-use app\modules\main\models\VideoInterview;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
+use app\modules\main\models\VideoInterview;
 
 /* @var $this yii\web\View */
-/* @var $model app\modules\main\models\AdvancedLandmark */
+/* @var $model app\modules\main\models\Landmark */
 /* @var $form yii\widgets\ActiveForm */
 ?>
 

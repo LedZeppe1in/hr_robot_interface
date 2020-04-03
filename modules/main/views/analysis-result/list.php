@@ -6,7 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Итоговые результаты анализа видеоинтервью';
+$this->title = 'Итоговые результаты анализа';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -19,11 +19,11 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
-                'attribute'=>'video_interview_id',
-                'label' => 'Видеоинтервью',
+                'attribute'=>'landmark_id',
+                'label' => 'Цифровая маска',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return $data->videoInterview->video_file_name;
+                    return $data->landmark->landmark_file_name;
                 },
             ],
             [

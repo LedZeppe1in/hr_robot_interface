@@ -18,8 +18,6 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'videoInterviewFile')->fileInput() ?>
 
-    <?= $form->field($model, 'landmarkFile')->fileInput() ?>
-
     <?= $form->field($model, 'description')->textarea(['maxlength' => true, 'rows'=>6]) ?>
 
     <div class="form-group">

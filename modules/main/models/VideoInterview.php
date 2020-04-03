@@ -12,12 +12,11 @@ use yii\helpers\ArrayHelper;
  * @property int $created_at
  * @property int $updated_at
  * @property string $video_file_name
- * @property string $landmark_file_name
  * @property string $description
  * @property int $respondent_id
  *
  * @property AddressedInterview[] $addressedInterviews
- * @property AnalysisResult[] $analysisResults
+ * @property Landmark[] $landmarks
  * @property Respondent $respondent
  */
 class VideoInterview extends \yii\db\ActiveRecord
@@ -41,8 +40,7 @@ class VideoInterview extends \yii\db\ActiveRecord
         return [
             [['respondent_id'], 'required'],
             [['respondent_id'], 'integer'],
-            [['video_file_name', 'landmark_file_name'], 'string'],
-            [['description'], 'string', 'max' => 600],
+            [['video_file_name', 'description'], 'string'],
             [['videoInterviewFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => Respondent::className(),
@@ -60,7 +58,6 @@ class VideoInterview extends \yii\db\ActiveRecord
             'created_at' => 'Создано',
             'updated_at' => 'Обновлено',
             'video_file_name' => 'Название файла видеоинтервью',
-            'landmark_file_name' => 'Название файла с лицевыми точками',
             'description' => 'Описание',
             'respondent_id' => 'ID респондента',
             'videoInterviewFile' => 'Файл видеоинтервью',
@@ -86,11 +83,11 @@ class VideoInterview extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[AnalysisResults]].
+     * Gets query for [[Landmarks]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getAnalysisResults()
+    public function getLandmarks()
     {
         return $this->hasMany(AnalysisResult::className(), ['video_interview_id' => 'id']);
     }
@@ -107,6 +104,7 @@ class VideoInterview extends \yii\db\ActiveRecord
 
     /**
      * Получение списка видеоинтервью.
+     *
      * @return array - массив всех видеоинтервью
      */
     public static function getVideoInterviews()

@@ -17,8 +17,6 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Видеоинтервью: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= ($model->landmark_file_name != '') ? Html::a('Определить признаки',
-            ['/analysis-result/detection/' . $model->id], ['class' => 'btn btn-primary']) : '' ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
@@ -55,13 +53,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => ($model->video_file_name != '') ? Html::a('скачать',
                     ['/video-interview/video-download/' . $model->id], ['target' => '_blank']) : null,
                 'format' => 'raw'
-            ],
-            [
-                'label' => 'Файл с лицевыми точками',
-                'value' => ($model->landmark_file_name != '') ? Html::a('скачать',
-                    ['/video-interview/landmark-download/' . $model->id], ['target' => '_blank']) : null,
-                'format' => 'raw'
-            ],
+            ]
         ],
     ]) ?>
 

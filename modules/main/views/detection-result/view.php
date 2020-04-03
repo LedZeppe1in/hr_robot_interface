@@ -13,8 +13,7 @@ use yii\widgets\DetailView;
 /* @var $noseFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $facts app\modules\main\controllers\DetectionResultController */
 
-$this->title = ($model->videoInterview->landmark_file_name != '') ? $model->videoInterview->landmark_file_name :
-    'не загружено';
+$this->title = $model->landmark->landmark_file_name;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты определения признаков', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
@@ -48,14 +47,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
             [
-                'attribute' => 'video_interview_id',
-                'label' => 'ID видеоинтервью',
-                'value' => $model->videoInterview->id,
+                'attribute' => 'landmark_id',
+                'label' => 'ID цифровой маски',
+                'value' => $model->landmark->id,
             ],
             [
-                'attribute' => 'video_interview_id',
-                'label' => 'Название файла видеоинтервью',
-                'value' => $model->videoInterview->video_file_name,
+                'attribute' => 'landmark_id',
+                'label' => 'Название файла с лицевыми точками',
+                'value' => $model->landmark->landmark_file_name,
             ],
             [
                 'label' => 'Описание',

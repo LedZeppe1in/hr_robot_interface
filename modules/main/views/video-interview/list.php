@@ -10,7 +10,7 @@ $this->title = 'Видеоинтервью';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div class="video-interview-index">
+<div class="video-interview-list">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
@@ -49,15 +49,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {detection} {delete}',
-                'buttons' => [
-                    'detection' => function ($url, $model, $key) {
-                        $icon = Html::tag('span', '',
-                            ['class' => 'glyphicon glyphicon-save-file', 'title' => 'Определение признаков']);
-                        $url = ['/analysis-result/detection/' . $model->id];
-                        return ($model->landmark_file_name != '') ? Html::a($icon, $url) : null;
-                    },
-                ],
+                'template' => '{view} {delete}',
             ],
         ],
     ]); ?>

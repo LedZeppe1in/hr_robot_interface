@@ -19,11 +19,11 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
-                'attribute'=>'video_interview_id',
-                'label' => 'Видеоинтервью',
+                'attribute'=>'landmark_id',
+                'label' => 'Цифровая маска',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return $data->videoInterview->video_file_name;
+                    return $data->landmark->landmark_file_name;
                 },
             ],
             [

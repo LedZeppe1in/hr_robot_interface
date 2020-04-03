@@ -3,13 +3,13 @@
 use yii\helpers\Html;
 
 /* @var $this yii\web\View */
-/* @var $model app\modules\main\models\AdvancedLandmark */
+/* @var $model app\modules\main\models\Landmark */
 
 $this->title = 'Загрузка файла';
-$this->params['breadcrumbs'][] = ['label' => 'Модифицированные файлы с лицевыми точками', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Цифровые маски', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="advanced-landmark-create">
+<div class="landmark-upload">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

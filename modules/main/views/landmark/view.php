@@ -4,22 +4,24 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
-/* @var $model app\modules\main\models\AdvancedLandmark */
+/* @var $model app\modules\main\models\Landmark */
 
-$this->title = ($model->file_name != '') ? $model->file_name : 'не загружена';
-$this->params['breadcrumbs'][] = ['label' => 'Модифицированные файлы с лицевыми точками', 'url' => ['list']];
+$this->title = ($model->landmark_file_name != '') ? $model->landmark_file_name : 'не загружена';
+$this->params['breadcrumbs'][] = ['label' => 'Цифровые маски', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
 <div class="advanced-landmark-view">
 
-    <h1>Модифицированная цифровая маска: <?= Html::encode($this->title) ?></h1>
+    <h1>Цифровая маска: <?= Html::encode($this->title) ?></h1>
 
     <p>
+        <?= ($model->landmark_file_name != '') ? Html::a('Определить признаки',
+            ['/analysis-result/detection/' . $model->id], ['class' => 'btn btn-primary']) : '' ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
-                'confirm' => 'Вы уверены, что хотите удалить этот файл?',
+                'confirm' => 'Вы уверены, что хотите удалить этот элемент?',
                 'method' => 'post',
             ],
         ]) ?>
@@ -50,8 +52,8 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'label' => 'Файл с лицевыми точками',
-                'value' => ($model->file_name != '') ? Html::a('скачать',
-                    ['/advanced-landmark/file-download/' . $model->id], ['target' => '_blank']) : null,
+                'value' => ($model->landmark_file_name != '') ? Html::a('скачать',
+                    ['/landmark/landmark-file-download/' . $model->id], ['target' => '_blank']) : null,
                 'format' => 'raw'
             ],
         ],
