@@ -46,6 +46,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => $model->respondent->name,
             ],
             [
+                'label' => 'Описание',
+                'value' => ($model->description != '') ? $model->description : null,
+                'format' => 'raw'
+            ],
+            [
                 'label' => 'Файл видеоинтервью',
                 'value' => ($model->video_file_name != '') ? Html::a('скачать',
                     ['/video-interview/video-download/' . $model->id], ['target' => '_blank']) : null,

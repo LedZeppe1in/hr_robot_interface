@@ -17,6 +17,8 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'landmarkFile')->fileInput() ?>
 
+    <?= $form->field($model, 'description')->textarea(['maxlength' => true, 'rows'=>6]) ?>
+
     <div class="form-group">
         <?= Html::submitButton('Сохранить', ['class' => 'btn btn-success']) ?>
     </div>

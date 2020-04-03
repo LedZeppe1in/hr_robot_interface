@@ -71,7 +71,7 @@ class DetectionResultController extends Controller
         $facts = $dbConnector->getFileContentToObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
-            'facts.json'
+            $model->facts_file_name
         );
 
         return $this->render('view', [
@@ -106,7 +106,7 @@ class DetectionResultController extends Controller
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $model->id, 'facts.json');
+                $model->id, $model->facts_file_name);
         }
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты определения признаков!');
@@ -156,7 +156,7 @@ class DetectionResultController extends Controller
             $result = $dbConnector->downloadFileToObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
-                'facts.json'
+                $model->facts_file_name
             );
 
             return $result;

@@ -28,6 +28,14 @@ $this->params['breadcrumbs'][] = $this->title;
                     return ($data->file_name != '') ? $data->file_name : null;
                 },
             ],
+            [
+                'attribute'=>'description',
+                'label' => 'Описание',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->description != '') ? $data->description : null;
+                },
+            ],
             'video_interview_id',
             [
                 'class' => 'yii\grid\ActionColumn',

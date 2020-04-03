@@ -13,7 +13,8 @@ use yii\widgets\DetailView;
 /* @var $noseFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $facts app\modules\main\controllers\DetectionResultController */
 
-$this->title = $model->id;
+$this->title = ($model->videoInterview->landmark_file_name != '') ? $model->videoInterview->landmark_file_name :
+    'не загружено';
 $this->params['breadcrumbs'][] = ['label' => 'Результаты определения признаков', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
@@ -21,12 +22,10 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <div class="analysis-result-view">
 
-    <h1><?= Html::encode($this->title) ?></h1>
+    <h1>Результат для: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Скачать результаты определения признаков',
-            ['file-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
-        <?= Html::a('Скачать факты', ['facts-download', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Интерпретировать признаки', '#', ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
@@ -50,8 +49,30 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'video_interview_id',
-                'label' => 'Видеоинтервью',
+                'label' => 'ID видеоинтервью',
+                'value' => $model->videoInterview->id,
+            ],
+            [
+                'attribute' => 'video_interview_id',
+                'label' => 'Название файла видеоинтервью',
                 'value' => $model->videoInterview->video_file_name,
+            ],
+            [
+                'label' => 'Описание',
+                'value' => ($model->description != '') ? $model->description : null,
+                'format' => 'raw'
+            ],
+            [
+                'label' => 'Файл с результатами определения признаков',
+                'value' => ($model->detection_result_file_name != '') ? Html::a('скачать',
+                    ['file-download', 'id' => $model->id], ['target' => '_blank']) : null,
+                'format' => 'raw'
+            ],
+            [
+                'label' => 'Файл с набором фактов',
+                'value' => ($model->facts_file_name != '') ? Html::a('скачать',
+                    ['facts-download', 'id' => $model->id], ['target' => '_blank']) : null,
+                'format' => 'raw'
             ],
         ],
     ]) ?>

@@ -6,14 +6,14 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\AdvancedLandmark */
 
-$this->title = ($model->file_name != '') ? $model->file_name : 'не загружено';
+$this->title = ($model->file_name != '') ? $model->file_name : 'не загружена';
 $this->params['breadcrumbs'][] = ['label' => 'Модифицированные файлы с лицевыми точками', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
 <div class="advanced-landmark-view">
 
-    <h1><?= Html::encode($this->title) ?></h1>
+    <h1>Модифицированная цифровая маска: <?= Html::encode($this->title) ?></h1>
 
     <p>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
@@ -38,6 +38,16 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
             'video_interview_id',
+            [
+                'attribute' => 'video_interview_id',
+                'label' => 'Название файла видеоинтервью',
+                'value' => $model->videoInterview->video_file_name,
+            ],
+            [
+                'label' => 'Описание',
+                'value' => ($model->description != '') ? $model->description : null,
+                'format' => 'raw'
+            ],
             [
                 'label' => 'Файл с лицевыми точками',
                 'value' => ($model->file_name != '') ? Html::a('скачать',

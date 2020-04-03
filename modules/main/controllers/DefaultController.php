@@ -95,6 +95,7 @@ class DefaultController extends Controller
                         $analysisResultModel = new AnalysisResult();
                         $analysisResultModel->video_interview_id = $model->id;
                         $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
+                        $analysisResultModel->facts_file_name = 'facts.json';
                         $analysisResultModel->interpretation_result_file_name = 'feature-interpretation-result.json';
                         $analysisResultModel->save();
                         // Получение содержимого json-файла с лицевыми точками из Object Storage
@@ -120,7 +121,7 @@ class DefaultController extends Controller
                         $dbConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                             $analysisResultModel->id,
-                            'facts.json',
+                            $analysisResultModel->facts_file_name,
                             $facts
                         );
                         // Вывод сообщения об успешном анализе видеоинтервью

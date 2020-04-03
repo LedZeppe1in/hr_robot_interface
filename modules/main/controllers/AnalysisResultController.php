@@ -73,7 +73,7 @@ class AnalysisResultController extends Controller
         $facts = $dbConnector->getFileContentToObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
-            'facts.json'
+            $model->facts_file_name
         );
         // Получение кода базы знаний
         $knowledgeBase = $dbConnector->getFileContentToObjectStorage(
@@ -107,6 +107,7 @@ class AnalysisResultController extends Controller
         $model = new AnalysisResult();
         $model->video_interview_id = $id;
         $model->detection_result_file_name = 'feature-detection-result.json';
+        $model->facts_file_name = 'facts.json';
         $model->save();
         // Поиск видеоинтервью по его id в БД
         $videoInterview = VideoInterview::findOne($id);
@@ -125,12 +126,8 @@ class AnalysisResultController extends Controller
         // Преобразование массива с результатами функции определения признаков в массив фактов
         $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
         // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
-        $dbConnector->saveFileToObjectStorage(
-            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-            $model->id,
-            'facts.json',
-            $facts
-        );
+        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $model->id, $model->facts_file_name, $facts);
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
 
@@ -158,7 +155,7 @@ class AnalysisResultController extends Controller
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
             $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $model->id, 'facts.json');
+                $model->id, $model->facts_file_name);
         }
         // Удаление файла с результатами интерпретации признаков на Object Storage
         if ($model->interpretation_result_file_name != '')
@@ -212,7 +209,7 @@ class AnalysisResultController extends Controller
             $result = $dbConnector->downloadFileToObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
-                'facts.json'
+                $model->facts_file_name
             );
 
             return $result;

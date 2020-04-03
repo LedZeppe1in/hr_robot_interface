@@ -23,6 +23,22 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
+                'attribute'=>'video_file_name',
+                'label' => 'Видеоинтервью',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->video_file_name != '') ? $data->video_file_name : null;
+                },
+            ],
+            [
+                'attribute'=>'description',
+                'label' => 'Описание',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->description != '') ? $data->description : null;
+                },
+            ],
+            [
                 'attribute'=>'respondent_id',
                 'label' => 'Респондент',
                 'format' => 'raw',

@@ -27,6 +27,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
             [
+                'attribute'=>'description',
+                'label' => 'Описание',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->description != '') ? $data->description : null;
+                },
+            ],
+            [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
                 'template' => '{view} {detection-file-download} {facts-file-download} 
