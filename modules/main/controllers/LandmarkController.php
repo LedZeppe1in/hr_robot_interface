@@ -124,7 +124,7 @@ class LandmarkController extends Controller
         $dbConnector = new OSConnector();
         // Удаление файла с лицевыми точками на Object Storage
         if ($model->landmark_file_name != '')
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id, $model->landmark_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success',
@@ -147,7 +147,7 @@ class LandmarkController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с лицевыми точками с Object Storage
         if ($model->landmark_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(
+            $result = $dbConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id,
                 $model->landmark_file_name

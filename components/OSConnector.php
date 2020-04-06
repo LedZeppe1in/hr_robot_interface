@@ -44,9 +44,9 @@ class OSConnector
     /**
      * Сохранение объекта файла в Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, landmarks, detectionresults или interpretationresults)
      * @param $path - название папки в бакете (соответствует id записи из БД)
-     * @param $fileName - имя файла (без пути)
+     * @param $fileName - имя файла с расширением без пути
      * @param $file - файл
      */
     public function saveFileToObjectStorage($bucketName, $path, $fileName, $file)
@@ -61,18 +61,18 @@ class OSConnector
                     fopen($file, 'r'),
             ]);
         } catch (S3Exception $e) {
-            echo "При загрузке файла произошла ошибка.\n";
+            echo "При сохранении файла произошла ошибка.\n";
         }
     }
 
     /**
      * Удаление объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, landmarks, detectionresults или interpretationresults)
      * @param $path - название папки в бакете (соответствует id записи из БД)
-     * @param $fileName - имя файла (без пути)
+     * @param $fileName - имя файла с расширением без пути
      */
-    public function removeFileToObjectStorage($bucketName, $path, $fileName)
+    public function removeFileFromObjectStorage($bucketName, $path, $fileName)
     {
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();
@@ -89,12 +89,12 @@ class OSConnector
     /**
      * Получение содержимого объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, landmarks, detectionresults или interpretationresults)
      * @param $path - название папки в бакете (соответствует id записи из БД)
-     * @param $fileName - имя файла (без пути
+     * @param $fileName - имя файла с расширением без пути
      * @return bool|mixed - содержимое объекта файла
      */
-    public function getFileContentToObjectStorage($bucketName, $path, $fileName)
+    public function getFileContentFromObjectStorage($bucketName, $path, $fileName)
     {
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();
@@ -106,7 +106,7 @@ class OSConnector
 
             return $result["Body"];
         } catch (S3Exception $e) {
-            echo "При получении файла произошла ошибка.\n";
+            echo "При получении содержимого файла произошла ошибка.\n";
         }
 
         return false;
@@ -115,12 +115,12 @@ class OSConnector
     /**
      * Скачивание объекта файла из Object Storage на Yandex.Cloud.
      *
-     * @param $bucketName - название бакета (videointerviews, advancedlandmarks, detectionresults или jsonfiles)
+     * @param $bucketName - название бакета (videointerviews, landmarks, detectionresults или interpretationresults)
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла (без пути
      * @return mixed - файл с Object Storage
      */
-    public function downloadFileToObjectStorage($bucketName, $path, $fileName)
+    public function downloadFileFromObjectStorage($bucketName, $path, $fileName)
     {
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();

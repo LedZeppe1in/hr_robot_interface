@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\Landmark;
 use Yii;
 use Exception;
 use yii\data\ActiveDataProvider;
@@ -11,8 +10,8 @@ use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\components\OSConnector;
 use app\components\FacialFeatureDetector;
+use app\modules\main\models\Landmark;
 use app\modules\main\models\AnalysisResult;
-use app\modules\main\models\VideoInterview;
 
 /**
  * AnalysisResultController implements the CRUD actions for AnalysisResult model.
@@ -64,20 +63,20 @@ class AnalysisResultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение json-файла c результатами определения признаков
-        $jsonFile = $dbConnector->getFileContentToObjectStorage(
+        $jsonFile = $dbConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->detection_result_file_name
         );
         $faceData = json_decode($jsonFile, true);
         // Получение json-файла c результатами определения признаков в виде массива наборов фактов
-        $facts = $dbConnector->getFileContentToObjectStorage(
+        $facts = $dbConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->facts_file_name
         );
         // Получение кода базы знаний
-        $knowledgeBase = $dbConnector->getFileContentToObjectStorage(
+        $knowledgeBase = $dbConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
             null,
             'knowledge-base.txt'
@@ -115,8 +114,11 @@ class AnalysisResultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение содержимого json-файла с лицевыми точками из Object Storage
-        $faceData = $dbConnector->getFileContentToObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-            $landmark->id, $landmark->landmark_file_name);
+        $faceData = $dbConnector->getFileContentFromObjectStorage(
+            OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+            $landmark->id,
+            $landmark->landmark_file_name
+        );
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица
@@ -153,14 +155,14 @@ class AnalysisResultController extends Controller
         $dbConnector = new OSConnector();
         // Удаление файлов с результатами определения признаков и фактами на Object Storage
         if ($model->detection_result_file_name != '') {
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->facts_file_name);
         }
         // Удаление файла с результатами интерпретации признаков на Object Storage
         if ($model->interpretation_result_file_name != '')
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
                 $model->id, $model->interpretation_result_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты анализа интервью!');
@@ -182,7 +184,7 @@ class AnalysisResultController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков с Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(
+            $result = $dbConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->detection_result_file_name
@@ -207,7 +209,7 @@ class AnalysisResultController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков в виде фактов с Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(
+            $result = $dbConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->facts_file_name

@@ -120,7 +120,7 @@ class VideoInterviewController extends Controller
         $dbConnector = new OSConnector();
         // Удаление файла видеоинтервью на Object Storage
         if ($model->video_file_name != '')
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
@@ -142,7 +142,7 @@ class VideoInterviewController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла видеоинтервью с Object Storage
         if ($model->video_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $result = $dbConnector->downloadFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
             return $result;
         }

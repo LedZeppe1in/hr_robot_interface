@@ -61,14 +61,14 @@ class DetectionResultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение json-файла c результатами определения признаков
-        $jsonFile = $dbConnector->getFileContentToObjectStorage(
+        $jsonFile = $dbConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->detection_result_file_name
         );
         $faceData = json_decode($jsonFile, true);
         // Получение json-файла c результатами определения признаков в виде массива наборов фактов
-        $facts = $dbConnector->getFileContentToObjectStorage(
+        $facts = $dbConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->facts_file_name
@@ -103,9 +103,9 @@ class DetectionResultController extends Controller
         $dbConnector = new OSConnector();
         // Удаление файлов с результатами определения признаков и фактами с Object Storage
         if ($model->detection_result_file_name != '') {
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
-            $dbConnector->removeFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->facts_file_name);
         }
         // Вывод сообщения об успешном удалении
@@ -128,7 +128,7 @@ class DetectionResultController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков на Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(
+            $result = $dbConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->detection_result_file_name
@@ -153,7 +153,7 @@ class DetectionResultController extends Controller
         $dbConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков в виде набора фактов с Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileToObjectStorage(
+            $result = $dbConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->facts_file_name

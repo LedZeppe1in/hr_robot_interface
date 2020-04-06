@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\Landmark;
 use Yii;
 use Exception;
 use yii\web\Controller;
@@ -10,6 +9,7 @@ use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
 use app\components\OSConnector;
 use app\components\FacialFeatureDetector;
+use app\modules\main\models\Landmark;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\KnowledgeBaseFileForm;
@@ -115,7 +115,7 @@ class DefaultController extends Controller
                             $analysisResultModel->interpretation_result_file_name = 'feature-interpretation-result.json';
                             $analysisResultModel->save();
                             // Получение содержимого json-файла с лицевыми точками из Object Storage
-                            $faceData = $dbConnector->getFileContentToObjectStorage(
+                            $faceData = $dbConnector->getFileContentFromObjectStorage(
                                 OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                                 $landmarkModel->id,
                                 $landmarkModel->landmark_file_name
@@ -168,7 +168,7 @@ class DefaultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение кода базы знаний из Object Storage
-        $knowledgeBase = $dbConnector->getFileContentToObjectStorage(
+        $knowledgeBase = $dbConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
             null,
             'knowledge-base.txt'
@@ -225,7 +225,7 @@ class DefaultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Скачивание файла базы знаний с Object Storage
-        $result = $dbConnector->downloadFileToObjectStorage(
+        $result = $dbConnector->downloadFileFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
             null,
             'knowledge-base.txt'
