@@ -20,7 +20,17 @@ $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
 
-<!-- Подключение js-скрипта -->
+<!-- Подключение css-стилей -->
+<?php $this->registerCssFile('/css/jQueryUI.css') ?>
+<?php $this->registerCssFile('/css/jQueryUIStructure.css') ?>
+<?php $this->registerCssFile('/css/theme.css') ?>
+<?php $this->registerCssFile('/css/jQueryGrid.css') ?>
+
+<!-- Подключение js-скриптов -->
+<?php $this->registerJsFile('/js/jQueryUI.js') ?>
+<?php $this->registerJsFile('/js/jquery.ui.datepicker-ru.js') ?>
+<?php $this->registerJsFile('/js/grid.locale-ru.js') ?>
+<?php $this->registerJsFile('/js/jQueryGrid.js') ?>
 <?php $this->registerJsFile('/js/Integration.js') ?>
 
 <script type="text/javascript">
