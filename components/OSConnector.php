@@ -11,18 +11,18 @@ use Aws\S3\Exception\S3Exception;
 class OSConnector
 {
     // Название бакета для файла базы знаний в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET = 'knowledgebase';
+    const OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET        = 'knowledgebase';
     // Название бакета для файлов видеоинтервью в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_VIDEO_BUCKET = 'videointerviews';
+    const OBJECT_STORAGE_VIDEO_BUCKET                 = 'videointerviews';
     // Название бакета для json-файлов цифровых масок в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_LANDMARK_BUCKET = 'landmarks';
+    const OBJECT_STORAGE_LANDMARK_BUCKET              = 'landmarks';
     // Название бакета для json-файлов результатов определения признаков в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_DETECTION_RESULT_BUCKET = 'detectionresults';
+    const OBJECT_STORAGE_DETECTION_RESULT_BUCKET      = 'detectionresults';
     // Название бакета для json-файлов результатов интерпретации признаков в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET = 'interpretationresults';
-    // Ключ для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
-    const OBJECT_STORAGE_KEY = 'IZnZSrNDYYbkZRDyAtZ9';
-    // Шифр для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
+
+    // Ключ и шифр для севрвисного аккаунта (hrrrobotuserforobjectstorage) в Object Storage на Yandex.Cloud
+    const OBJECT_STORAGE_KEY    = 'IZnZSrNDYYbkZRDyAtZ9';
     const OBJECT_STORAGE_SECRET = 'EsbUgm4uGMnBtwc5bTqBsfbhSgnesPQrX6YGVAHH';
 
     // Настройки для подключения Object Storage на Yandex.Cloud
@@ -130,6 +130,7 @@ class OSConnector
                 'Key' => ($path != null) ? $path . '/' . $fileName : $fileName,
             ]);
             // Установка типа контента при скачивании файла
+            header('Access-Control-Allow-Origin: *'); // Реализация кроссдоменных запросов XMLHTTPRequest
             header('Content-Description: File Transfer');
             header("Content-Type: {$result['ContentType']}");
             header('Content-Disposition: attachment; filename=' . $fileName);

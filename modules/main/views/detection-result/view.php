@@ -24,7 +24,13 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Результат для: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Интерпретировать признаки', '#', ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Интерпретировать признаки',
+            'http://84.201.129.65:9999/Drools/Main.php?IDOfDataForReasoningProcess=' . $model->id,
+            ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Посмотреть в редакторе маски',
+            'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->landmark->id .
+            '&detection_result_id=' . $model->id,
+            ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [

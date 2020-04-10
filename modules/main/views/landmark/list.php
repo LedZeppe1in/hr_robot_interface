@@ -40,8 +40,16 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {detection} {delete}',
+                'template' => '{view} {mask-editor} {detection} {delete}',
                 'buttons' => [
+                    'mask-editor' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-user',
+                                'title' => 'Посмотреть в редакторе маски']);
+                        $url = 'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
+                            '&detection_result_id=none';
+                        return Html::a($icon, $url);
+                    },
                     'detection' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-save-file', 'title' => 'Определение признаков']);

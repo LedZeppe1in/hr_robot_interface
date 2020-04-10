@@ -21,9 +21,9 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <!-- Подключение css-стилей -->
+<?php $this->registerCssFile('/css/theme.css') ?>
 <?php $this->registerCssFile('/css/jQueryUI.css') ?>
 <?php $this->registerCssFile('/css/jQueryUIStructure.css') ?>
-<?php $this->registerCssFile('/css/theme.css') ?>
 <?php $this->registerCssFile('/css/jQueryGrid.css') ?>
 
 <!-- Подключение js-скриптов -->
@@ -31,13 +31,11 @@ $this->params['breadcrumbs'][] = $this->title;
 <?php $this->registerJsFile('/js/jquery.ui.datepicker-ru.js') ?>
 <?php $this->registerJsFile('/js/grid.locale-ru.js') ?>
 <?php $this->registerJsFile('/js/jQueryGrid.js') ?>
-<?php $this->registerJsFile('/js/Integration.js') ?>
+<?php $this->registerJsFile('http://84.201.129.65:9999/Drools/Integration.js') ?>
 
 <script type="text/javascript">
-    // Переменная для базы знаний
-    var knowledgeBase = '<?php echo $knowledgeBase;//str_replace(array("\r", "\n"), ' ', $knowledgeBase); ?>';
-    // Массив для наборов фактов
-    var facts = '<?php echo $facts; ?>';
+    // Номер набора фактов
+    var facts = '<?php echo $model->id; ?>';
 </script>
 
 <div class="analysis-result-view">
@@ -45,6 +43,10 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Итоговые результаты для: <?= Html::encode($this->title) ?></h1>
 
     <p>
+        <?= Html::a('Посмотреть в редакторе маски',
+            'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->landmark->id .
+                '&detection_result_id=' . $model->id,
+            ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [

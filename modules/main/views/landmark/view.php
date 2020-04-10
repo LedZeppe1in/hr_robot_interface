@@ -17,7 +17,11 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?= ($model->landmark_file_name != '') ? Html::a('Определить признаки',
-            ['/analysis-result/detection/' . $model->id], ['class' => 'btn btn-primary']) : '' ?>
+            ['/analysis-result/detection/' . $model->id], ['class' => 'btn btn-success']) : '' ?>
+        <?= Html::a('Посмотреть в редакторе маски',
+            'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
+                '&detection_result_id=none',
+            ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [

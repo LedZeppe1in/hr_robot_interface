@@ -37,9 +37,17 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {detection-file-download} {facts-file-download} 
+                'template' => '{view} {mask-editor} {detection-file-download} {facts-file-download} 
                     {interpretation-file-download} {delete}',
                 'buttons' => [
+                    'mask-editor' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-user',
+                                'title' => 'Посмотреть в редакторе маски']);
+                        $url = 'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='.
+                            $model->landmark->id . '&detection_result_id=' . $model->id;
+                        return Html::a($icon, $url);
+                    },
                     'detection-file-download' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-floppy-save',
