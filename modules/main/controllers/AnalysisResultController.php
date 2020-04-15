@@ -81,6 +81,12 @@ class AnalysisResultController extends Controller
             null,
             'knowledge-base.txt'
         );
+        // Получение json-файла с результатами интерпретации признаков
+        $interpretationResult = $dbConnector->getFileContentFromObjectStorage(
+            OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+            $model->id,
+            $model->interpretation_result_file_name
+        );
 
         return $this->render('view', [
             'model' => $model,
@@ -91,6 +97,7 @@ class AnalysisResultController extends Controller
             'noseFeatures' => $faceData['nose'],
             'facts' => $facts,
             'knowledgeBase' => $knowledgeBase,
+            'interpretationResult' => $interpretationResult
         ]);
     }
 
@@ -218,6 +225,64 @@ class AnalysisResultController extends Controller
             return $result;
         }
         throw new Exception('Файл не найден!');
+    }
+
+    /**
+     * Скачать json-файл с результатами определения признаков.
+     *
+     * @param $id - идентификатор модели результатов анализа
+     * @return mixed
+     * @throws NotFoundHttpException
+     */
+    public function actionInterpretationFileDownload($id)
+    {
+        $model = $this->findModel($id);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $dbConnector = new OSConnector();
+        // Скачивание файла с результатами интерпретации признаков с Object Storage
+        if ($model->interpretation_result_file_name != '') {
+            $result = $dbConnector->downloadFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                $model->id,
+                $model->interpretation_result_file_name
+            );
+
+            return $result;
+        }
+        throw new Exception('Файл не найден!');
+    }
+
+    /**
+     * Сохранение результатов интерпретации на Object Storage.
+     *
+     * @return bool
+     */
+    public function actionSaveInterpretationResult()
+    {
+        // Если POST-запрос
+        if (Yii::$app->request->isPost) {
+            // Поиск записи о результатах анализа по id
+            $analysisResult = AnalysisResult::findOne(Yii::$app->request->post('analysisResultId'));
+            // Получение данных о результатах интерпретации признаков
+            $interpretationResultData = Yii::$app->request->post('interpretationResultData');
+            // Если данные получены
+            if ($interpretationResultData != '') {
+                // Обновление поля названия файла с результатами интерпретации признаков
+                $analysisResult->interpretation_result_file_name = 'feature-interpretation-result.json';
+                $analysisResult->updateAttributes(['interpretation_result_file_name']);
+                // Создание объекта коннектора с Yandex.Cloud Object Storage
+                $dbConnector = new OSConnector();
+                // Сохранение результатов интерпретации в объект файла на Object Storage
+                $dbConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->interpretation_result_file_name,
+                    $interpretationResultData
+                );
+            }
+            return false;
+        }
+        return false;
     }
 
     /**

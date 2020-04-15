@@ -13,6 +13,7 @@ use yii\widgets\DetailView;
 /* @var $noseFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $knowledgeBase app\modules\main\controllers\AnalysisResultController */
 /* @var $facts app\modules\main\controllers\AnalysisResultController */
+/* @var $interpretationResult app\modules\main\controllers\AnalysisResultController */
 
 $this->title = $model->landmark->landmark_file_name;
 $this->params['breadcrumbs'][] = ['label' => 'Итоговые результаты анализа', 'url' => ['list']];
@@ -34,8 +35,10 @@ $this->params['breadcrumbs'][] = $this->title;
 <?php $this->registerJsFile('http://84.201.129.65:9999/Drools/Integration.js') ?>
 
 <script type="text/javascript">
-    // Номер набора фактов
+    // Номер результата анализа (для набора фактов)
     var facts = '<?php echo $model->id; ?>';
+    // Номер результата анализа
+    var IDOfRecord = '<?php echo $model->id; ?>';
 </script>
 
 <div class="analysis-result-view">
@@ -98,7 +101,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'label' => 'Файл с результатами интерпретации признаков',
                 'value' => ($model->interpretation_result_file_name != '') ? Html::a('скачать',
-                    '#', ['target' => '_blank']) : null,
+                    ['interpretation-file-download', 'id' => $model->id], ['target' => '_blank']) : null,
                 'format' => 'raw'
             ],
         ],
@@ -150,7 +153,9 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'label' => 'Результаты интерпретации',
-                'content' => $this->render('_interpretation_result'),
+                'content' => $this->render('_interpretation_result', [
+                    'interpretationResult' => $interpretationResult
+                ]),
             ]
         ]
     ]); ?>
