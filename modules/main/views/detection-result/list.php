@@ -10,7 +10,7 @@ $this->title = 'Результаты определения признаков';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div class="analysis-result-index">
+<div class="detection-result-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

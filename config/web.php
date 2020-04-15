@@ -53,6 +53,8 @@ $config = [
                 '/analysis-result/<_ar:(view|detection|detection-file-download|facts-download|interpretation-file-download|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
                 '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
                 '/detection-result/<_dr:(view|file-download|facts-download|delete)>/<id:\d+>' => 'main/detection-result/<_dr>',
+                '/interpretation-result/<_ir:(list)>' => 'main/interpretation-result/<_ir>',
+                '/interpretation-result/<_ir:(view|file-download|delete)>/<id:\d+>' => 'main/interpretation-result/<_ir>',
             ],
         ],
         'cache' => [

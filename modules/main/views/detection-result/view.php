@@ -19,7 +19,7 @@ $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
 
-<div class="analysis-result-view">
+<div class="detection-result-view">
 
     <h1>Результат для: <?= Html::encode($this->title) ?></h1>
 
