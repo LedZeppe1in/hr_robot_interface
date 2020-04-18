@@ -58,7 +58,8 @@ class OSConnector
                 'Bucket' => $bucketName,
                 'Key' => ($path != null) ? $path . '/' . $fileName : $fileName,
                 'Body' => (is_array($file)) ? json_encode($file, JSON_UNESCAPED_UNICODE) :
-                    fopen($file, 'r'),
+                    (is_string($file) && (is_object(json_decode($file)) || is_array(json_decode($file)))) ? $file :
+                        fopen($file, 'r'),
             ]);
         } catch (S3Exception $e) {
             echo "При сохранении файла произошла ошибка.\n";
@@ -107,6 +108,7 @@ class OSConnector
             return $result["Body"];
         } catch (S3Exception $e) {
             echo "При получении содержимого файла произошла ошибка.\n";
+            echo $fileName;
         }
 
         return false;

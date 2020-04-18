@@ -39,6 +39,8 @@ $this->params['breadcrumbs'][] = $this->title;
     var facts = '<?php echo $model->id; ?>';
     // Номер результата анализа
     var IDOfRecord = '<?php echo $model->id; ?>';
+    // CSRF-токен
+    var CSRFToken = '<?php echo Yii::$app->request->csrfToken; ?>';
 </script>
 
 <div class="analysis-result-view">
