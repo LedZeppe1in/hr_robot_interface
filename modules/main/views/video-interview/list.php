@@ -46,11 +46,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     return $data->respondent->name;
                 },
             ],
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {delete}',
-            ],
+            ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
 

@@ -258,7 +258,9 @@ class FacialFeatureDetector
 
     public function getFaceDataMaxForKeyV3($facialCharacteristics, $pointNum, $key)
     {
-        $facialCharacteristicsNumber = count($facialCharacteristics);
+        $facialCharacteristicsNumber = 0;
+        if (is_array($facialCharacteristics))
+            $facialCharacteristicsNumber = count($facialCharacteristics);
         if ($facialCharacteristicsNumber <= 0)
             return false;
 
@@ -1032,10 +1034,17 @@ class FacialFeatureDetector
 
                 //определяем движение брови по движению верхних точек бровей
                 // 19 - левая бровь, 24 - правая бровь
-                $rightEyebrowMovementY = $sourceFaceData['normmask'][$i][24]['Y'] - $yN24;
-                $rightEyebrowMovementX = $sourceFaceData['normmask'][$i][24]['X'] - $xN24;
-                $leftEyebrowMovementY = $sourceFaceData['normmask'][$i][19]['Y'] - $yN19;
-                $leftEyebrowMovementX = $sourceFaceData['normmask'][$i][19]['X'] - $xN19;
+                if (isset($sourceFaceData['normmask'][$i])) {
+                    $rightEyebrowMovementY = $sourceFaceData['normmask'][$i][24]['Y'] - $yN24;
+                    $rightEyebrowMovementX = $sourceFaceData['normmask'][$i][24]['X'] - $xN24;
+                    $leftEyebrowMovementY = $sourceFaceData['normmask'][$i][19]['Y'] - $yN19;
+                    $leftEyebrowMovementX = $sourceFaceData['normmask'][$i][19]['X'] - $xN19;
+                } else {
+                    $rightEyebrowMovementY = 0;
+                    $rightEyebrowMovementX = 0;
+                    $leftEyebrowMovementY = 0;
+                    $leftEyebrowMovementX = 0;
+                }
                 $rightEyebrowXMovForce = $this->getForce($scaleX24, abs($rightEyebrowMovementX));
                 $rightEyebrowYMovForce = $this->getForce($scaleY24, abs($rightEyebrowMovementY));
 //                $targetFaceData["eyebrow"]["right_eyebrow_movement"][$i]["force"] =
@@ -1279,9 +1288,9 @@ class FacialFeatureDetector
 
                 //движение уголков рта
                 $xMov = 'none';
-                if (($targetFaceData["mouth"]["right_corner_mouth_movement_x"][$i]["val"] ==
-                        $targetFaceData["mouth"]["left_corner_mouth_movement_x"][$i]["val"] ) and
-                    (isset($targetFaceData["mouth"]["left_corner_mouth_movement_x"][$i]))) {
+                if (isset($targetFaceData["mouth"]["left_corner_mouth_movement_x"][$i]) &&
+                    ($targetFaceData["mouth"]["right_corner_mouth_movement_x"][$i]["val"] ==
+                        $targetFaceData["mouth"]["left_corner_mouth_movement_x"][$i]["val"])) {
                     $xMov = $targetFaceData["mouth"]["right_corner_mouth_movement_x"][$i]["val"];
                 }
                 $targetFaceData["mouth"]["mouth_corners_movement"][$i]["val"] = $xMov;
@@ -1429,105 +1438,107 @@ class FacialFeatureDetector
      */
     public function detectTrends($sourceFaceData1, $trendLength)
     {
-        foreach ($sourceFaceData1 as $k=>$v) {
-            foreach ($v as $k1=>$v1) {
-                if(isset($v1[0])) {
-                    $v1[0]["trend"] = '1=';
-                    $v1[0]["confidence"] = 1;
-                }
-                $currentTrendLength = 1;
-
-                for ($i = 1; $i < count($v1); $i++) {
-//                    if(isset($v1[$i-1][$arrayKeys[1]]))
-//                        $val0 = $v1[$i-1][$arrayKeys[1]];
-//                    if(isset($v1[$i]) && isset($arrayKeys[1]))
-//                        $val1 = $v1[$i][$arrayKeys[1]];
-
-//echo $v1[$i]["force"].'/'.$v1[$i-1]["force"].'/'.$v1[$i]["val"].'/'.$v1[$i-1]["val"].'/'.$v1[$i]["trend"].'<br>';
-                    if ((isset($v1[$i]["force"])) && (isset($v1[$i-1]["force"])) &&
-                        (isset($v1[$i]["val"])) && (isset($v1[$i-1]["val"]))) {
-
-                        if (!isset($v1[$i-1]["trend"])){
-                            $v1[$i-1]["trend"] = '1=';
-                            $v1[$i-1]["confidence"] = 1;
+        if ($sourceFaceData1 != null)
+            foreach ($sourceFaceData1 as $k => $v)
+                if ($v != null) {
+                    foreach ($v as $k1 => $v1) {
+                        if(isset($v1[0])) {
+                            $v1[0]["trend"] = '1=';
+                            $v1[0]["confidence"] = 1;
                         }
-                        if (($v1[$i-1]["force"]<$v1[$i]["force"]) &&    //если интенсивность увеличивается
-                            ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                            (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'+') > 0))) { //и был тренд на увеличение, то продолжаем его
-                            ++$currentTrendLength;
-                            $v1[$i]["trend"] = $currentTrendLength.'+';
-                            $v1[$i]["confidence"] = 1;
-                        }
+                        $currentTrendLength = 1;
 
-                        if (($v1[$i-1]["force"]>$v1[$i]["force"]) &&    //если интенсивность уменьшается
-                            ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                            (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'-') > 0))) { //и был тренд на уменьшение, то продолжаем его
-                            ++$currentTrendLength;
-                            $v1[$i]["trend"] = $currentTrendLength.'-';
-                            $v1[$i]["confidence"] = 1;
-                        }
+                        for ($i = 1; $i < count($v1); $i++) {
+        //                    if(isset($v1[$i-1][$arrayKeys[1]]))
+        //                        $val0 = $v1[$i-1][$arrayKeys[1]];
+        //                    if(isset($v1[$i]) && isset($arrayKeys[1]))
+        //                        $val1 = $v1[$i][$arrayKeys[1]];
 
-                        if (($v1[$i-1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не меняется
-                            ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                            (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'=') > 0))) { //и был тренд на сохранение, то продолжаем его
-                            ++$currentTrendLength;
-                            $v1[$i]["trend"] = $currentTrendLength.'=';
-                            $v1[$i]["confidence"] = 1;
-                        }
+        //echo $v1[$i]["force"].'/'.$v1[$i-1]["force"].'/'.$v1[$i]["val"].'/'.$v1[$i-1]["val"].'/'.$v1[$i]["trend"].'<br>';
+                            if ((isset($v1[$i]["force"])) && (isset($v1[$i-1]["force"])) &&
+                                (isset($v1[$i]["val"])) && (isset($v1[$i-1]["val"]))) {
 
-                        if (($v1[$i-1]["force"]<$v1[$i]["force"]) &&    //если интенсивность увеличивается
-                            ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                            (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'+') === false))) {
-                            //и был тренд на уменьшение или сохранение, то начинаем новый тренд на увеличение
-                            $currentTrendLength = 1;
-                            $v1[$i]["trend"] = $currentTrendLength.'+';
-                            $v1[$i]["confidence"] = 1;
-                        }
-
-                        if (($v1[$i-1]["force"]>$v1[$i]["force"]) &&    //если интенсивность уменьшается
-                            ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                            (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'-') === false))) {
-                            //и был тренд на увеличение или сохранение, то начинаем новый тренд на уменьшение
-                            $currentTrendLength = 1;
-                            $v1[$i]["trend"] = $currentTrendLength.'-';
-                            $v1[$i]["confidence"] = 1;
-                        }
-
-                        if (($v1[$i-1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не маеняется
-                            ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                            (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'=') === false))) {
-                            //и был тренд на увеличение или уменьшение, то начинаем новый тренд на сохранение
-                            $currentTrendLength = 1;
-                            $v1[$i]["trend"] = $currentTrendLength.'=';
-                            $v1[$i]["confidence"] = 1;
-                        }
-
-                        if ($v1[$i-1]["val"] !== $v1[$i]["val"]){ //если значения отличаются
-                            //это либо числовое значение
-                            if (is_numeric($v1[$i]["val"])){
-                                if ($v1[$i-1]["val"]>$v1[$i]["val"]) $trenfVal = '-';
-                                if ($v1[$i-1]["val"]<$v1[$i]["val"]) $trenfVal = '+';
-                                //значение тренда сохраняется
-                                if (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"], $trenfVal) > 0)) {
+                                if (!isset($v1[$i-1]["trend"])){
+                                    $v1[$i-1]["trend"] = '1=';
+                                    $v1[$i-1]["confidence"] = 1;
+                                }
+                                if (($v1[$i-1]["force"]<$v1[$i]["force"]) &&    //если интенсивность увеличивается
+                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'+') > 0))) { //и был тренд на увеличение, то продолжаем его
                                     ++$currentTrendLength;
-                                } else {$currentTrendLength = 1;}
-                                $v1[$i]["trend"] = $currentTrendLength.$trenfVal;
-                                $v1[$i]["confidence"] = 1;
-                            } else {
-                                //либо смена направления для качественного значения
-                                $currentTrendLength = 1;
-                                if ($v1[$i-1]["force"]>$v1[$i]["force"]) $trenfVal = '-';
-                                if ($v1[$i-1]["force"]<$v1[$i]["force"]) $trenfVal = '+';
-                                if ($v1[$i-1]["force"] === $v1[$i]["force"]) $trenfVal = '=';
-                                $v1[$i]["trend"] = $currentTrendLength.$trenfVal;
-                                $v1[$i]["confidence"] = 1;
+                                    $v1[$i]["trend"] = $currentTrendLength.'+';
+                                    $v1[$i]["confidence"] = 1;
+                                }
+
+                                if (($v1[$i-1]["force"]>$v1[$i]["force"]) &&    //если интенсивность уменьшается
+                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'-') > 0))) { //и был тренд на уменьшение, то продолжаем его
+                                    ++$currentTrendLength;
+                                    $v1[$i]["trend"] = $currentTrendLength.'-';
+                                    $v1[$i]["confidence"] = 1;
+                                }
+
+                                if (($v1[$i-1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не меняется
+                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'=') > 0))) { //и был тренд на сохранение, то продолжаем его
+                                    ++$currentTrendLength;
+                                    $v1[$i]["trend"] = $currentTrendLength.'=';
+                                    $v1[$i]["confidence"] = 1;
+                                }
+
+                                if (($v1[$i-1]["force"]<$v1[$i]["force"]) &&    //если интенсивность увеличивается
+                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'+') === false))) {
+                                    //и был тренд на уменьшение или сохранение, то начинаем новый тренд на увеличение
+                                    $currentTrendLength = 1;
+                                    $v1[$i]["trend"] = $currentTrendLength.'+';
+                                    $v1[$i]["confidence"] = 1;
+                                }
+
+                                if (($v1[$i-1]["force"]>$v1[$i]["force"]) &&    //если интенсивность уменьшается
+                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'-') === false))) {
+                                    //и был тренд на увеличение или сохранение, то начинаем новый тренд на уменьшение
+                                    $currentTrendLength = 1;
+                                    $v1[$i]["trend"] = $currentTrendLength.'-';
+                                    $v1[$i]["confidence"] = 1;
+                                }
+
+                                if (($v1[$i-1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не маеняется
+                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'=') === false))) {
+                                    //и был тренд на увеличение или уменьшение, то начинаем новый тренд на сохранение
+                                    $currentTrendLength = 1;
+                                    $v1[$i]["trend"] = $currentTrendLength.'=';
+                                    $v1[$i]["confidence"] = 1;
+                                }
+
+                                if ($v1[$i-1]["val"] !== $v1[$i]["val"]){ //если значения отличаются
+                                    //это либо числовое значение
+                                    if (is_numeric($v1[$i]["val"])){
+                                        if ($v1[$i-1]["val"]>$v1[$i]["val"]) $trenfVal = '-';
+                                        if ($v1[$i-1]["val"]<$v1[$i]["val"]) $trenfVal = '+';
+                                        //значение тренда сохраняется
+                                        if (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"], $trenfVal) > 0)) {
+                                            ++$currentTrendLength;
+                                        } else {$currentTrendLength = 1;}
+                                        $v1[$i]["trend"] = $currentTrendLength.$trenfVal;
+                                        $v1[$i]["confidence"] = 1;
+                                    } else {
+                                        //либо смена направления для качественного значения
+                                        $currentTrendLength = 1;
+                                        if ($v1[$i-1]["force"]>$v1[$i]["force"]) $trenfVal = '-';
+                                        if ($v1[$i-1]["force"]<$v1[$i]["force"]) $trenfVal = '+';
+                                        if ($v1[$i-1]["force"] === $v1[$i]["force"]) $trenfVal = '=';
+                                        $v1[$i]["trend"] = $currentTrendLength.$trenfVal;
+                                        $v1[$i]["confidence"] = 1;
+                                    }
+                                }
                             }
                         }
+                     $sourceFaceData1[$k][$k1] = $v1;
                     }
                 }
-             $sourceFaceData1[$k][$k1] = $v1;
-            }
-        }
         return $sourceFaceData1;
     }
     /**
@@ -1560,8 +1571,9 @@ class FacialFeatureDetector
         else
             $sourceFaceData3 =  $FaceData_; // use the AB format
         //
-        $arr = array('61','62', '63', '65', '66', '67', 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35,
-            19,24, 17, 21, 22, 26, 48,54, 51, 57, );
+ //       $arr = array('61','62', '63', '65', '66', '67', 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35,
+ //           19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
+        $arr = array('61');
         $res = array();
         for ($i = 0; $i < count($sourceFaceData3['normmask']); $i++) {
             foreach ($arr as $k1 => $v1) {
@@ -1614,12 +1626,70 @@ class FacialFeatureDetector
             fwrite($fd,$v);
             fclose($fd);
         }
-
-
-
  //       return $sourceFaceData2;
     }
 
+    //input data is array
+    public function saveXY2($sourceFaceData3,$fileName)
+    {
+        //
+        //       $arr = array('61','62', '63', '65', '66', '67', 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35,
+        //           19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
+        $arr = array('61');
+        $res = array();
+        for ($i = 0; $i < count($sourceFaceData3['normmask']); $i++) {
+            foreach ($arr as $k1 => $v1) {
+//              print_r($sourceFaceData3['normmask'][$i][$v1]);
+//                echo  '<br>';
+                if (isset($sourceFaceData3['normmask'][$i][$v1])){
+                    $res[$v1] =  $res[$v1].$i.';'.$sourceFaceData3['normmask'][$i][$v1]['X'].';'.
+                        $sourceFaceData3['normmask'][$i][$v1]['Y']."\n";
+                }
+            }
+        }
+        for ($i = 0; $i < count($sourceFaceData3['left_nasolabial_fold']); $i++) {
+            $res['31x48x74'] =  $res['31x48x74'].$i.';'.
+                ($sourceFaceData3['left_nasolabial_fold'][$i][0]['X'] - $sourceFaceData3['left_nasolabial_fold'][$i][0]['X2']).';'.
+                ($sourceFaceData3['left_nasolabial_fold'][$i][0]['Y'] - $sourceFaceData3['left_nasolabial_fold'][$i][0]['Y2']).';'.
+                $sourceFaceData3['left_nasolabial_fold'][$i][0]['SUMX'].';'.
+                $sourceFaceData3['left_nasolabial_fold'][$i][0]['SUMY'].';'.
+                $sourceFaceData3['left_nasolabial_fold'][$i][0]['SUMX2'].';'.
+                $sourceFaceData3['left_nasolabial_fold'][$i][0]['SUMY2'].';'.
+                $sourceFaceData3['left_nasolabial_fold'][$i][0]['NNN']."\n";
+        }
+        for ($i = 0; $i < count($sourceFaceData3['right_nasolabial_fold']); $i++) {
+            $res['35x54x75'] =  $res['35x54x75'].$i.';'.
+                ($sourceFaceData3['right_nasolabial_fold'][$i][0]['X'] - $sourceFaceData3['right_nasolabial_fold'][$i][0]['X2']).';'.
+                ($sourceFaceData3['right_nasolabial_fold'][$i][0]['Y'] - $sourceFaceData3['right_nasolabial_fold'][$i][0]['Y2']).';'.
+                $sourceFaceData3['right_nasolabial_fold'][$i][0]['SUMX'].';'.
+                $sourceFaceData3['right_nasolabial_fold'][$i][0]['SUMY'].';'.
+                $sourceFaceData3['right_nasolabial_fold'][$i][0]['SUMX2'].';'.
+                $sourceFaceData3['right_nasolabial_fold'][$i][0]['SUMY2'].';'.
+                $sourceFaceData3['right_nasolabial_fold'][$i][0]['NNN']."\n";
+        }
+        for ($i = 0; $i < count($sourceFaceData3['left_nasolabial_fold_2']); $i++) {
+            $res['31x40x74'] =  $res['31x40x74'].$i.';'.
+                ($sourceFaceData3['left_nasolabial_fold_2'][$i][0]['X'] - $sourceFaceData3['left_nasolabial_fold_2'][$i][0]['X2']).';'.
+                ($sourceFaceData3['left_nasolabial_fold_2'][$i][0]['Y'] - $sourceFaceData3['left_nasolabial_fold_2'][$i][0]['Y2']).';'.
+                $sourceFaceData3['left_nasolabial_fold_2'][$i][0]['SUMX'].';'.
+                $sourceFaceData3['left_nasolabial_fold_2'][$i][0]['SUMY'].';'.$sourceFaceData3['left_nasolabial_fold_2'][$i][0]['NNN']."\n";
+        }
+        for ($i = 0; $i < count($sourceFaceData3['right_nasolabial_fold_2']); $i++) {
+            $res['35x47x75'] =  $res['35x47x75'].$i.';'.
+                ($sourceFaceData3['right_nasolabial_fold_2'][$i][0]['X'] - $sourceFaceData3['right_nasolabial_fold_2'][$i][0]['X2']).';'.
+                ($sourceFaceData3['right_nasolabial_fold_2'][$i][0]['Y'] - $sourceFaceData3['right_nasolabial_fold_2'][$i][0]['Y2']).';'.
+                $sourceFaceData3['right_nasolabial_fold_2'][$i][0]['SUMX'].';'.
+                $sourceFaceData3['right_nasolabial_fold_2'][$i][0]['SUMY'].';'.$sourceFaceData3['right_nasolabial_fold_2'][$i][0]['NNN']."\n";
+        }
+        //        print_r($res);
+        foreach ($res as $k => $v) {
+//            echo $v.'<br>';
+            $fd = fopen($fileName.'_'.$k.'.csv', "w");
+            fwrite($fd,$v);
+            fclose($fd);
+        }
+        //       return $sourceFaceData2;
+    }
     /**
      * Определение дополнительных проявлений, в частности
      * моргание
@@ -1629,130 +1699,180 @@ class FacialFeatureDetector
      */
     public function detectAdditionalFeatures($sourceFaceData1)
     {
-        foreach ($sourceFaceData1 as $k=>$v) {
-
-            // детекция носогубки (v.2): по уголкам рта
-            if ($k === 'mouth'){
-                foreach ($v as $k1 => $v1) {
-                if (($k1 === 'left_corner_mouth_movement_x') || ($k1 === 'right_corner_mouth_movement_x')){
-                    if(strpos($k1,'right')>-1) $prefix = 'right_';
-                    elseif ($prefix = 'left_');
-                    for ($i = 0; $i < count($v1); $i++) {
-                        if (isset($v1[$i]["val"]) && isset($v1[$i]["force"])
-                            //                                 &&  isset($v1[$i]["confidence"]) && isset($v1[$i]["trend"])
-                        ) {
-                            $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["force"] =
-                                $v1[$i]["force"];
-                            $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["val"] =
-                                $v1[$i]["val"];
-                            $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["trend"] =
-                                $v1[$i]["trend"];
-                            $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["confidence"] =
-                                $v1[$i]["confidence"];
-                        }
-                    }
-                }
-            }
-            }
-            if ($k === 'eye') {
-                $maxREW = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'right_eye_width', "val");
-                $maxLEW = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'left_eye_width', "val");
-                $maxREW2 = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'right_eye_width2', "val");
-                $maxLEW2 = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'left_eye_width2', "val");
-
-                foreach ($v as $k1 => $v1) {
-                    //eye_width
-                    if (($k1 === 'right_eye_width')||($k1 === 'left_eye_width')) {
+        if ($sourceFaceData1 != null)
+            foreach ($sourceFaceData1 as $k=>$v) {
+                // детекция носогубки (v.2): по уголкам рта
+                if (($k === 'mouth') && ($v != null)) {
+                    foreach ($v as $k1 => $v1) {
+                    if (($k1 === 'left_corner_mouth_movement_x') || ($k1 === 'right_corner_mouth_movement_x')){
                         if(strpos($k1,'right')>-1) $prefix = 'right_';
                         elseif ($prefix = 'left_');
-                        //---------------------------------------------------------------------------------------
-                        for ($i = 1; $i < count($v1); $i++) {
-                            //определение закрытие глаза, когда ширина равна 50%
-                            if (//isset($v1[$i]["force"])&&
-                                isset($v1[$i]["val"])) {
-                               if($prefix === 'right_') {
-                                   $val = round($maxREW*0.5);
-                                   //width, расстояние между 37 и 41 для левого глаза, для правого - 43 и 47
-                                   //альтернативно: width, расстояние между 38 и 40 для левого глаза, для правого - 44 и 46
-/*                                   echo $i.' : RE:43-47: '.round(($sourceFaceData1[$k][$prefix."eye_width"][$i]["val"]*100)/$maxREW).' % / '.
-                                       $sourceFaceData1[$k][$prefix."eye_width"][$i]["val"].'<br>';
-                                   echo $i.' : RE:44-46: '.round(($sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"]*100)/$maxREW2).' % / '.
-                                       $sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"].'<br>';*/
-                               }
-                               else {
-                                   $val = round($maxLEW*0.5); //50% - эвристическая оценка
- /*                                  echo $i.' : LE:37-41: '.round(($sourceFaceData1[$k][$prefix."eye_width"][$i]["val"]*100)/$maxLEW).' % / '.
-                                       $sourceFaceData1[$k][$prefix."eye_width"][$i]["val"].'<br>';
-                                   echo $i.' : LE:38-40: '.round(($sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"]*100)/$maxLEW2).' % / '.
-                                       $sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"].'<br>';*/
-                               }
-//echo $i.':'.$sourceFaceData1[$k][$prefix."eye_width"][$i]["val"].'/'.$val.'<br>';
-                               if($sourceFaceData1[$k][$prefix."eye_width"][$i]["val"] <= $val)
-                                    $sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] = 'yes';
-                                else
-                                    $sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] = 'no';
-                            }
-                        }
-                        //---------------------------------------------------------------------------------------
-                    }
-                    //--------------------------------------------------------------------------------------------
-                    //моргание
-                    if (($k1 === 'right_eye_width_changing')||($k1 === 'left_eye_width_changing')) {
-                        if(strpos($k1,'right')>-1) $prefix = 'right_';
-                        elseif ($prefix = 'left_');
-                        //---------------------------------------------------------------------------------------
-                        $eyeStartClosingFrame = '-1';
-                        $eyeClosedFrame = '-1';
-                        $eyeStartOpeningFrame = '-1';
-                        $eyeEndOpeningFrame = '-1';
-                        for ($i = 0; $i < count($v1); $i++) $sourceFaceData1[$k][$prefix."eye_blink"][$i]["val"] = 'no';
-
                         for ($i = 0; $i < count($v1); $i++) {
-                            //определение моргания: уменьшение, закрытие, предполагаем, что открытие длится столько же, сколько закрытие
-                            if (//isset($v1[$i]["trend"])&&
-                                isset($v1[$i]["val"])
-                                ) {
-                                //если глаз начинает закрываться, то фиксируем
-                                if (($v1[$i]["val"] === '-')&&($eyeStartClosingFrame === '-1')){
-                                    $eyeStartClosingFrame = $i;
-//                                    $eyeStartOpeningFrame = '-1';
-//                                    $eyeClosedFrame = '-1';
-                                }
-                                //если глаз не закрывается, и не закрывался, то обнуляем
-                                if (($v1[$i]["val"] !== '-')&&($eyeClosedFrame === '-1')) {
-                                    $eyeStartClosingFrame = '-1';
-                                    $eyeStartOpeningFrame = '-1';
-                                }
-
-                                //если глаз закрыт и ранее это не фиксировалось, то фиксируем
-                                if(($sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] === 'yes')
-                                    &&($eyeClosedFrame === '-1')) $eyeClosedFrame = $i;
-
-                                //если глаз открыт и ранее фиксировалось его закрытие, то возможно моргание
-                                if(($sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] === 'no')
-                                    &&($eyeClosedFrame !== '-1')){
-                                    //processing
-                                   if($eyeStartClosingFrame !== '-1') {
-                                        //изменить значения свойств в диапазоне от $eyeStartClosingFrame до $eyeEndOpeningFrame
-                                        $sourceFaceData1[$k][$prefix . "eye_blink"] =
-                                            $this->updateValues($sourceFaceData1[$k][$prefix . "eye_blink"], 'val',
-                                                'yes', $eyeStartClosingFrame, ($i + $eyeClosedFrame - $eyeStartClosingFrame));
-//                                       $eyeStartClosingFrame = $i + $eyeClosedFrame - $eyeStartClosingFrame;
-                                    }
-                                 $eyeClosedFrame = '-1';
-                                }
-//                                echo $i.' :: '.$eyeStartClosingFrame.'/'.$eyeClosedFrame.'/'.$v1[$i]["val"].'/'.
-//                                    $sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"].'<br>';
+                            if (isset($v1[$i]["val"]) && isset($v1[$i]["force"])
+                                //                                 &&  isset($v1[$i]["confidence"]) && isset($v1[$i]["trend"])
+                            ) {
+                                $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["force"] =
+                                    $v1[$i]["force"];
+                                $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["val"] =
+                                    $v1[$i]["val"];
+                                $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["trend"] =
+                                    $v1[$i]["trend"];
+                                $sourceFaceData1['nose'][$prefix."nasolabial_fold_movement"][$i]["confidence"] =
+                                    $v1[$i]["confidence"];
                             }
                         }
-                        //---------------------------------------------------------------------------------------
                     }
                 }
+                }
+                if ($k === 'eye') {
+                    $maxREW = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'right_eye_width', "val");
+                    $maxLEW = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'left_eye_width', "val");
+                    $maxREW2 = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'right_eye_width2', "val");
+                    $maxLEW2 = $this->getFaceDataMaxForKeyV3($sourceFaceData1['eye'],'left_eye_width2', "val");
+
+                    if ($v != null)
+                        foreach ($v as $k1 => $v1) {
+                            //eye_width
+                            if (($k1 === 'right_eye_width')||($k1 === 'left_eye_width')) {
+                                if(strpos($k1,'right')>-1) $prefix = 'right_';
+                                elseif ($prefix = 'left_');
+                                //---------------------------------------------------------------------------------------
+                                for ($i = 1; $i < count($v1); $i++) {
+                                    //определение закрытие глаза, когда ширина равна 50%
+                                    if (//isset($v1[$i]["force"])&&
+                                        isset($v1[$i]["val"])) {
+                                       if($prefix === 'right_') {
+                                           $val = round($maxREW*0.5);
+                                           //width, расстояние между 37 и 41 для левого глаза, для правого - 43 и 47
+                                           //альтернативно: width, расстояние между 38 и 40 для левого глаза, для правого - 44 и 46
+        /*                                   echo $i.' : RE:43-47: '.round(($sourceFaceData1[$k][$prefix."eye_width"][$i]["val"]*100)/$maxREW).' % / '.
+                                               $sourceFaceData1[$k][$prefix."eye_width"][$i]["val"].'<br>';
+                                           echo $i.' : RE:44-46: '.round(($sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"]*100)/$maxREW2).' % / '.
+                                               $sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"].'<br>';*/
+                                       }
+                                       else {
+                                           $val = round($maxLEW*0.5); //50% - эвристическая оценка
+         /*                                  echo $i.' : LE:37-41: '.round(($sourceFaceData1[$k][$prefix."eye_width"][$i]["val"]*100)/$maxLEW).' % / '.
+                                               $sourceFaceData1[$k][$prefix."eye_width"][$i]["val"].'<br>';
+                                           echo $i.' : LE:38-40: '.round(($sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"]*100)/$maxLEW2).' % / '.
+                                               $sourceFaceData1[$k][$prefix."eye_width2"][$i]["val"].'<br>';*/
+                                       }
+        //echo $i.':'.$sourceFaceData1[$k][$prefix."eye_width"][$i]["val"].'/'.$val.'<br>';
+                                       if($sourceFaceData1[$k][$prefix."eye_width"][$i]["val"] <= $val)
+                                            $sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] = 'yes';
+                                        else
+                                            $sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] = 'no';
+                                    }
+                                }
+                                //---------------------------------------------------------------------------------------
+                            }
+                            //--------------------------------------------------------------------------------------------
+                            //моргание
+                            if (($k1 === 'right_eye_width_changing')||($k1 === 'left_eye_width_changing')) {
+                                if(strpos($k1,'right')>-1) $prefix = 'right_';
+                                elseif ($prefix = 'left_');
+                                //---------------------------------------------------------------------------------------
+                                $eyeStartClosingFrame = '-1';
+                                $eyeClosedFrame = '-1';
+                                $eyeStartOpeningFrame = '-1';
+                                $eyeEndOpeningFrame = '-1';
+                                for ($i = 0; $i < count($v1); $i++) $sourceFaceData1[$k][$prefix."eye_blink"][$i]["val"] = 'no';
+
+                                for ($i = 0; $i < count($v1); $i++) {
+                                    //определение моргания: уменьшение, закрытие, предполагаем, что открытие длится столько же, сколько закрытие
+                                    if (//isset($v1[$i]["trend"])&&
+                                        isset($v1[$i]["val"])
+                                        ) {
+                                        //если глаз начинает закрываться, то фиксируем
+                                        if (($v1[$i]["val"] === '-')&&($eyeStartClosingFrame === '-1')){
+                                            $eyeStartClosingFrame = $i;
+        //                                    $eyeStartOpeningFrame = '-1';
+        //                                    $eyeClosedFrame = '-1';
+                                        }
+                                        //если глаз не закрывается, и не закрывался, то обнуляем
+                                        if (($v1[$i]["val"] !== '-') && ($eyeClosedFrame === '-1')) {
+                                            $eyeStartClosingFrame = '-1';
+                                            $eyeStartOpeningFrame = '-1';
+                                        }
+
+                                        //если глаз закрыт и ранее это не фиксировалось, то фиксируем
+                                        if (isset($sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"]) &&
+                                            ($sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] === 'yes') &&
+                                            ($eyeClosedFrame === '-1')) $eyeClosedFrame = $i;
+
+                                        //если глаз открыт и ранее фиксировалось его закрытие, то возможно моргание
+                                        if (isset($sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"]) &&
+                                            ($sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"] === 'no') &&
+                                            ($eyeClosedFrame !== '-1')) {
+                                            //processing
+                                           if($eyeStartClosingFrame !== '-1') {
+                                                //изменить значения свойств в диапазоне от $eyeStartClosingFrame до $eyeEndOpeningFrame
+                                                $sourceFaceData1[$k][$prefix . "eye_blink"] =
+                                                    $this->updateValues($sourceFaceData1[$k][$prefix . "eye_blink"], 'val',
+                                                        'yes', $eyeStartClosingFrame, ($i + $eyeClosedFrame - $eyeStartClosingFrame));
+        //                                       $eyeStartClosingFrame = $i + $eyeClosedFrame - $eyeStartClosingFrame;
+                                            }
+                                         $eyeClosedFrame = '-1';
+                                        }
+        //                                echo $i.' :: '.$eyeStartClosingFrame.'/'.$eyeClosedFrame.'/'.$v1[$i]["val"].'/'.
+        //                                    $sourceFaceData1[$k][$prefix."eye_closed"][$i]["val"].'<br>';
+                                    }
+                                }
+                                //---------------------------------------------------------------------------------------
+                            }
+                        }
+                }
             }
-        }
         return $sourceFaceData1;
     }
-
+    /**
+     * Сглаживание данных методом скользящего среднего.
+     *
+     * @param $sourceFaceData1 - входной массив с лицевыми точками (landmarks)
+     * @return array - выходной массив с обработанным массивом
+     */
+    public function processingWithMovingAverage($sourceFaceData1, $cnt)
+    {
+     $resFaceData = array();
+     if ($sourceFaceData1 != null)
+         foreach ($sourceFaceData1 as $k => $v) //normpoints and triangles
+             if ($v != null) {
+        //echo $k.' '.$v.'<br>';
+                 for ($i = 0; $i < count($sourceFaceData1[$k]); $i++) { //frames
+                     foreach ($sourceFaceData1[$k] as $k1 => $v1) { //points
+        //              print_r($sourceFaceData3['normmask'][$i][$v1]);
+        //                echo  '<br>';
+                         if (isset($sourceFaceData1[$k][$i][$k1])) { //points $sourceFaceData3['normmask'][0][43]['X']
+        //                  print_r($sourceFaceData1[$k][$i][$k1]); echo  '<br>';
+                           $avSumX = 0;
+                           $avSumY = 0;
+                           $i2 = $i - $cnt + 1;
+                           if ($i2 < 0) $i2 = 0;
+        //                   if($k1 == 61) $s = $i.'('.$i2.'/'.($i - $i2 + 1).')';
+                           if ($i > 0) {
+                               for ($i1 = $i; $i1 >= $i2; $i1--) {
+                                   if (isset($sourceFaceData1[$k][$i1][$k1])) {
+                                       $avSumX = $avSumX + $sourceFaceData1[$k][$i1][$k1]['X'];
+                                       $avSumY = $avSumY + $sourceFaceData1[$k][$i1][$k1]['Y'];
+        //                              if($k1 == 61) $s .= '['.$sourceFaceData1[$k][$i1][$k1]['X'].'/'.$sourceFaceData1[$k][$i1][$k1]['Y'].']';
+                                   }
+                               }
+                               $avSumX = round($avSumX / ($i - $i2 + 1));
+                               $avSumY = round($avSumY / ($i - $i2 + 1));
+                            } else {
+                                $avSumX = $sourceFaceData1[$k][$i][$k1]['X'];;
+                                $avSumY = $sourceFaceData1[$k][$i][$k1]['Y'];
+                            }
+        //                     if($k1 == 61) $s .= ' :'.$avSumX.'/'.$avSumY.'<br>';
+        //                   if($k1 == 61) echo $s;
+                             $resFaceData[$k][$i][$k1]['X'] = $avSumX;
+                             $resFaceData[$k][$i][$k1]['Y'] = $avSumY;
+                         }
+                     }
+                 }
+             }
+     return $resFaceData;
+    }
     /**
      * Обнаружение признаков на основе анализа входных данных.
      *
@@ -1768,6 +1888,10 @@ class FacialFeatureDetector
             $FaceData = $this->convertIJson($FaceData_);
         else
             $FaceData =  $FaceData_; // use the AB format
+
+        $FaceData = $this->processingWithMovingAverage($FaceData,3);
+ //       $this->saveXY2($FaceData1,'ma');
+
         $detectedFeatures['eye'] = $this->detectEyeFeatures($FaceData);
         $detectedFeatures['mouth'] = $this->detectMouthFeatures($FaceData);
         $detectedFeatures['brow'] = $this->detectBrowFeatures($FaceData);
@@ -2229,7 +2353,9 @@ class FacialFeatureDetector
         // Массив для наборов фактов, сформированных для каждого кадра
         $facts = array();
         // Кол-во кадров
-        $numberFrames = count($detectedFeatures['eye']['left_eye_upper_eyelid_movement']);
+        $numberFrames = 0;
+        if (is_array($detectedFeatures['eye']['left_eye_upper_eyelid_movement']))
+            $numberFrames = count($detectedFeatures['eye']['left_eye_upper_eyelid_movement']);
         // Цикл от 1 до общего-кол-ва кадров
         for ($i = 1; $i < $numberFrames; $i++) {
             // Массив фактов для текущего кадра

@@ -26,7 +26,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a('Интерпретировать признаки',
             'http://84.201.129.65:9999/Drools/Main.php?IDOfDataForReasoningProcess=' . $model->id .
-                '&IDOfFile=' . $model->id . '&IDOfSession=' . Yii::$app->request->csrfToken,
+                '&IDOfFile=' . $model->id,
             ['class' => 'btn btn-success']) ?>
         <?= Html::a('Посмотреть в редакторе маски',
             'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->landmark->id .

@@ -21,8 +21,9 @@ use yii\helpers\ArrayHelper;
  */
 class VideoInterview extends \yii\db\ActiveRecord
 {
+    const VIDEO_INTERVIEW_ANALYSIS_SCENARIO = 'login'; // Сценарий анализа видео-интервью
+
     public $videoInterviewFile; // Файл видео-интервью
-    public $landmarkFile;       // Файл с лицевыми точками
 
     /**
      * @return string table name
@@ -38,11 +39,11 @@ class VideoInterview extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
+            [['videoInterviewFile'], 'required', 'on' => self::VIDEO_INTERVIEW_ANALYSIS_SCENARIO],
             [['respondent_id'], 'required'],
             [['respondent_id'], 'integer'],
             [['video_file_name', 'description'], 'string'],
             [['videoInterviewFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
-            [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => Respondent::className(),
                 'targetAttribute' => ['respondent_id' => 'id']],
         ];
@@ -61,7 +62,6 @@ class VideoInterview extends \yii\db\ActiveRecord
             'description' => 'Описание',
             'respondent_id' => 'ID респондента',
             'videoInterviewFile' => 'Файл видеоинтервью',
-            'landmarkFile' => 'Файл с лицевыми точками',
         ];
     }
 

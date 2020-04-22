@@ -28,7 +28,7 @@ $config = [
         'request' => [
             // site root directory
             'baseUrl' => '',
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
+            // secret key (this is required by cookie validation)
             'cookieValidationKey' => 'EGP0tfP_8uLB0S45rX87hIbTCv_OCYa4',
         ],
         'urlManager' => [
@@ -46,10 +46,10 @@ $config = [
                 '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',
                 '/customer/<_cus:(view|update|delete)>/<id:\d+>' => 'main/customer/<_cus>',
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
-                '/video-interview/<_vi:(view|delete|video-download)>/<id:\d+>' => 'main/video-interview/<_vi>',
+                '/video-interview/<_vi:(view|update|delete|video-download)>/<id:\d+>' => 'main/video-interview/<_vi>',
                 '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
                 '/landmark/<_lm:(view|delete|landmark-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
-                '/analysis-result/<_ar:(list|save-interpretation-result)>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
                 '/analysis-result/<_ar:(view|detection|detection-file-download|facts-download|interpretation-file-download|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
                 '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
                 '/detection-result/<_dr:(view|file-download|facts-download|delete)>/<id:\d+>' => 'main/detection-result/<_dr>',
@@ -95,6 +95,11 @@ $config = [
                 ],
             ],
         ],
+        // Подключение расширения для запуска консольных команд в фоновом режиме в среде Yii
+        'consoleRunner' => [
+            'class' => 'vova07\console\ConsoleRunner',
+            'file' => '@app/yii'
+        ]
     ],
     'params' => $params,
 ];

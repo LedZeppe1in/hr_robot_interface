@@ -72,7 +72,7 @@ class VideoInterviewController extends Controller
         $model = new VideoInterview();
         // POST-запрос
         if ($model->load(Yii::$app->request->post())) {
-            // Загрузка файлов с формы
+            // Загрузка файла с формы
             $videoInterviewFile = UploadedFile::getInstance($model, 'videoInterviewFile');
             $model->videoInterviewFile = $videoInterviewFile;
             // Валидация поля файла
@@ -98,6 +98,56 @@ class VideoInterviewController extends Controller
         }
 
         return $this->render('upload', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Updates an existing VideoInterview model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionUpdate($id)
+    {
+        $model = $this->findModel($id);
+        // POST-запрос
+        if ($model->load(Yii::$app->request->post())) {
+            // Загрузка файла с формы
+            $videoInterviewFile = UploadedFile::getInstance($model, 'videoInterviewFile');
+            $model->videoInterviewFile = $videoInterviewFile;
+            // Валидация поля файла
+            if ($model->validate(['videoInterviewFile'])) {
+                // Старое название файла видеоинтервью
+                $old_video_file_name = $model->video_file_name;
+                // Если пользователь загрузил файл видеоинтервью
+                if ($videoInterviewFile && $videoInterviewFile->tempName)
+                    // Формирование нового названия файла видеоинтервью
+                    $model->video_file_name = $model->videoInterviewFile->baseName . '.' .
+                        $model->videoInterviewFile->extension;
+                // Сохранение данных о видеоинтервью в БД
+                if ($model->save()) {
+                    // Если пользователь загрузил файл видеоинтервью
+                    if ($videoInterviewFile && $videoInterviewFile->tempName) {
+                        // Создание объекта коннектора с Yandex.Cloud Object Storage
+                        $dbConnector = new OSConnector();
+                        // Удаление старого файла видеоинтервью на Object Storage
+                        $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                            $model->id, $old_video_file_name);
+                        // Сохранение нового файла видеоинтервью на Object Storage
+                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                            $model->id, $model->video_file_name, $videoInterviewFile->tempName);
+                    }
+                    // Вывод сообщения об удачной загрузке
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили видеоинтервью!');
+
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+            }
+        }
+
+        return $this->render('update', [
             'model' => $model,
         ]);
     }
