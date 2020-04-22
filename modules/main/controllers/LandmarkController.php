@@ -107,6 +107,57 @@ class LandmarkController extends Controller
     }
 
     /**
+     * Updates an existing Landmark model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionUpdate($id)
+    {
+        $model = $this->findModel($id);
+        // POST-запрос
+        if ($model->load(Yii::$app->request->post())) {
+            // Загрузка файла с формы
+            $landmarkFile = UploadedFile::getInstance($model, 'landmarkFile');
+            $model->landmarkFile = $landmarkFile;
+            // Валидация поля файла
+            if ($model->validate(['landmarkFile'])) {
+                // Старое название файла с лицевыми точками
+                $old_landmark_file_name = $model->landmark_file_name;
+                // Если пользователь загрузил файл с лицевыми точками
+                if ($landmarkFile && $landmarkFile->tempName)
+                    $model->landmark_file_name = $model->landmarkFile->baseName . '.' . $model->landmarkFile->extension;
+                // Сохранение данных о цифровой маски в БД
+                if ($model->save()) {
+                    // Если пользователь загрузил файл с лицевыми точками
+                    if ($landmarkFile && $landmarkFile->tempName) {
+                        // Создание объекта коннектора с Yandex.Cloud Object Storage
+                        $dbConnector = new OSConnector();
+                        // Удаление старого файла с цифровой маской на Object Storage
+                        $dbConnector->removeFileFromObjectStorage(
+                            OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                            $model->id,
+                            $old_landmark_file_name
+                        );
+                        // Сохранение нового файла с цифровой маской на Object Storage
+                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                            $model->id, $model->landmark_file_name, $landmarkFile->tempName);
+                    }
+                    // Вывод сообщения об удачной загрузке
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили цифровую маску!');
+
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+            }
+        }
+
+        return $this->render('update', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
      * Deletes an existing Landmark model.
      * If deletion is successful, the browser will be redirected to the 'list' page.
      * @param $id

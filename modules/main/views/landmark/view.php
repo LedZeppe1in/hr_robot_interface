@@ -11,7 +11,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Цифровые маски', 'url
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
-<div class="advanced-landmark-view">
+<div class="landmark-view">
 
     <h1>Цифровая маска: <?= Html::encode($this->title) ?></h1>
 
@@ -22,6 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
                 '&detection_result_id=none',
             ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [

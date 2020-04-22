@@ -9,7 +9,7 @@ use app\modules\main\models\VideoInterview;
 /* @var $form yii\widgets\ActiveForm */
 ?>
 
-<div class="advanced-landmark-form">
+<div class="landmark-form">
 
     <?php $form = ActiveForm::begin(); ?>
 
