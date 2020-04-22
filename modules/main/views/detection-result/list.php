@@ -37,7 +37,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {mask-editor} {detection-file-download} {facts-file-download} {delete}',
+                'template' => '{view} {update} {mask-editor} {detection-file-download} {facts-file-download} {delete}',
                 'buttons' => [
                     'mask-editor' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',

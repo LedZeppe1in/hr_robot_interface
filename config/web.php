@@ -50,11 +50,14 @@ $config = [
                 '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
                 '/landmark/<_lm:(view|update|delete|landmark-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
-                '/analysis-result/<_ar:(view|detection|detection-file-download|facts-download|interpretation-file-download|delete)>/<id:\d+>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(view|update|delete|detection|detection-file-download|facts-download|interpretation-file-download)>/<id:\d+>' =>
+                    'main/analysis-result/<_ar>',
                 '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
-                '/detection-result/<_dr:(view|file-download|facts-download|delete)>/<id:\d+>' => 'main/detection-result/<_dr>',
+                '/detection-result/<_dr:(view|update|delete|file-download|facts-download)>/<id:\d+>' =>
+                    'main/detection-result/<_dr>',
                 '/interpretation-result/<_ir:(list)>' => 'main/interpretation-result/<_ir>',
-                '/interpretation-result/<_ir:(view|file-download|delete)>/<id:\d+>' => 'main/interpretation-result/<_ir>',
+                '/interpretation-result/<_ir:(view|update|delete|file-download)>/<id:\d+>' =>
+                    'main/interpretation-result/<_ir>',
             ],
         ],
         'cache' => [
