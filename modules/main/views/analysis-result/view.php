@@ -11,6 +11,7 @@ use yii\widgets\DetailView;
 /* @var $browFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $eyebrowFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $noseFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $chinFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $knowledgeBase app\modules\main\controllers\AnalysisResultController */
 /* @var $facts app\modules\main\controllers\AnalysisResultController */
 /* @var $interpretationResult app\modules\main\controllers\AnalysisResultController */
@@ -138,6 +139,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Признаки для носа',
                 'content' => $this->render('_nose_features', [
                     'noseFeatures' => $noseFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для подбородка',
+                'content' => $this->render('_chin_features', [
+                    'chinFeatures' => $chinFeatures
                 ]),
             ],
             [

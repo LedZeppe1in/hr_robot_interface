@@ -11,6 +11,7 @@ use yii\widgets\DetailView;
 /* @var $browFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $eyebrowFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $noseFeatures app\modules\main\controllers\DetectionResultController */
+/* @var $chinFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $facts app\modules\main\controllers\DetectionResultController */
 
 $this->title = $model->landmark->landmark_file_name;
@@ -114,6 +115,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Признаки для носа',
                 'content' => $this->render('_nose_features', [
                     'noseFeatures' => $noseFeatures
+                ]),
+            ],
+            [
+                'label' => 'Признаки для подбородка',
+                'content' => $this->render('_chin_features', [
+                    'chinFeatures' => $chinFeatures
                 ]),
             ],
             [

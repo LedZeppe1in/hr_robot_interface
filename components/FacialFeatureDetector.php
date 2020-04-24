@@ -561,6 +561,18 @@ class FacialFeatureDetector
         } else return false;
     }
 
+    public function addPoints($pointsName,$sourceFaceData,$resFaceData,$info)
+    {
+        if (isset($sourceFaceData['normmask']))
+        for ($i = 0; $i < count($sourceFaceData['normmask']); $i++) {
+            if (isset($sourceFaceData['normmask'][$i]))
+            foreach ($sourceFaceData['normmask'][$i] as $k1 => $v1) { //points
+                $resFaceData['frame_#'.$i][$pointsName.'('.$info.')'][$k1][0] =  $sourceFaceData['normmask'][$i][$k1]['X'];
+                $resFaceData['frame_#'.$i][$pointsName.'('.$info.')'][$k1][1] =  $sourceFaceData['normmask'][$i][$k1]['Y'];
+            }
+        }
+        return $resFaceData;
+    }
     /**
      * конвертация входного файла И в массив АБ
      * @param $iFaceData - массив из json в формате И
@@ -1350,7 +1362,7 @@ class FacialFeatureDetector
 //                $force1 = $targetFaceData["mouth"]["mouth_upper_lip_outer_center_movement"][$i]["force"];
                 }
 
-                if (isset($targetFaceData["mouth"]["left_corner_mouth_movement"][$i]))
+                if (isset($targetFaceData["mouth"]["mouth_upper_lip_outer_center_movement"][$i]))
                     if (isset($targetFaceData["mouth"]["mouth_upper_lip_outer_center_movement"][$i]) &&
                         $targetFaceData["mouth"]["mouth_upper_lip_outer_center_movement"][$i]["force"] == 0)
                         $targetFaceData["mouth"]["mouth_upper_lip_outer_center_movement"][$i]["val"] = 'none';
@@ -1447,105 +1459,109 @@ class FacialFeatureDetector
     {
         if ($sourceFaceData1 != null)
             foreach ($sourceFaceData1 as $k => $v)
+                if(strpos($k,'frame') === false){
                 if ($v != null) {
                     foreach ($v as $k1 => $v1) {
-                        if(isset($v1[0])) {
+                        if (isset($v1[0])) {
                             $v1[0]["trend"] = '1=';
                             $v1[0]["confidence"] = 1;
                         }
                         $currentTrendLength = 1;
 
                         for ($i = 1; $i < count($v1); $i++) {
-        //                    if(isset($v1[$i-1][$arrayKeys[1]]))
-        //                        $val0 = $v1[$i-1][$arrayKeys[1]];
-        //                    if(isset($v1[$i]) && isset($arrayKeys[1]))
-        //                        $val1 = $v1[$i][$arrayKeys[1]];
+                            //                    if(isset($v1[$i-1][$arrayKeys[1]]))
+                            //                        $val0 = $v1[$i-1][$arrayKeys[1]];
+                            //                    if(isset($v1[$i]) && isset($arrayKeys[1]))
+                            //                        $val1 = $v1[$i][$arrayKeys[1]];
 
-        //echo $v1[$i]["force"].'/'.$v1[$i-1]["force"].'/'.$v1[$i]["val"].'/'.$v1[$i-1]["val"].'/'.$v1[$i]["trend"].'<br>';
-                            if ((isset($v1[$i]["force"])) && (isset($v1[$i-1]["force"])) &&
-                                (isset($v1[$i]["val"])) && (isset($v1[$i-1]["val"]))) {
+                            //echo $v1[$i]["force"].'/'.$v1[$i-1]["force"].'/'.$v1[$i]["val"].'/'.$v1[$i-1]["val"].'/'.$v1[$i]["trend"].'<br>';
+                            if ((isset($v1[$i]["force"])) && (isset($v1[$i - 1]["force"])) &&
+                                (isset($v1[$i]["val"])) && (isset($v1[$i - 1]["val"]))) {
 
-                                if (!isset($v1[$i-1]["trend"])){
-                                    $v1[$i-1]["trend"] = '1=';
-                                    $v1[$i-1]["confidence"] = 1;
+                                if (!isset($v1[$i - 1]["trend"])) {
+                                    $v1[$i - 1]["trend"] = '1=';
+                                    $v1[$i - 1]["confidence"] = 1;
                                 }
-                                if (($v1[$i-1]["force"]<$v1[$i]["force"]) &&    //если интенсивность увеличивается
-                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'+') > 0))) { //и был тренд на увеличение, то продолжаем его
+                                if (($v1[$i - 1]["force"] < $v1[$i]["force"]) &&    //если интенсивность увеличивается
+                                    ($v1[$i - 1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], '+') > 0))) { //и был тренд на увеличение, то продолжаем его
                                     ++$currentTrendLength;
-                                    $v1[$i]["trend"] = $currentTrendLength.'+';
+                                    $v1[$i]["trend"] = $currentTrendLength . '+';
                                     $v1[$i]["confidence"] = 1;
                                 }
 
-                                if (($v1[$i-1]["force"]>$v1[$i]["force"]) &&    //если интенсивность уменьшается
-                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'-') > 0))) { //и был тренд на уменьшение, то продолжаем его
+                                if (($v1[$i - 1]["force"] > $v1[$i]["force"]) &&    //если интенсивность уменьшается
+                                    ($v1[$i - 1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], '-') > 0))) { //и был тренд на уменьшение, то продолжаем его
                                     ++$currentTrendLength;
-                                    $v1[$i]["trend"] = $currentTrendLength.'-';
+                                    $v1[$i]["trend"] = $currentTrendLength . '-';
                                     $v1[$i]["confidence"] = 1;
                                 }
 
-                                if (($v1[$i-1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не меняется
-                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'=') > 0))) { //и был тренд на сохранение, то продолжаем его
+                                if (($v1[$i - 1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не меняется
+                                    ($v1[$i - 1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], '=') > 0))) { //и был тренд на сохранение, то продолжаем его
                                     ++$currentTrendLength;
-                                    $v1[$i]["trend"] = $currentTrendLength.'=';
+                                    $v1[$i]["trend"] = $currentTrendLength . '=';
                                     $v1[$i]["confidence"] = 1;
                                 }
 
-                                if (($v1[$i-1]["force"]<$v1[$i]["force"]) &&    //если интенсивность увеличивается
-                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'+') === false))) {
+                                if (($v1[$i - 1]["force"] < $v1[$i]["force"]) &&    //если интенсивность увеличивается
+                                    ($v1[$i - 1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], '+') === false))) {
                                     //и был тренд на уменьшение или сохранение, то начинаем новый тренд на увеличение
                                     $currentTrendLength = 1;
-                                    $v1[$i]["trend"] = $currentTrendLength.'+';
+                                    $v1[$i]["trend"] = $currentTrendLength . '+';
                                     $v1[$i]["confidence"] = 1;
                                 }
 
-                                if (($v1[$i-1]["force"]>$v1[$i]["force"]) &&    //если интенсивность уменьшается
-                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'-') === false))) {
+                                if (($v1[$i - 1]["force"] > $v1[$i]["force"]) &&    //если интенсивность уменьшается
+                                    ($v1[$i - 1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], '-') === false))) {
                                     //и был тренд на увеличение или сохранение, то начинаем новый тренд на уменьшение
                                     $currentTrendLength = 1;
-                                    $v1[$i]["trend"] = $currentTrendLength.'-';
+                                    $v1[$i]["trend"] = $currentTrendLength . '-';
                                     $v1[$i]["confidence"] = 1;
                                 }
 
-                                if (($v1[$i-1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не маеняется
-                                    ($v1[$i-1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
-                                    (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"],'=') === false))) {
+                                if (($v1[$i - 1]["force"] === $v1[$i]["force"]) &&    //если интенсивность не маеняется
+                                    ($v1[$i - 1]["val"] === $v1[$i]["val"]) &&    //и значение не меняет направление
+                                    (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], '=') === false))) {
                                     //и был тренд на увеличение или уменьшение, то начинаем новый тренд на сохранение
                                     $currentTrendLength = 1;
-                                    $v1[$i]["trend"] = $currentTrendLength.'=';
+                                    $v1[$i]["trend"] = $currentTrendLength . '=';
                                     $v1[$i]["confidence"] = 1;
                                 }
 
-                                if ($v1[$i-1]["val"] !== $v1[$i]["val"]){ //если значения отличаются
+                                if ($v1[$i - 1]["val"] !== $v1[$i]["val"]) { //если значения отличаются
                                     //это либо числовое значение
-                                    if (is_numeric($v1[$i]["val"])){
-                                        if ($v1[$i-1]["val"]>$v1[$i]["val"]) $trenfVal = '-';
-                                        if ($v1[$i-1]["val"]<$v1[$i]["val"]) $trenfVal = '+';
+                                    if (is_numeric($v1[$i]["val"])) {
+                                        if ($v1[$i - 1]["val"] > $v1[$i]["val"]) $trenfVal = '-';
+                                        if ($v1[$i - 1]["val"] < $v1[$i]["val"]) $trenfVal = '+';
                                         //значение тренда сохраняется
-                                        if (isset($v1[$i-1]["trend"]) && (strpos($v1[$i-1]["trend"], $trenfVal) > 0)) {
+                                        if (isset($v1[$i - 1]["trend"]) && (strpos($v1[$i - 1]["trend"], $trenfVal) > 0)) {
                                             ++$currentTrendLength;
-                                        } else {$currentTrendLength = 1;}
-                                        $v1[$i]["trend"] = $currentTrendLength.$trenfVal;
+                                        } else {
+                                            $currentTrendLength = 1;
+                                        }
+                                        $v1[$i]["trend"] = $currentTrendLength . $trenfVal;
                                         $v1[$i]["confidence"] = 1;
                                     } else {
                                         //либо смена направления для качественного значения
                                         $currentTrendLength = 1;
-                                        if ($v1[$i-1]["force"]>$v1[$i]["force"]) $trenfVal = '-';
-                                        if ($v1[$i-1]["force"]<$v1[$i]["force"]) $trenfVal = '+';
-                                        if ($v1[$i-1]["force"] === $v1[$i]["force"]) $trenfVal = '=';
-                                        $v1[$i]["trend"] = $currentTrendLength.$trenfVal;
+                                        if ($v1[$i - 1]["force"] > $v1[$i]["force"]) $trenfVal = '-';
+                                        if ($v1[$i - 1]["force"] < $v1[$i]["force"]) $trenfVal = '+';
+                                        if ($v1[$i - 1]["force"] === $v1[$i]["force"]) $trenfVal = '=';
+                                        $v1[$i]["trend"] = $currentTrendLength . $trenfVal;
                                         $v1[$i]["confidence"] = 1;
                                     }
                                 }
                             }
                         }
-                     $sourceFaceData1[$k][$k1] = $v1;
+                        $sourceFaceData1[$k][$k1] = $v1;
                     }
                 }
+    }
         return $sourceFaceData1;
     }
     /**
@@ -1836,6 +1852,43 @@ class FacialFeatureDetector
             }
         return $sourceFaceData1;
     }
+
+    public function processingOutliers($sourceFaceData1,$level,$neighborsCnt){
+        //bt default $neighborsCnt = 1
+        $resFaceData = array();
+        $level = $level/100;
+        if ($sourceFaceData1 != null)
+            foreach ($sourceFaceData1 as $k => $v) //normpoints and triangles
+                if ($v != null) {
+                    for ($i = $neighborsCnt; $i < count($sourceFaceData1[$k]) - $neighborsCnt; $i++) {
+                        if (isset($sourceFaceData1[$k][$i])) //frames
+                            foreach ($sourceFaceData1[$k][$i] as $k1 => $v1) { //points
+                                if (isset($sourceFaceData1[$k][$i-1][$k1]) && isset($sourceFaceData1[$k][$i+1][$k1])) { //points $sourceFaceData3['normmask'][0][43]['X']
+                                    $neighborLeftValueX = ($sourceFaceData1[$k][$i-1][$k1]['X']+
+                                        $sourceFaceData1[$k][$i-1][$k1]['X']*$level);
+                                    $neighborRightValueX = ($sourceFaceData1[$k][$i+1][$k1]['X']+
+                                        $sourceFaceData1[$k][$i+1][$k1]['X']*$level);
+ //                                   echo $neighborLeftValueX.'/'.$neighborRightValueX.'//'.$sourceFaceData1[$k][$i][$k1]['X'].'<br>';
+                                    if (($neighborLeftValueX < $sourceFaceData1[$k][$i][$k1]['X'])&&
+                                        ($neighborRightValueX < $sourceFaceData1[$k][$i][$k1]['X'])
+                                    ) $sourceFaceData1[$k][$i][$k1]['X'] = (($sourceFaceData1[$k][$i-1][$k1]['X'] +
+                                        $sourceFaceData1[$k][$i+1][$k1]['X'])/2);
+
+                                    $neighborLeftValueY = ($sourceFaceData1[$k][$i-1][$k1]['Y']+
+                                        $sourceFaceData1[$k][$i-1][$k1]['Y']*$level);
+                                    $neighborRightValueY = ($sourceFaceData1[$k][$i+1][$k1]['Y']+
+                                        $sourceFaceData1[$k][$i+1][$k1]['Y']*$level);
+//                                    echo $neighborLeftValueY.'/'.$neighborRightValueY.'//'.$sourceFaceData1[$k][$i][$k1]['Y'].'<br>';
+                                    if (($neighborLeftValueY < $sourceFaceData1[$k][$i][$k1]['Y'])&&
+                                        ($neighborRightValueY < $sourceFaceData1[$k][$i][$k1]['Y'])
+                                    ) $sourceFaceData1[$k][$i][$k1]['Y'] = ($sourceFaceData1[$k][$i-1][$k1]['Y'] +
+                                            $sourceFaceData1[$k][$i+1][$k1]['Y'])/2;
+                                }
+                            }
+                    }
+                }
+        return $sourceFaceData1;
+    }
     /**
      * Сглаживание данных методом скользящего среднего.
      *
@@ -1843,7 +1896,6 @@ class FacialFeatureDetector
      * @return array - выходной массив с обработанным массивом
      */
     public function processingWithMovingAverage($sourceFaceData1, $cnt)
-        //!!! вопрос центрирования результатов
     {
      $resFaceData = array();
      if ($sourceFaceData1 != null)
@@ -1918,10 +1970,14 @@ class FacialFeatureDetector
   /*      $fd = fopen('_AB.json', "w");
             fwrite($fd,json_encode($FaceData));
             fclose($fd);*/
-
+        $detectedFeatures = array();
+        $FaceData = $this->processingOutliers($FaceData,10,1);
+        $detectedFeatures = $this->addPoints('NORM_POINTS_OUTLIER',$FaceData,$detectedFeatures,'outlier_level_percent(10)outlier_neighbors(1)');
         $FaceData = $this->processingWithMovingAverage($FaceData,3);
+        $detectedFeatures = $this->addPoints('NORM_POINTS_OUTLIER_MA',$FaceData,$detectedFeatures,'smoth_order(3)');
         $FaceData = $this->processingWithMovingAverage($FaceData,5);
-//        $this->saveXY2($FaceData,'m1.json');
+        $detectedFeatures = $this->addPoints('NORM_POINTS_OUTLIER_MA',$FaceData,$detectedFeatures,'smoth_order(3_5)');
+//                $this->saveXY2($FaceData,'m1.json');
  /*         $fd = fopen('_MA.json', "w");
               fwrite($fd,json_encode($FaceData));
               fclose($fd);*/
@@ -1933,6 +1989,7 @@ class FacialFeatureDetector
         $detectedFeatures['chin'] = $this->detectChinFeatures($FaceData);
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
         $detectedFeaturesWithTrends = $this->detectAdditionalFeatures($detectedFeaturesWithTrends);
+  //      $detectedFeaturesWithTrends = $this->addMAPoints($FaceData,$detectedFeaturesWithTrends,'3_5');
 
         return $detectedFeaturesWithTrends;
     }
@@ -2312,7 +2369,7 @@ class FacialFeatureDetector
         if ($sourceFeatureName == 'mouth_length')
             $targetValues['targetFacePart'] = 'Рот';
         if (($sourceFeatureName == 'mouth_length') && ($sourceValue == 'none')) {
-            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['featureChangeType'] = 'Изменение размера по горизонтали';
             $targetValues['changeDirection'] = 'Отсутствие направления';
         }
         if (($sourceFeatureName == 'mouth_length') && ($sourceValue == '-')) {
@@ -2326,7 +2383,7 @@ class FacialFeatureDetector
         if ($sourceFeatureName == 'mouth_width')
             $targetValues['targetFacePart'] = 'Рот';
         if (($sourceFeatureName == 'mouth_width') && ($sourceValue == 'none')) {
-            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['featureChangeType'] = 'Изменение размера по вертикали';
             $targetValues['changeDirection'] = 'Отсутствие направления';
         }
         if (($sourceFeatureName == 'mouth_width') && ($sourceValue == '-')) {
@@ -2399,7 +2456,7 @@ class FacialFeatureDetector
         if ((($sourceFeatureName == 'mouth_upper_lip_outer_center_movement') ||
                 ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')) &&
             ($sourceValue == 'none')) {
-            $targetValues['featureChangeType'] = 'Отсутствие типа';
+            $targetValues['featureChangeType'] = 'Изменение положения по вертикали';
             $targetValues['changeDirection'] = 'Отсутствие направления';
         }
         if ((($sourceFeatureName == 'mouth_upper_lip_outer_center_movement') ||
