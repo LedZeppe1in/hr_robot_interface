@@ -98,11 +98,6 @@ $config = [
                 ],
             ],
         ],
-        // Подключение расширения для запуска консольных команд в фоновом режиме в среде Yii
-        'consoleRunner' => [
-            'class' => 'vova07\console\ConsoleRunner',
-            'file' => '@app/yii'
-        ]
     ],
     'params' => $params,
 ];

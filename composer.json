@@ -20,8 +20,7 @@
         "yiisoft/yii2-swiftmailer": "~2.0.0 || ~2.1.0",
         "aws/aws-sdk-php": "^3.133",
         "ext-pgsql": "^7.2",
-        "ext-soap": "^7.2",
-        "vova07/yii2-console-runner-extension": "*"
+        "ext-soap": "^7.2"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

@@ -54,12 +54,17 @@ class OSConnector
         $sdk = new Sdk($this->sharedConfig);
         $s3Client = $sdk->createS3();
         try {
+            $content = $file;
+            // Если пришел массив
+            if (is_array($file))
+                $content = json_encode($file, JSON_UNESCAPED_UNICODE);
+            // Если пришел не json-текст (файл)
+            if (is_string($file) && !is_array(json_decode($file, true)))
+                $content = fopen($file, 'r');
             $s3Client->putObject([
                 'Bucket' => $bucketName,
                 'Key' => ($path != null) ? $path . '/' . $fileName : $fileName,
-                'Body' => (is_array($file)) ? json_encode($file, JSON_UNESCAPED_UNICODE) :
-                    (is_string($file) && (is_object(json_decode($file)) || is_array(json_decode($file)))) ? $file :
-                        fopen($file, 'r'),
+                'Body' => $content,
             ]);
         } catch (S3Exception $e) {
             echo "При сохранении файла произошла ошибка.\n";
