@@ -8,7 +8,10 @@
     <div class="col-md-12">
         <?php
             echo '<pre>';
-            print_r($noseFeatures);
+            if ($noseFeatures != null)
+                print_r($noseFeatures);
+            else
+                echo '<span class="not-set">(не задано)</span>';
             echo '</pre>';
         ?>
     </div>

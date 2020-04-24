@@ -8,7 +8,10 @@
     <div class="col-md-12">
         <?php
             echo '<pre>';
-            print_r($mouthFeatures);
+            if ($mouthFeatures != null)
+                print_r($mouthFeatures);
+            else
+                echo '<span class="not-set">(не задано)</span>';
             echo '</pre>';
         ?>
     </div>

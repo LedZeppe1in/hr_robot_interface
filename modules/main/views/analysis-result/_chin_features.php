@@ -8,7 +8,10 @@
     <div class="col-md-12">
         <?php
             echo '<pre>';
-            print_r($chinFeatures);
+            if ($chinFeatures != null)
+                print_r($chinFeatures);
+            else
+                echo '<span class="not-set">(не задано)</span>';
             echo '</pre>';
         ?>
     </div>
