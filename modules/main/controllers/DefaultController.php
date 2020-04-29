@@ -134,6 +134,7 @@ class DefaultController extends Controller
                         $landmarkModel->landmark_file_name = $videoInterviewModel->videoInterviewFile->baseName .
                             '.json';
                         $landmarkModel->video_interview_id = $videoInterviewModel->id;
+                        $landmarkModel->description = $videoInterviewModel->description; // Описание с видеоинтервью
                         $landmarkModel->save();
                         // Сохранение файла с лицевыми точками на Object Storage
                         $dbConnector->saveFileToObjectStorage(

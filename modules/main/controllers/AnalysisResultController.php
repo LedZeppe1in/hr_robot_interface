@@ -134,14 +134,15 @@ class AnalysisResultController extends Controller
      */
     public function actionDetection($id)
     {
+        // Поиск цифровой маски по id в БД
+        $landmark = Landmark::findOne($id);
         // Создание модели для результатов определения признаков
         $model = new AnalysisResult();
         $model->detection_result_file_name = 'feature-detection-result.json';
         $model->facts_file_name = 'facts.json';
         $model->landmark_id = $id;
+        $model->description = $landmark->description; // Описание с цифровой маски
         $model->save();
-        // Поиск цифровой маски по id в БД
-        $landmark = Landmark::findOne($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $dbConnector = new OSConnector();
         // Получение содержимого json-файла с лицевыми точками из Object Storage
