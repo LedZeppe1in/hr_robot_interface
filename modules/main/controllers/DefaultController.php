@@ -149,6 +149,7 @@ class DefaultController extends Controller
                         $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
                         $analysisResultModel->facts_file_name = 'facts.json';
                         $analysisResultModel->interpretation_result_file_name = 'feature-interpretation-result.json';
+                        $analysisResultModel->description = $videoInterviewModel->description; // Описание с видеоинтервью
                         $analysisResultModel->save();
                         // Получение содержимого json-файла с лицевыми точками из Object Storage
                         $faceData = $dbConnector->getFileContentFromObjectStorage(
