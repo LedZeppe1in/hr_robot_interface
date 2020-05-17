@@ -81,10 +81,10 @@ class DefaultController extends Controller
                 // Сохранение данных о видеоинтервью в БД
                 if ($videoInterviewModel->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
-                    $dbConnector = new OSConnector();
+                    $osConnector = new OSConnector();
                     // Сохранение файла видеоинтервью на Object Storage
                     if ($videoInterviewModel->video_file_name != '')
-                        $dbConnector->saveFileToObjectStorage(
+                        $osConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                             $videoInterviewModel->id,
                             $videoInterviewModel->video_file_name,
@@ -137,7 +137,7 @@ class DefaultController extends Controller
                         $landmarkModel->description = $videoInterviewModel->description; // Описание с видеоинтервью
                         $landmarkModel->save();
                         // Сохранение файла с лицевыми точками на Object Storage
-                        $dbConnector->saveFileToObjectStorage(
+                        $osConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                             $landmarkModel->id,
                             $landmarkModel->landmark_file_name,
@@ -152,7 +152,7 @@ class DefaultController extends Controller
                         $analysisResultModel->description = $videoInterviewModel->description; // Описание с видеоинтервью
                         $analysisResultModel->save();
                         // Получение содержимого json-файла с лицевыми точками из Object Storage
-                        $faceData = $dbConnector->getFileContentFromObjectStorage(
+                        $faceData = $osConnector->getFileContentFromObjectStorage(
                             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                             $landmarkModel->id,
                             $landmarkModel->landmark_file_name
@@ -162,7 +162,7 @@ class DefaultController extends Controller
                         // Выявление признаков для лица
                         $facialFeatures = $facialFeatureDetector->detectFeatures($faceData);
                         // Сохранение json-файла с результатами определения признаков на Object Storage
-                        $dbConnector->saveFileToObjectStorage(
+                        $osConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                             $analysisResultModel->id,
                             $analysisResultModel->detection_result_file_name,
@@ -171,7 +171,7 @@ class DefaultController extends Controller
                         // Преобразование массива с результатами определения признаков в массив фактов
                         $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
                         // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
-                        $dbConnector->saveFileToObjectStorage(
+                        $osConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                             $analysisResultModel->id,
                             $analysisResultModel->facts_file_name,
@@ -221,9 +221,9 @@ class DefaultController extends Controller
     public function actionKnowledgeBase()
     {
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Получение кода базы знаний из Object Storage
-        $knowledgeBase = $dbConnector->getFileContentFromObjectStorage(
+        $knowledgeBase = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
             null,
             'knowledge-base.txt'
@@ -249,9 +249,9 @@ class DefaultController extends Controller
                 'knowledgeBaseFile');
             if ($knowledgeBaseFileForm->validate()) {
                 // Создание объекта коннектора с Yandex.Cloud Object Storage
-                $dbConnector = new OSConnector();
+                $osConnector = new OSConnector();
                 // Сохранение загруженного файла базы знаний на Object Storage
-                $dbConnector->saveFileToObjectStorage(
+                $osConnector->saveFileToObjectStorage(
                     OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
                     null,
                     'knowledge-base.txt',
@@ -278,9 +278,9 @@ class DefaultController extends Controller
     public function actionKnowledgeBaseDownload()
     {
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла базы знаний с Object Storage
-        $result = $dbConnector->downloadFileFromObjectStorage(
+        $result = $osConnector->downloadFileFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
             null,
             'knowledge-base.txt'

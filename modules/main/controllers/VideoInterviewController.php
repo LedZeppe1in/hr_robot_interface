@@ -84,10 +84,10 @@ class VideoInterviewController extends Controller
                 // Сохранение данных о видеоинтервью в БД
                 if ($model->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
-                    $dbConnector = new OSConnector();
+                    $osConnector = new OSConnector();
                     // Сохранение файла видеоинтервью на Object Storage
                     if ($model->video_file_name != '')
-                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                             $model->id, $model->video_file_name, $videoInterviewFile->tempName);
                     // Вывод сообщения об удачной загрузке
                     Yii::$app->getSession()->setFlash('success', 'Вы успешно загрузили видеоинтервью!');
@@ -131,12 +131,12 @@ class VideoInterviewController extends Controller
                     // Если пользователь загрузил файл видеоинтервью
                     if ($videoInterviewFile && $videoInterviewFile->tempName) {
                         // Создание объекта коннектора с Yandex.Cloud Object Storage
-                        $dbConnector = new OSConnector();
+                        $osConnector = new OSConnector();
                         // Удаление старого файла видеоинтервью на Object Storage
-                        $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                        $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                             $model->id, $old_video_file_name);
                         // Сохранение нового файла видеоинтервью на Object Storage
-                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                             $model->id, $model->video_file_name, $videoInterviewFile->tempName);
                     }
                     // Вывод сообщения об удачной загрузке
@@ -167,10 +167,10 @@ class VideoInterviewController extends Controller
         // Удалние записи из БД
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Удаление файла видеоинтервью на Object Storage
         if ($model->video_file_name != '')
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили видеоинтервью!');
@@ -189,10 +189,10 @@ class VideoInterviewController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла видеоинтервью с Object Storage
         if ($model->video_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+            $result = $osConnector->downloadFileFromObjectStorage(OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
                 $model->id, $model->video_file_name);
             return $result;
         }

@@ -59,9 +59,9 @@ class InterpretationResultController extends Controller
         // Поиск записи в БД о результатах интерпретации признаков
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Получение json-файла c результатами интерпретации признаков
-        $jsonFile = $dbConnector->getFileContentFromObjectStorage(
+        $jsonFile = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
             $model->id,
             $model->interpretation_result_file_name
@@ -112,10 +112,10 @@ class InterpretationResultController extends Controller
         // Удалние записи из БД
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Удаление файлов с результатами интерпретации признаков и фактами с Object Storage
         if ($model->interpretation_result_file_name != '') {
-            $dbConnector->removeFileFromObjectStorage(
+            $osConnector->removeFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
                 $model->id,
                 $model->interpretation_result_file_name
@@ -139,10 +139,10 @@ class InterpretationResultController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с результатами интерпретации признаков на Object Storage
         if ($model->interpretation_result_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
                 $model->id,
                 $model->interpretation_result_file_name

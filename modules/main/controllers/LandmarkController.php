@@ -83,10 +83,10 @@ class LandmarkController extends Controller
                 // Сохранение данных о цифровой маски в БД
                 if ($model->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
-                    $dbConnector = new OSConnector();
+                    $osConnector = new OSConnector();
                     // Сохранение файла с цифровой маской на Object Storage
                     if ($model->landmark_file_name != '')
-                        $dbConnector->saveFileToObjectStorage(
+                        $osConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                             $model->id,
                             $model->landmark_file_name,
@@ -133,15 +133,15 @@ class LandmarkController extends Controller
                     // Если пользователь загрузил файл с лицевыми точками
                     if ($landmarkFile && $landmarkFile->tempName) {
                         // Создание объекта коннектора с Yandex.Cloud Object Storage
-                        $dbConnector = new OSConnector();
+                        $osConnector = new OSConnector();
                         // Удаление старого файла с цифровой маской на Object Storage
-                        $dbConnector->removeFileFromObjectStorage(
+                        $osConnector->removeFileFromObjectStorage(
                             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                             $model->id,
                             $old_landmark_file_name
                         );
                         // Сохранение нового файла с цифровой маской на Object Storage
-                        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                             $model->id, $model->landmark_file_name, $landmarkFile->tempName);
                     }
                     // Вывод сообщения об удачной загрузке
@@ -172,10 +172,10 @@ class LandmarkController extends Controller
         // Удалние записи из БД
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Удаление файла с лицевыми точками на Object Storage
         if ($model->landmark_file_name != '')
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id, $model->landmark_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success',
@@ -195,10 +195,10 @@ class LandmarkController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с лицевыми точками с Object Storage
         if ($model->landmark_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id,
                 $model->landmark_file_name

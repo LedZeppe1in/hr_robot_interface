@@ -59,16 +59,16 @@ class DetectionResultController extends Controller
         // Поиск записи в БД о результатах определения признаков
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Получение json-файла c результатами определения признаков
-        $jsonFile = $dbConnector->getFileContentFromObjectStorage(
+        $jsonFile = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->detection_result_file_name
         );
         $faceData = json_decode($jsonFile, true);
         // Получение json-файла c результатами определения признаков в виде массива наборов фактов
-        $facts = $dbConnector->getFileContentFromObjectStorage(
+        $facts = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->facts_file_name
@@ -124,12 +124,12 @@ class DetectionResultController extends Controller
         // Удалние записи из БД
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Удаление файлов с результатами определения признаков и фактами с Object Storage
         if ($model->detection_result_file_name != '') {
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->facts_file_name);
         }
         // Вывод сообщения об успешном удалении
@@ -149,10 +149,10 @@ class DetectionResultController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков на Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->detection_result_file_name
@@ -174,10 +174,10 @@ class DetectionResultController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков в виде набора фактов с Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->facts_file_name

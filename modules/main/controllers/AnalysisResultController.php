@@ -61,28 +61,28 @@ class AnalysisResultController extends Controller
         // Поиск записи в БД о результатах определения признаков
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Получение json-файла c результатами определения признаков
-        $jsonFile = $dbConnector->getFileContentFromObjectStorage(
+        $jsonFile = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->detection_result_file_name
         );
         $faceData = json_decode($jsonFile, true);
         // Получение json-файла c результатами определения признаков в виде массива наборов фактов
-        $facts = $dbConnector->getFileContentFromObjectStorage(
+        $facts = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id,
             $model->facts_file_name
         );
         // Получение кода базы знаний
-        $knowledgeBase = $dbConnector->getFileContentFromObjectStorage(
+        $knowledgeBase = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
             null,
             'knowledge-base.txt'
         );
         // Получение json-файла с результатами интерпретации признаков
-        $interpretationResult = $dbConnector->getFileContentFromObjectStorage(
+        $interpretationResult = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
             $model->id,
             $model->interpretation_result_file_name
@@ -144,9 +144,9 @@ class AnalysisResultController extends Controller
         $model->description = $landmark->description; // Описание с цифровой маски
         $model->save();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Получение содержимого json-файла с лицевыми точками из Object Storage
-        $faceData = $dbConnector->getFileContentFromObjectStorage(
+        $faceData = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
             $landmark->id,
             $landmark->landmark_file_name
@@ -156,12 +156,12 @@ class AnalysisResultController extends Controller
         // Выявление признаков для лица
         $facialFeatures = $facialFeatureDetector->detectFeatures($faceData);
         // Сохранение json-файла с результатами определения признаков на Object Storage
-        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->detection_result_file_name, $facialFeatures);
         // Преобразование массива с результатами функции определения признаков в массив фактов
         $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
         // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
-        $dbConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->facts_file_name, $facts);
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
@@ -184,17 +184,17 @@ class AnalysisResultController extends Controller
         // Удалние записи из БД
         $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Удаление файлов с результатами определения признаков и фактами на Object Storage
         if ($model->detection_result_file_name != '') {
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->detection_result_file_name);
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id, $model->facts_file_name);
         }
         // Удаление файла с результатами интерпретации признаков на Object Storage
         if ($model->interpretation_result_file_name != '')
-            $dbConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
                 $model->id, $model->interpretation_result_file_name);
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили результаты анализа интервью!');
@@ -213,10 +213,10 @@ class AnalysisResultController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков с Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->detection_result_file_name
@@ -238,10 +238,10 @@ class AnalysisResultController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков в виде фактов с Object Storage
         if ($model->detection_result_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,
                 $model->facts_file_name
@@ -263,10 +263,10 @@ class AnalysisResultController extends Controller
     {
         $model = $this->findModel($id);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $dbConnector = new OSConnector();
+        $osConnector = new OSConnector();
         // Скачивание файла с результатами интерпретации признаков с Object Storage
         if ($model->interpretation_result_file_name != '') {
-            $result = $dbConnector->downloadFileFromObjectStorage(
+            $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
                 $model->id,
                 $model->interpretation_result_file_name
