@@ -19,8 +19,6 @@ class m200520_094334_question extends Migration
             'updated_at' => $this->integer()->notNull(),
             'text' => $this->text()->notNull(),
         ], $tableOptions);
-
-        $this->createIndex('idx_question_text', '{{%question}}', 'text');
     }
 
     public function down()

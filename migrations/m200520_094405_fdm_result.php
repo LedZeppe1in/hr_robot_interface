@@ -20,8 +20,6 @@ class m200520_094405_fdm_result extends Migration
             'result' => $this->text()->notNull(),
             'description' => $this->text(),
         ], $tableOptions);
-
-        $this->createIndex('idx_fdm_result_result', '{{%fdm_result}}', 'result');
     }
 
     public function down()

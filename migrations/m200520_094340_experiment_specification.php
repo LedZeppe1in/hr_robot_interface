@@ -20,9 +20,6 @@ class m200520_094340_experiment_specification extends Migration
             'specification' => $this->text()->notNull(),
             'description' => $this->text(),
         ], $tableOptions);
-
-        $this->createIndex('idx_experiment_specification_specification',
-            '{{%experiment_specification}}', 'specification');
     }
 
     public function down()
