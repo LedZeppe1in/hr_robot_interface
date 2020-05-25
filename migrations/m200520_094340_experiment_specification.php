@@ -17,6 +17,7 @@ class m200520_094340_experiment_specification extends Migration
             'id' => $this->primaryKey(),
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
+            'name' => $this->string()->notNull(),
             'specification' => $this->text()->notNull(),
             'description' => $this->text(),
         ], $tableOptions);
