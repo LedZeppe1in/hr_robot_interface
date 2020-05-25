@@ -21,9 +21,21 @@ use yii\helpers\ArrayHelper;
  */
 class VideoInterview extends \yii\db\ActiveRecord
 {
+    use \mootensai\relation\RelationTrait;
+
     const VIDEO_INTERVIEW_ANALYSIS_SCENARIO = 'login'; // Сценарий анализа видео-интервью
 
+    const TYPE_ZERO                    = 0;   // Поворот на 0 градусов
+    const TYPE_NINETY                  = 90;  // Поворот на 90 градусов
+    const TYPE_ONE_HUNDRED_EIGHTY      = 180; // Поворот на 180 градусов
+    const TYPE_TWO_HUNDRED_AND_SEVENTY = 270; // Поворот на 270 градусов
+
+    const TYPE_MIRRORING_TRUE  = true;  // Отзеркаливание есть
+    const TYPE_MIRRORING_FALSE = false; // Отзеркаливания нет
+
     public $videoInterviewFile; // Файл видео-интервью
+    public $rotationParameter;  // Параметр поворота
+    public $mirroringParameter; // Параметр наличия отзеркаливания
 
     /**
      * @return string table name
@@ -43,6 +55,7 @@ class VideoInterview extends \yii\db\ActiveRecord
             [['respondent_id'], 'required'],
             [['respondent_id'], 'integer'],
             [['video_file_name', 'description'], 'string'],
+            [['rotationParameter', 'mirroringParameter'], 'safe'],
             [['videoInterviewFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
             [['respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => Respondent::className(),
                 'targetAttribute' => ['respondent_id' => 'id']],
@@ -62,6 +75,8 @@ class VideoInterview extends \yii\db\ActiveRecord
             'description' => 'Описание',
             'respondent_id' => 'ID респондента',
             'videoInterviewFile' => 'Файл видеоинтервью',
+            'rotationParameter' => 'Поворот (градусы)',
+            'mirroringParameter' => 'Наличие отзеркаливания',
         ];
     }
 
@@ -89,7 +104,7 @@ class VideoInterview extends \yii\db\ActiveRecord
      */
     public function getLandmarks()
     {
-        return $this->hasMany(AnalysisResult::className(), ['video_interview_id' => 'id']);
+        return $this->hasMany(Landmark::className(), ['video_interview_id' => 'id']);
     }
 
     /**
@@ -110,5 +125,33 @@ class VideoInterview extends \yii\db\ActiveRecord
     public static function getVideoInterviews()
     {
         return ArrayHelper::map(self::find()->all(), 'id', 'id');
+    }
+
+    /**
+     * Получение списка типов градусов для поворота.
+     *
+     * @return array - массив всех возможных типов градусов поворотов
+     */
+    public static function getRotationTypes()
+    {
+        return [
+            self::TYPE_ZERO => self::TYPE_ZERO,
+            self::TYPE_NINETY => self::TYPE_NINETY,
+            self::TYPE_ONE_HUNDRED_EIGHTY => self::TYPE_ONE_HUNDRED_EIGHTY,
+            self::TYPE_TWO_HUNDRED_AND_SEVENTY => self::TYPE_TWO_HUNDRED_AND_SEVENTY,
+        ];
+    }
+
+    /**
+     * Получение списка типов наличия отзеркаливания.
+     *
+     * @return array - массив всех возможных типов наличия отзеркаливания
+     */
+    public static function getMirroringTypes()
+    {
+        return [
+            self::TYPE_MIRRORING_FALSE => 'Нет',
+            self::TYPE_MIRRORING_TRUE => 'Да',
+        ];
     }
 }
