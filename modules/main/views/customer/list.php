@@ -10,7 +10,7 @@ $this->title = 'Заказчики';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div class="customer-index">
+<div class="customer-list">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

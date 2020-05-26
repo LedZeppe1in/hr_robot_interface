@@ -10,6 +10,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Респонденты', 'url' => 
 $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Обновить';
 ?>
+
 <div class="respondent-update">
 
     <h1><?= Html::encode($this->title) ?></h1>

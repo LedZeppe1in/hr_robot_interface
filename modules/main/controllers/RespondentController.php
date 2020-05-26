@@ -69,6 +69,9 @@ class RespondentController extends Controller
         $model = new Respondent();
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            // Вывод сообщения об удачном создании респондента
+            Yii::$app->getSession()->setFlash('success', 'Вы успешно добавили нового респондента!');
+
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -89,6 +92,9 @@ class RespondentController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            // Вывод сообщения об удачном обновлении
+            Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили данные респондента!');
+
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -99,14 +105,18 @@ class RespondentController extends Controller
 
     /**
      * Deletes an existing Respondent model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException if the model cannot be found
+     * If deletion is successful, the browser will be redirected to the 'list' page.
+     * @param $id
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
      */
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
+        // Вывод сообщения об успешном удалении
+        Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили респондента!');
 
         return $this->redirect(['list']);
     }
