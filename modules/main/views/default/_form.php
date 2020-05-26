@@ -11,13 +11,14 @@ use wbraganca\dynamicform\DynamicFormWidget;
 /* @var $form yii\widgets\ActiveForm */
 /* @var $model app\modules\main\models\VideoInterview */
 /* @var $landmarkModels app\modules\main\models\Landmark */
+/* @var $questions app\modules\main\controllers\DefaultController */
 ?>
 
 <script type="text/javascript">
     // Выполнение скрипта при загрузке страницы
     $(document).ready(function() {
         // Изменение номера у заголовков элементов шаблонов правил
-        var dynamicLandmarkFormWrapper = jQuery(".add_dynamic_landmark_form_wrapper");
+        let dynamicLandmarkFormWrapper = jQuery(".add_dynamic_landmark_form_wrapper");
         dynamicLandmarkFormWrapper.on("afterInsert", function(e, item) {
             jQuery(".add_dynamic_landmark_form_wrapper .panel-title-question").each(function(index) {
                 jQuery(this).html("Вопрос №" + (index + 1) + ":");
@@ -32,6 +33,27 @@ use wbraganca\dynamicform\DynamicFormWidget;
             jQuery(".add_dynamic_landmark_form_wrapper .panel-title-question").each(function(index) {
                 jQuery(this).html("Вопрос №" + (index + 1) + ":")
             });
+        });
+        // Обработка выбора значения в откидном списке с вопросами
+        $(document).on("change", ".question-list", function() {
+            // Формирование названия id для поля ввода текста вопроса
+            let questionInputName = this.id.slice(0, this.id.indexOf("-question")) + "-questiontext";
+            // Получение элемента поля ввода текста вопроса по id
+            let element = document.getElementById(questionInputName);
+            // Получение элемента метки для поля ввода текста вопроса
+            let label = document.querySelector("label[for='" + questionInputName + "']");
+            // Получение значения в откидном поле
+            let questionId = this.value;
+            // Если значение не задано, то раскрываем поле ввода текста вопроса
+            if (questionId === '') {
+                element.style.display = "";
+                element.value = "";
+                label.style.display = "";
+            } else {
+                element.style.display = "none";
+                element.value = "hidden";
+                label.style.display = "none";
+            }
         });
     });
 </script>
@@ -86,6 +108,11 @@ use wbraganca\dynamicform\DynamicFormWidget;
                         <div class="clearfix"></div>
                     </div>
                     <div class="panel-body">
+                        <div class="landmark-questions">
+                            <?= $form->field($landmarkModel, "[{$index}]question_id")->dropDownList($questions,
+                                ['prompt' => 'Ввести новый вопрос...', 'class' => 'form-control question-list'])
+                                    ->label('Вопрос') ?>
+                        </div>
                         <div class="landmark-question">
                             <?= $form->field($landmarkModel, "[{$index}]questionText")
                                 ->textInput(['maxlength' => true]) ?>

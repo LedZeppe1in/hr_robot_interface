@@ -50,6 +50,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Название файла видеоинтервью',
                 'value' => $model->videoInterview->video_file_name,
             ],
+            'question_id',
+            [
+                'attribute' => 'question_id',
+                'label' => 'Текст вопроса',
+                'value' => $model->question_id ? $model->question->text : null,
+            ],
             'rotation',
             [
                 'attribute' => 'mirroring',

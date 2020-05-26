@@ -5,6 +5,7 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\VideoInterview */
 /* @var $landmarkModels app\modules\main\models\Landmark */
+/* @var $questions app\modules\main\controllers\DefaultController */
 
 $this->title = 'Загрузка видеоинтервью';
 $this->params['breadcrumbs'][] = $this->title;
@@ -17,6 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= $this->render('_form', [
         'model' => $model,
         'landmarkModels' => $landmarkModels,
+        'questions' => $questions
     ]) ?>
 
 </div>

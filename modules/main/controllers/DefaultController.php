@@ -2,8 +2,10 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\Question;
 use Yii;
 use Exception;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
@@ -70,6 +72,8 @@ class DefaultController extends Controller
         $videoInterviewModel = new VideoInterview(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO]);
         // Создание массива с моделями цифровой маски
         $landmarkModels = [new Landmark];
+        //
+        $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // POST-запрос
         if ($videoInterviewModel->loadAll(Yii::$app->request->post())) {
             // Загрузка файла видеоинтервью с формы
@@ -154,8 +158,22 @@ class DefaultController extends Controller
                     exec('./venv/bin/python ./main.py ./test.json');
                     // Отлов ошибки выполнения программы обработки видео
                     try {
+                        $index = 0;
                         // Обход по всем найденным цифровым маскам
                         foreach ($landmarks as $landmark) {
+                            // Получение значения текста вопроса
+                            $questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
+                            // Если поле текста вопроса содержит значение "hidden"
+                            if ($questionText != 'hidden') {
+                                // Создание и сохранение новой модели вопроса
+                                $questionModel = new Question();
+                                $questionModel->text = $questionText;
+                                $questionModel->save();
+                                // Формирование id вопроса
+                                $landmark->question_id = $questionModel->id;
+                            }
+                            // Увеличение индекса на 1
+                            $index++;
                             // Формирование названия json-файла с результатами обработки видео
                             $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
                             // Формирование описания цифровой маски
@@ -166,7 +184,8 @@ class DefaultController extends Controller
                             // Формирование значения наличия отзеркаливания
                             $landmark->mirroring = boolval($mirroring);
                             // Обновление атрибутов цифровой маски в БД
-                            $landmark->updateAttributes(['landmark_file_name', 'description', 'rotation', 'mirroring']);
+                            $landmark->updateAttributes(['landmark_file_name', 'description', 'rotation',
+                                'mirroring', 'question_id']);
                             // Получение json-файла с результатами обработки видео в виде цифровой маски
                             $landmarkFile = file_get_contents($jsonResultPath .
                                 $landmark->landmark_file_name, true);
@@ -247,6 +266,7 @@ class DefaultController extends Controller
         return $this->render('analysis', [
             'model' => $videoInterviewModel,
             'landmarkModels' => $landmarkModels,
+            'questions' => $questions
         ]);
     }
 
