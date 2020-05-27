@@ -17,6 +17,7 @@ class m200520_094423_test_result extends Migration
             'id' => $this->primaryKey(),
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
+            'experiment_run' => $this->text(),
             'description' => $this->text(),
             'experiment_specification_id' => $this->integer()->notNull(),
             'fdm_result_id' => $this->integer()->notNull(),
