@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\Question;
 use Yii;
 use Exception;
 use yii\helpers\ArrayHelper;
@@ -12,6 +11,7 @@ use yii\web\UploadedFile;
 use app\components\OSConnector;
 use app\components\FacialFeatureDetector;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\Question;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\KnowledgeBaseFileForm;
@@ -71,10 +71,10 @@ class DefaultController extends Controller
         // Создание модели видеоинтервью со сценарием анализа
         $videoInterviewModel = new VideoInterview(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO]);
         // Создание массива с моделями цифровой маски
-        $landmarkModels = [new Landmark];
-        //
+        $landmarkModels = [new Landmark(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO])];
+        // Формирование списка вопросов
         $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
-        // POST-запрос
+        // Загрузка данных, пришедших методом POST
         if ($videoInterviewModel->loadAll(Yii::$app->request->post())) {
             // Загрузка файла видеоинтервью с формы
             $videoInterviewFile = UploadedFile::getInstance($videoInterviewModel, 'videoInterviewFile');
@@ -98,7 +98,7 @@ class DefaultController extends Controller
                             $videoInterviewFile->tempName
                         );
                     // Путь к программе обработки видео
-                    $mainPath = '/home/-Common/-ivan/';
+                    $mainPath = '/home/-Common/';
                     // Путь к файлу видеоинтервью
                     $videoPath = $mainPath . 'video/';
                     // Путь к json-файлу результатов обработки видеоинтервью
@@ -223,7 +223,32 @@ class DefaultController extends Controller
                             );
                             // Преобразование массива с результатами определения признаков в массив фактов
                             $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
-                            // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
+                            // Если в json-файле цифровой маски есть данные по Action Units
+                            if (strpos($faceData,'AUs') !== false) {
+                                // Формирование json-строки
+                                $faceData = str_replace('{"AUs"',',{"AUs"', $faceData);
+                                $faceData = trim($faceData, ',');
+                                $faceData = '[' . $faceData . ']';
+                                // Конвертация данных по Action Units в набор фактов
+                                $initialData = json_decode($faceData);
+                                if ((count($facts) > 0) && (count($initialData) > 0)) {
+                                    $frameData = $initialData[0];
+                                    $targetPropertyName = 'AUs';
+                                    if (property_exists($frameData, $targetPropertyName) === True)
+                                        foreach ($initialData as $frameIndex => $frameData) {
+                                            $actionUnits = $frameData -> {$targetPropertyName};
+                                            $actionUnitsAsFacts = $facialFeatureDetector->convertActionUnitsToFacts(
+                                                $actionUnits,
+                                                $frameIndex
+                                            );
+                                            if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
+                                                $facts[$frameIndex] = array_merge($facts[$frameIndex],
+                                                    $actionUnitsAsFacts);
+                                        }
+                                }
+                            }
+                            // Сохранение json-файла с результатами конвертации определенных признаков в
+                            // набор фактов на Object Storage
                             $osConnector->saveFileToObjectStorage(
                                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                                 $analysisResultModel->id,

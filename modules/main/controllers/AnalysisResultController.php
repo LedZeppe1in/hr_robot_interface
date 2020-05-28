@@ -160,6 +160,27 @@ class AnalysisResultController extends Controller
             $model->id, $model->detection_result_file_name, $facialFeatures);
         // Преобразование массива с результатами функции определения признаков в массив фактов
         $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
+        // Если в json-файле цифровой маски есть данные по Action Units
+        if (strpos($faceData,'AUs') !== false) {
+            // Формирование json-строки
+            $faceData = str_replace('{"AUs"',',{"AUs"', $faceData);
+            $faceData = trim($faceData, ',');
+            $faceData = '[' . $faceData . ']';
+            // Конвертация данных по Action Units в набор фактов
+            $initialData = json_decode($faceData);
+            if ((count($facts) > 0) && (count($initialData) > 0)) {
+                $frameData = $initialData[0];
+                $targetPropertyName = 'AUs';
+                if (property_exists($frameData, $targetPropertyName) === True)
+                    foreach ($initialData as $frameIndex => $frameData) {
+                        $actionUnits = $frameData -> {$targetPropertyName};
+                        $actionUnitsAsFacts = $facialFeatureDetector->convertActionUnitsToFacts($actionUnits,
+                            $frameIndex);
+                        if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
+                            $facts[$frameIndex] = array_merge($facts[$frameIndex], $actionUnitsAsFacts);
+                    }
+            }
+        }
         // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
         $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->facts_file_name, $facts);
