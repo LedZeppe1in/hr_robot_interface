@@ -5,12 +5,14 @@ namespace app\modules\main\controllers;
 use Yii;
 use Exception;
 use yii\data\ActiveDataProvider;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
 use app\components\OSConnector;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\Question;
 
 /**
  * LandmarkController implements the CRUD actions for AdvancedLandmark model.
@@ -69,7 +71,10 @@ class LandmarkController extends Controller
      */
     public function actionUpload()
     {
-        $model = new Landmark();
+        // Создание модели цифровой маски со сценарием загрузки новой цифровой маски
+        $model = new Landmark(['scenario' => Landmark::UPLOAD_LANDMARK_SCENARIO]);
+        // Формирование списка вопросов
+        $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // POST-запрос
         if ($model->load(Yii::$app->request->post())) {
             // Загрузка файла с формы
@@ -80,6 +85,17 @@ class LandmarkController extends Controller
                 // Если пользователь загрузил файл с лицевыми точками
                 if ($landmarkFile && $landmarkFile->tempName)
                     $model->landmark_file_name = $model->landmarkFile->baseName . '.' . $model->landmarkFile->extension;
+                // Получение значения текста вопроса
+                $questionText = Yii::$app->request->post('Landmark')['questionText'];
+                // Если поле текста вопроса содержит значение "hidden"
+                if ($questionText != 'hidden') {
+                    // Создание и сохранение новой модели вопроса
+                    $questionModel = new Question();
+                    $questionModel->text = $questionText;
+                    $questionModel->save();
+                    // Формирование id вопроса
+                    $model->question_id = $questionModel->id;
+                }
                 // Сохранение данных о цифровой маски в БД
                 if ($model->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
@@ -103,6 +119,7 @@ class LandmarkController extends Controller
 
         return $this->render('upload', [
             'model' => $model,
+            'questions' => $questions,
         ]);
     }
 
@@ -115,7 +132,10 @@ class LandmarkController extends Controller
      */
     public function actionUpdate($id)
     {
+        // Поиск модели цифровой маски по id
         $model = $this->findModel($id);
+        // Формирование списка вопросов
+        $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // POST-запрос
         if ($model->load(Yii::$app->request->post())) {
             // Загрузка файла с формы
@@ -154,6 +174,7 @@ class LandmarkController extends Controller
 
         return $this->render('update', [
             'model' => $model,
+            'questions' => $questions,
         ]);
     }
 

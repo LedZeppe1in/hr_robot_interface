@@ -71,7 +71,7 @@ class DefaultController extends Controller
         // Создание модели видеоинтервью со сценарием анализа
         $videoInterviewModel = new VideoInterview(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO]);
         // Создание массива с моделями цифровой маски
-        $landmarkModels = [new Landmark(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO])];
+        $landmarkModels = [new Landmark()];
         // Формирование списка вопросов
         $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // Загрузка данных, пришедших методом POST

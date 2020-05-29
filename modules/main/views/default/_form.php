@@ -71,7 +71,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
 
     <?= $form->field($model, 'rotationParameter')->dropDownList(VideoInterview::getRotationTypes()) ?>
 
-    <?= $form->field($model, 'mirroringParameter')->dropDownList(VideoInterview::getMirroringTypes()) ?>
+    <?= $form->field($model, 'mirroringParameter')->dropDownList(VideoInterview::getMirroringValues()) ?>
 
     <?php DynamicFormWidget::begin([
         'widgetContainer' => 'add_dynamic_landmark_form_wrapper', // only alphanumeric characters plus "_" [A-Za-z0-9_]
@@ -121,7 +121,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
                             <?= $form->field($landmarkModel, "[{$index}]start_time")
                                 ->widget(TimePicker::className(), [
                                     'mode' => 'time',
-                                    'clientOptions'=>[
+                                    'clientOptions'=> [
                                         'timeFormat' => 'HH:mm:ss:l',
                                         'showSecond' => true,
                                         'showButtonPanel' => false
@@ -132,7 +132,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
                             <?= $form->field($landmarkModel, "[{$index}]finish_time")
                                 ->widget(TimePicker::className(), [
                                     'mode' => 'time',
-                                    'clientOptions'=>[
+                                    'clientOptions'=> [
                                         'timeFormat' => 'HH:mm:ss:l',
                                         'showSecond' => true,
                                         'showButtonPanel' => false

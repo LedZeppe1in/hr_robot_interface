@@ -25,8 +25,15 @@ use yii\behaviors\TimestampBehavior;
  */
 class Landmark extends \yii\db\ActiveRecord
 {
-    const TRUE_MIRRORING = true;   // Отзеркаливание есть
-    const FALSE_MIRRORING = false; // Отзеркаливания нет
+    const UPLOAD_LANDMARK_SCENARIO = 'upload-landmark'; // Сценарий загрузки новой цифровой маски
+
+    const TYPE_ZERO                    = 0;   // Поворот на 0 градусов
+    const TYPE_NINETY                  = 90;  // Поворот на 90 градусов
+    const TYPE_ONE_HUNDRED_EIGHTY      = 180; // Поворот на 180 градусов
+    const TYPE_TWO_HUNDRED_AND_SEVENTY = 270; // Поворот на 270 градусов
+
+    const TYPE_MIRRORING_TRUE  = true;  // Отзеркаливание есть
+    const TYPE_MIRRORING_FALSE = false; // Отзеркаливания нет
 
     public $landmarkFile; // Файл с лицевыми точками
     public $questionText; // Текст вопроса
@@ -45,10 +52,11 @@ class Landmark extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['video_interview_id', 'start_time', 'finish_time', 'questionText'], 'required'],
+            [['landmarkFile'], 'required', 'on' => self::UPLOAD_LANDMARK_SCENARIO],
+            [['start_time', 'finish_time', 'video_interview_id', 'questionText'], 'required'],
             [['video_interview_id'], 'integer'],
             [['landmark_file_name', 'description', 'questionText'], 'string',],
-            [['start_time', 'finish_time'], 'safe'],
+            [['rotation', 'mirroring', 'start_time', 'finish_time'], 'safe'],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
@@ -115,22 +123,25 @@ class Landmark extends \yii\db\ActiveRecord
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
-            // Получение миллисекунд для стартового времени
-            $startTime = explode(":", $this->start_time);
-            $startHour = $startTime[0] * 60 * 60 * 1000;
-            $startMinute = $startTime[1] * 60 * 1000;
-            $startSecond = $startTime[2] * 1000;
-            $startMillisecond = $startTime[3];
-            $this->start_time = $startHour + $startMinute + $startSecond + $startMillisecond;
-            // Получение миллисекунд для времени окончания
-            $finishTime = explode(":", $this->finish_time);
-            $finishHour = $finishTime[0] * 60 * 60 * 1000;
-            $finishMinute = $finishTime[1] * 60 * 1000;
-            $finishSecond = $finishTime[2] * 1000;
-            $finishMillisecond = $finishTime[3];
-            $this->finish_time = $finishHour + $finishMinute + $finishSecond + $finishMillisecond;
+            if ($insert) {
+                // Получение миллисекунд для стартового времени
+                $startTime = explode(":", $this->start_time);
+                $startHour = $startTime[0] * 60 * 60 * 1000;
+                $startMinute = $startTime[1] * 60 * 1000;
+                $startSecond = $startTime[2] * 1000;
+                $startMillisecond = $startTime[3];
+                $this->start_time = $startHour + $startMinute + $startSecond + $startMillisecond;
+                // Получение миллисекунд для времени окончания
+                $finishTime = explode(":", $this->finish_time);
+                $finishHour = $finishTime[0] * 60 * 60 * 1000;
+                $finishMinute = $finishTime[1] * 60 * 1000;
+                $finishSecond = $finishTime[2] * 1000;
+                $finishMillisecond = $finishTime[3];
+                $this->finish_time = $finishHour + $finishMinute + $finishSecond + $finishMillisecond;
 
-            return parent::beforeSave($insert);
+                return parent::beforeSave($insert);
+            } else
+                return true;
         }
         return false;
     }
@@ -175,6 +186,21 @@ class Landmark extends \yii\db\ActiveRecord
     }
 
     /**
+     * Получение списка типов градусов для поворота.
+     *
+     * @return array - массив всех возможных типов градусов поворотов
+     */
+    public static function getRotationTypes()
+    {
+        return [
+            self::TYPE_ZERO => self::TYPE_ZERO,
+            self::TYPE_NINETY => self::TYPE_NINETY,
+            self::TYPE_ONE_HUNDRED_EIGHTY => self::TYPE_ONE_HUNDRED_EIGHTY,
+            self::TYPE_TWO_HUNDRED_AND_SEVENTY => self::TYPE_TWO_HUNDRED_AND_SEVENTY,
+        ];
+    }
+
+    /**
      * Получение списка значений для отзеркаливания.
      *
      * @return array - массив всех возможных значений для отзеркаливания
@@ -182,8 +208,8 @@ class Landmark extends \yii\db\ActiveRecord
     public static function getMirroringValues()
     {
         return [
-            self::TRUE_MIRRORING => 'Да',
-            self::FALSE_MIRRORING => 'Нет',
+            self::TYPE_MIRRORING_FALSE => 'Нет',
+            self::TYPE_MIRRORING_TRUE => 'Да',
         ];
     }
 

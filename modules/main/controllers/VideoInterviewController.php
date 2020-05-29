@@ -9,8 +9,8 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
-use app\modules\main\models\VideoInterview;
 use app\components\OSConnector;
+use app\modules\main\models\VideoInterview;
 
 /**
  * VideoInterviewController implements the CRUD actions for VideoInterview model.
@@ -69,7 +69,10 @@ class VideoInterviewController extends Controller
      */
     public function actionUpload()
     {
-        $model = new VideoInterview();
+        // Установка времени выполнения скрипта в 10 мин.
+        set_time_limit(60*10);
+        // Создание модели видео-интервью
+        $model = new VideoInterview(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO]);
         // POST-запрос
         if ($model->load(Yii::$app->request->post())) {
             // Загрузка файла с формы

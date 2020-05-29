@@ -2,8 +2,8 @@
 
 namespace app\modules\main\models;
 
-use yii\behaviors\TimestampBehavior;
 use yii\helpers\ArrayHelper;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "{{%video_interview}}".
@@ -23,7 +23,7 @@ class VideoInterview extends \yii\db\ActiveRecord
 {
     use \mootensai\relation\RelationTrait;
 
-    const VIDEO_INTERVIEW_ANALYSIS_SCENARIO = 'login'; // Сценарий анализа видео-интервью
+    const VIDEO_INTERVIEW_ANALYSIS_SCENARIO = 'video-interview-analysis'; // Сценарий анализа видео-интервью
 
     const TYPE_ZERO                    = 0;   // Поворот на 0 градусов
     const TYPE_NINETY                  = 90;  // Поворот на 90 градусов
@@ -118,13 +118,32 @@ class VideoInterview extends \yii\db\ActiveRecord
     }
 
     /**
+     * Получение полного определения видео с указанием id, имени файла и его описания.
+     *
+     * @return string - полное определение видео
+     */
+    public function getFullName()
+    {
+        if ($this->video_file_name != '')
+            $videoFileName = $this->video_file_name;
+        else
+            $videoFileName = 'не задано';
+        if ($this->description != '')
+            $description = $this->description;
+        else
+            $description = 'не задано';
+
+        return 'Видео №' . $this->id . ' (' . $videoFileName . ' - ' . $description . ')';
+    }
+
+    /**
      * Получение списка видеоинтервью.
      *
      * @return array - массив всех видеоинтервью
      */
     public static function getVideoInterviews()
     {
-        return ArrayHelper::map(self::find()->all(), 'id', 'id');
+        return ArrayHelper::map(self::find()->all(), 'id', 'fullName');
     }
 
     /**
@@ -143,11 +162,11 @@ class VideoInterview extends \yii\db\ActiveRecord
     }
 
     /**
-     * Получение списка типов наличия отзеркаливания.
+     * Получение списка значений для отзеркаливания.
      *
-     * @return array - массив всех возможных типов наличия отзеркаливания
+     * @return array - массив всех возможных значений для отзеркаливания
      */
-    public static function getMirroringTypes()
+    public static function getMirroringValues()
     {
         return [
             self::TYPE_MIRRORING_FALSE => 'Нет',
