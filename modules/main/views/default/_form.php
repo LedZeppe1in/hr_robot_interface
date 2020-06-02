@@ -73,6 +73,9 @@ use wbraganca\dynamicform\DynamicFormWidget;
 
     <?= $form->field($model, 'mirroringParameter')->dropDownList(VideoInterview::getMirroringValues()) ?>
 
+    <?= $form->field($model, 'processingType')->dropDownList(VideoInterview::getProcessingTypes())
+        ->label('Тип обработки получаемых цифровых масок') ?>
+
     <?php DynamicFormWidget::begin([
         'widgetContainer' => 'add_dynamic_landmark_form_wrapper', // only alphanumeric characters plus "_" [A-Za-z0-9_]
         'widgetBody' => '.container-items', // css class selector

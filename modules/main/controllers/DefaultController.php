@@ -196,13 +196,16 @@ class DefaultController extends Controller
                                 $landmark->landmark_file_name,
                                 $landmarkFile
                             );
+                            // Получение типа обработки получаемых цифровых масок
+                            $processingType = Yii::$app->request->post('VideoInterview')['processingType'];
                             // Создание модели для результатов определения признаков
                             $analysisResultModel = new AnalysisResult();
                             $analysisResultModel->landmark_id = $landmark->id;
                             $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
                             $analysisResultModel->facts_file_name = 'facts.json';
                             //$analysisResultModel->interpretation_result_file_name = 'feature-interpretation-result.json';
-                            $analysisResultModel->description = $landmark->description;
+                            $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
+                                ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
                             $analysisResultModel->save();
                             // Получение содержимого json-файла с лицевыми точками из Object Storage
                             $faceData = $osConnector->getFileContentFromObjectStorage(
@@ -213,7 +216,7 @@ class DefaultController extends Controller
                             // Создание объекта обнаружения лицевых признаков
                             $facialFeatureDetector = new FacialFeatureDetector();
                             // Выявление признаков для лица
-                            $facialFeatures = $facialFeatureDetector->detectFeatures($faceData);
+                            $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, $processingType);
                             // Сохранение json-файла с результатами определения признаков на Object Storage
                             $osConnector->saveFileToObjectStorage(
                                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,

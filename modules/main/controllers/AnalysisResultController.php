@@ -129,10 +129,11 @@ class AnalysisResultController extends Controller
      * Страница с результатами определения лицивых признаков.
      *
      * @param $id
+     * @param $processingType
      * @return string
      * @throws NotFoundHttpException
      */
-    public function actionDetection($id)
+    public function actionDetection($id, $processingType)
     {
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);
@@ -141,7 +142,8 @@ class AnalysisResultController extends Controller
         $model->detection_result_file_name = 'feature-detection-result.json';
         $model->facts_file_name = 'facts.json';
         $model->landmark_id = $id;
-        $model->description = $landmark->description; // Описание с цифровой маски
+        $model->description = $landmark->description . ($processingType == 0 ?
+            ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
         $model->save();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
@@ -154,7 +156,7 @@ class AnalysisResultController extends Controller
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица
-        $facialFeatures = $facialFeatureDetector->detectFeatures($faceData);
+        $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, (int)$processingType);
         // Сохранение json-файла с результатами определения признаков на Object Storage
         $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->detection_result_file_name, $facialFeatures);

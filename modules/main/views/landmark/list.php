@@ -40,7 +40,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {update} {mask-editor} {detection} {delete}',
+                'template' => '{view} {update} {mask-editor} {raw-detection} {norm-detection} {delete}',
                 'buttons' => [
                     'mask-editor' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
@@ -50,10 +50,16 @@ $this->params['breadcrumbs'][] = $this->title;
                             '&detection_result_id=none';
                         return Html::a($icon, $url);
                     },
-                    'detection' => function ($url, $model, $key) {
-                        $icon = Html::tag('span', '',
-                            ['class' => 'glyphicon glyphicon-save-file', 'title' => 'Определение признаков']);
-                        $url = ['/analysis-result/detection/' . $model->id];
+                    'raw-detection' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-file',
+                            'title' => 'Определение признаков по сырым точкам']);
+                        $url = ['/analysis-result/detection/' . $model->id . '/' . 0];
+                        return ($model->landmark_file_name != '') ? Html::a($icon, $url) : null;
+                    },
+                    'norm-detection' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-save-file',
+                            'title' => 'Определение признаков по нормализованным точкам']);
+                        $url = ['/analysis-result/detection/' . $model->id . '/' . 1];
                         return ($model->landmark_file_name != '') ? Html::a($icon, $url) : null;
                     },
                 ],

@@ -52,7 +52,8 @@ $config = [
                 '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
                 '/landmark/<_lm:(view|update|delete|landmark-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
-                '/analysis-result/<_ar:(view|update|delete|detection|detection-file-download|facts-download|interpretation-file-download)>/<id:\d+>' =>
+                '/analysis-result/<_ar:(detection)>/<id:\d+>/<processingType:\d+>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(view|update|delete|detection-file-download|facts-download|interpretation-file-download)>/<id:\d+>' =>
                     'main/analysis-result/<_ar>',
                 '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
                 '/detection-result/<_dr:(view|update|delete|file-download|facts-download)>/<id:\d+>' =>

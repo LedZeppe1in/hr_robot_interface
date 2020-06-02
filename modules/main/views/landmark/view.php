@@ -1,5 +1,6 @@
 <?php
 
+use yii\bootstrap\ButtonDropdown;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
@@ -16,8 +17,20 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Цифровая маска: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= ($model->landmark_file_name != '') ? Html::a('Определить признаки',
-            ['/analysis-result/detection/' . $model->id], ['class' => 'btn btn-success']) : '' ?>
+        <?php if ($model->landmark_file_name != '') {
+            echo ButtonDropdown::widget([
+                'label' => 'Определить признаки',
+                'dropdown' => [
+                    'items' => [
+                        ['label' => 'По сырым точкам', 'url' => '/analysis-result/detection/' .
+                            $model->id . '/' . 0],
+                        ['label' => 'По нормализованным точкам', 'url' => '/analysis-result/detection/' .
+                            $model->id . '/' . 1],
+                    ],
+                ],
+                'options' => ['class' => 'btn btn-success']
+            ]);
+        } ?>
         <?= Html::a('Посмотреть в редакторе маски',
             'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
                 '&detection_result_id=none',

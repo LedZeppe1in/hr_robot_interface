@@ -33,9 +33,13 @@ class VideoInterview extends \yii\db\ActiveRecord
     const TYPE_MIRRORING_TRUE  = true;  // Отзеркаливание есть
     const TYPE_MIRRORING_FALSE = false; // Отзеркаливания нет
 
+    const TYPE_RAW_POINTS  = 0;       // Обработка сырых точек
+    const TYPE_NORMALIZED_POINTS = 1; // Обраблотка нормализованных точек
+
     public $videoInterviewFile; // Файл видео-интервью
     public $rotationParameter;  // Параметр поворота
     public $mirroringParameter; // Параметр наличия отзеркаливания
+    public $processingType;     // Тип обработки полученных цифровых масок
 
     /**
      * @return string table name
@@ -55,7 +59,7 @@ class VideoInterview extends \yii\db\ActiveRecord
             [['respondent_id'], 'required'],
             [['respondent_id'], 'integer'],
             [['video_file_name', 'description'], 'string'],
-            [['rotationParameter', 'mirroringParameter'], 'safe'],
+            [['rotationParameter', 'mirroringParameter', 'processingType'], 'safe'],
             [['videoInterviewFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
             [['respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => Respondent::className(),
                 'targetAttribute' => ['respondent_id' => 'id']],
@@ -77,6 +81,7 @@ class VideoInterview extends \yii\db\ActiveRecord
             'videoInterviewFile' => 'Файл видеоинтервью',
             'rotationParameter' => 'Поворот (градусы)',
             'mirroringParameter' => 'Наличие отзеркаливания',
+            'processingType' => 'Тип обработки цифровых масок',
         ];
     }
 
@@ -171,6 +176,19 @@ class VideoInterview extends \yii\db\ActiveRecord
         return [
             self::TYPE_MIRRORING_FALSE => 'Нет',
             self::TYPE_MIRRORING_TRUE => 'Да',
+        ];
+    }
+
+    /**
+     * Получение списка типов обработки цифровых масок.
+     *
+     * @return array - массив всех возможных типов обработки цифровых масок
+     */
+    public static function getProcessingTypes()
+    {
+        return [
+            self::TYPE_RAW_POINTS => 'Сырые точки',
+            self::TYPE_NORMALIZED_POINTS => 'Нормализованные точки',
         ];
     }
 }
