@@ -13,6 +13,7 @@ use yii\web\UploadedFile;
 use app\components\OSConnector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
+use app\modules\main\models\AnalysisResult;
 
 /**
  * LandmarkController implements the CRUD actions for AdvancedLandmark model.
@@ -189,15 +190,42 @@ class LandmarkController extends Controller
      */
     public function actionDelete($id)
     {
+        // Поиск цифровой маски по id
         $model = $this->findModel($id);
-        // Удалние записи из БД
-        $model->delete();
+        // Поиск результатов анализа, проведенных для данной цифровой маски
+        $analysisResults = AnalysisResult::find()->where(['landmark_id' => $model->id])->all();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
+        // Обход всех найденных результатов анализа
+        foreach ($analysisResults as $analysisResult) {
+            // Удаление файлов с результатами определения признаков и фактами на Object Storage
+            if ($analysisResult->detection_result_file_name != '')
+                $osConnector->removeFileFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->detection_result_file_name
+                );
+            // Удаление файлов с набором фактов на Object Storage
+            if ($analysisResult->facts_file_name != '')
+                $osConnector->removeFileFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->facts_file_name
+                );
+            // Удаление файла с результатами интерпретации признаков на Object Storage
+            if ($analysisResult->interpretation_result_file_name != '')
+                $osConnector->removeFileFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->interpretation_result_file_name
+                );
+        }
         // Удаление файла с лицевыми точками на Object Storage
         if ($model->landmark_file_name != '')
             $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id, $model->landmark_file_name);
+        // Удалние записи из БД
+        $model->delete();
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success',
             'Вы успешно удалили файл с цифровой маской!');

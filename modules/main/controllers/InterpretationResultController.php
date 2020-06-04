@@ -108,11 +108,17 @@ class InterpretationResultController extends Controller
      */
     public function actionDelete($id)
     {
+        // Поиск результатов анализа по id
         $model = $this->findModel($id);
-        // Удалние записи из БД
-        $model->delete();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
+        // Удаление файлов с результатами определения признаков и фактами на Object Storage
+        if ($model->detection_result_file_name != '' && $model->facts_file_name != '') {
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $model->id, $model->detection_result_file_name);
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $model->id, $model->facts_file_name);
+        }
         // Удаление файлов с результатами интерпретации признаков и фактами с Object Storage
         if ($model->interpretation_result_file_name != '') {
             $osConnector->removeFileFromObjectStorage(
@@ -121,6 +127,8 @@ class InterpretationResultController extends Controller
                 $model->interpretation_result_file_name
             );
         }
+        // Удалние записи из БД
+        $model->delete();
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success',
             'Вы успешно удалили результаты интерпретации признаков!');
