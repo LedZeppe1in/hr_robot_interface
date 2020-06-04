@@ -98,7 +98,7 @@ class DefaultController extends Controller
                             $videoInterviewFile->tempName
                         );
                     // Путь к программе обработки видео
-                    $mainPath = '/home/-Common/';
+                    $mainPath = '/home/-Common/-ivan/';
                     // Путь к файлу видеоинтервью
                     $videoPath = $mainPath . 'video/';
                     // Путь к json-файлу результатов обработки видеоинтервью
@@ -138,9 +138,11 @@ class DefaultController extends Controller
                     $parameters['nameVidFilesIn'] = 'video/' . $videoInterviewModel->video_file_name;
                     $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
                     $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
-                    $parameters['indexesTriagnleStats'] = [[31, 48, 51], [35, 51, 54], [31, 48, 74], [35, 54, 75],
-                        [48, 74, 76], [54, 75, 77], [48, 59, 76], [54, 55, 77], [7, 57, 59], [9, 55, 57], [7, 9, 57],
-                        [31, 40, 74], [35, 47, 75], [40, 41, 74], [46, 47, 75]];
+//                    $parameters['indexesTriagnleStats'] = [[31, 48, 51], [35, 51, 54], [31, 48, 74], [35, 54, 75],
+//                        [48, 74, 76], [54, 75, 77], [48, 59, 76], [54, 55, 77], [7, 57, 59], [9, 55, 57], [7, 9, 57],
+//                        [31, 40, 74], [35, 47, 75], [40, 41, 74], [46, 47, 75]];
+                    $parameters['indexesTriagnleStats'] = [[21, 48, 74], [31, 40, 74], [35, 54, 75], [35, 47, 75],
+                        [27, 35, 42], [27, 31, 39]];
                     $parameters['rotate_mode'] = $rotation;
                     $parameters['questions'] = $questions;
                     // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
@@ -159,6 +161,7 @@ class DefaultController extends Controller
                     // Отлов ошибки выполнения программы обработки видео
                     try {
                         $index = 0;
+                        $analysisResultIds = '';
                         // Обход по всем найденным цифровым маскам
                         foreach ($landmarks as $landmark) {
                             // Получение значения текста вопроса
@@ -258,7 +261,26 @@ class DefaultController extends Controller
                                 $analysisResultModel->facts_file_name,
                                 $facts
                             );
+                            // Формирование строки из всех id результатов анализа
+                            if ($analysisResultIds == '')
+                                $analysisResultIds = $analysisResultModel->id;
+                            else
+                                $analysisResultIds .= ', ' . $analysisResultModel->id;
                         }
+                        // Формирование параметров запуска модуля интерпретации признаков
+                        $parameters = array('DataSource' => 'ExecuteReasoningForSetOfInitialConditions',
+                            'AddressForCodeOfKnowledgeBaseRetrieval' =>
+                                'http://84.201.129.65/default/knowledge-base-download',
+                            'AddressForInitialConditionsRetrieval' =>
+                                'http://84.201.129.65/analysis-result/facts-download/',
+                            'IDsOfInitialConditions' => '[' . $analysisResultIds . ']',
+                            'AddressToSendResults' => 'http://84.201.129.65:9999/Drools/RetrieveData.php');
+                        // Вызов модуля интерпретации признаков через CURL
+                        $Request = curl_init('http://84.201.129.65:9999/Drools/RetrieveData.php');
+                        $DataToSend = http_build_query($parameters);
+                        curl_setopt($Request, CURLOPT_POSTFIELDS, $DataToSend);
+                        curl_setopt($Request, CURLOPT_RETURNTRANSFER, True);
+                        curl_close($Request);
                         // Изменение статуса обработки видеоинтервью
                         $success = true;
                     } catch (Exception $e) {
