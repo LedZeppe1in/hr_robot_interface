@@ -27,6 +27,11 @@ use wbraganca\dynamicform\DynamicFormWidget;
                     showSecond: true,
                     showButtonPanel: false
                 });
+                $("#landmark-" + (index + 1) + "-finish_time").timepicker({
+                    timeFormat: "HH:mm:ss:l",
+                    showSecond: true,
+                    showButtonPanel: false
+                });
             });
         });
         dynamicLandmarkFormWrapper.on("afterDelete", function(e) {

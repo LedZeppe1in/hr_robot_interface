@@ -1,5 +1,7 @@
 <?php
 
+namespace app\components;
+
 /**
  * Class DBConnector - класс для взаимодействия с базой данных.
  */
@@ -130,17 +132,20 @@ class DBConnector
      * @param $fileName - название json-файла с лицевыми точками сохраняемого на Object Storage
      * @param $description - описание цифровой маски
      * @param $videoInterviewId - идентификатор видеоинтервью (дочернего ключа, FK) из таблицы "hrrobot_video_interview")
+     * @return resource - результата запроса
      */
     public function insertLandmark($connection, $fileName, $description, $videoInterviewId)
     {
         // Получение текущего времени
         $currentTime = time();
         // SQL-запрос
-        $sql = "INSERT INTO hrrobot_advanced_landmark (created_at, updated_at, file_name, description, video_interview_id) 
-            VALUES ('$currentTime', '$currentTime', '$fileName', '$description', '$videoInterviewId')";
+        $sql = 'INSERT INTO hrrobot_landmark (created_at, updated_at, file_name, description, video_interview_id) 
+            VALUES ($1, $1, $2, $3, $4)';
         // Выполнение SQL-запроса
-        pg_query($connection, $sql) or die("Ошибка в запросе: " .
-            iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+        $result = pg_query_params($connection, $sql, array($currentTime, $fileName, $description, $videoInterviewId)) or
+            die("Ошибка в запросе: " . iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+
+        return $result;
     }
 
     /**
@@ -152,19 +157,24 @@ class DBConnector
      * сохраняемого на Object Storage (с указанием расширения файла)
      * @param $description - описание цифровой маски
      * @param $videoInterviewId - обновляемое значение для поля идентификатора видеоинтервью (дочернего ключа, FK)
+     * @return resource - результата запроса
      */
     public function updateLandmark($connection, $id, $fileName, $description, $videoInterviewId)
     {
         // Получение текущего времени
         $currentTime = time();
         // SQL-запрос
-        $sql = "UPDATE hrrobot_advanced_landmark
-            SET updated_at = '$currentTime', file_name = '$fileName', description = '$description', 
-                video_interview_id = '$videoInterviewId'
-            WHERE id = '$id'";
+        $sql = 'UPDATE hrrobot_landmark
+            SET updated_at = $2, file_name = $3, description = $4, video_interview_id = $5
+            WHERE id = $1';
         // Выполнение SQL-запроса
-        pg_query($connection, $sql) or die("Ошибка в запросе: " .
-            iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+        $result = pg_query_params(
+            $connection,
+            $sql,
+            array($id, $currentTime, $fileName, $description, $videoInterviewId)
+        ) or die("Ошибка в запросе: " . iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+
+        return $result;
     }
 
     /**
@@ -174,17 +184,20 @@ class DBConnector
      * @param $id - идентификатор результата анализа (PK)
      * @param $interpretationResultFileName - название json-файла с результатами интерпретации,
      * сохраняемого на Object Storage (с указанием расширения файла)
+     * @return resource - результата запроса
      */
     public function updateAnalysisResult($connection, $id, $interpretationResultFileName)
     {
         // Получение текущего времени
         $currentTime = time();
         // SQL-запрос
-        $sql = "UPDATE hrrobot_analysis_result
-            SET updated_at = '$currentTime', interpretation_result_file_name = '$interpretationResultFileName'
-            WHERE id = '$id'";
+        $sql = 'UPDATE hrrobot_analysis_result
+            SET updated_at = $2, interpretation_result_file_name = $3
+            WHERE id = $1';
         // Выполнение SQL-запроса
-        pg_query($connection, $sql) or die("Ошибка в запросе: " .
-            iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+        $result = pg_query_params($connection, $sql, array($id, $currentTime, $interpretationResultFileName)) or
+            die("Ошибка в запросе: " . iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+
+        return $result;
     }
 }
