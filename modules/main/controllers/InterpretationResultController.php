@@ -70,7 +70,9 @@ class InterpretationResultController extends Controller
 
         return $this->render('view', [
             'model' => $model,
-            'interpretationResult' => $interpretationResult,
+            'interpretationResult' => $interpretationResult['Steps'],
+            'ruleDescription' => $interpretationResult['DescriptionsOfRules'],
+            'factTemplateDescription' => $interpretationResult['DescriptionsOfTemplates'],
         ]);
     }
 

@@ -62,6 +62,7 @@ class DefaultController extends Controller
      * интерпретации признаков).
      *
      * @return string|\yii\web\Response
+     * @throws \Throwable
      * @throws \yii\db\Exception
      */
     public function actionAnalysis()
@@ -162,6 +163,7 @@ class DefaultController extends Controller
                     try {
                         $index = 0;
                         $analysisResultIds = '';
+                        $lastAnalysisResultId = null;
                         // Обход по всем найденным цифровым маскам
                         foreach ($landmarks as $landmark) {
                             // Получение значения текста вопроса
@@ -267,6 +269,8 @@ class DefaultController extends Controller
                                     $analysisResultIds = $analysisResultModel->id;
                                 else
                                     $analysisResultIds .= ', ' . $analysisResultModel->id;
+                                // Запоминание последнего id анализа результата
+                                $lastAnalysisResultId = $analysisResultModel->id;
                             } else
                                 // Удаление записи о цифровой маски для которой не сформирован json-файл
                                 Landmark::findOne($landmark->id)->delete();
@@ -311,11 +315,20 @@ class DefaultController extends Controller
                             unlink($jsonResultPath . $jsonResultFile);
                     // Если видеоинтервью обработалось корректно
                     if ($success) {
-                        // Вывод сообщения об успешном анализе видеоинтервью
-                        Yii::$app->getSession()->setFlash('success',
-                            'Вы успешно проанализировали видеоинтервью!');
+                        // Если был сформирован результат анализа
+                        if ($lastAnalysisResultId != null) {
+                            // Вывод сообщения об успешном анализе видеоинтервью
+                            Yii::$app->getSession()->setFlash('success',
+                                'Вы успешно проанализировали видеоинтервью!');
 
-                        return $this->redirect(['/analysis-result/list/']);
+                            return $this->redirect(['/analysis-result/view/' . $lastAnalysisResultId]);
+                        } else {
+                            // Вывод сообщения о неуспешном анализе видеоинтервью
+                            Yii::$app->getSession()->setFlash('error',
+                                'Видеоинтервью проанализировать не удалось!');
+
+                            return $this->redirect(['/video-interview/view/' . $videoInterviewModel->id]);
+                        }
                     }
                 }
             }

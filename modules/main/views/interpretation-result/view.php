@@ -1,11 +1,14 @@
 <?php
 
 use yii\helpers\Html;
+use yii\bootstrap\Tabs;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\AnalysisResult */
 /* @var $interpretationResult app\modules\main\controllers\InterpretationResultController */
+/* @var $ruleDescription app\modules\main\controllers\InterpretationResultController */
+/* @var $factTemplateDescription app\modules\main\controllers\InterpretationResultController */
 
 $this->title = $model->landmark->landmark_file_name;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты интерпретации признаков', 'url' => ['list']];
@@ -64,9 +67,26 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]) ?>
 
-    <?php
-        echo '<pre>';
-        print_r($interpretationResult);
-        echo '</pre>';
-    ?>
+    <?php echo Tabs::widget([
+        'items' => [
+            [
+                'label' => 'Результаты интерпретации по кадрам',
+                'content' => $this->render('_interpretation_results', [
+                    'interpretationResult' => $interpretationResult
+                ]),
+            ],
+            [
+                'label' => 'Описание правил',
+                'content' => $this->render('_rule_description', [
+                    'ruleDescription' => $ruleDescription
+                ]),
+            ],
+            [
+                'label' => 'Описание шаблонов фактов',
+                'content' => $this->render('_fact_template_description', [
+                    'factTemplateDescription' => $factTemplateDescription
+                ]),
+            ]
+        ]
+    ]); ?>
 </div>

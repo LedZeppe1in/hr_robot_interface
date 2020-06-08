@@ -48,7 +48,8 @@ $config = [
                 '/question/<_ques:(list|create)>' => 'main/question/<_ques>',
                 '/question/<_ques:(view|update|delete)>/<id:\d+>' => 'main/question/<_ques>',
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
-                '/video-interview/<_vi:(view|update|delete|video-download)>/<id:\d+>' => 'main/video-interview/<_vi>',
+                '/video-interview/<_vi:(view|update|delete|video-download|get-landmarks)>/<id:\d+>' =>
+                    'main/video-interview/<_vi>',
                 '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
                 '/landmark/<_lm:(view|update|delete|landmark-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',

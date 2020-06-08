@@ -124,7 +124,7 @@ class OSConnector
      *
      * @param $bucketName - название бакета (videointerviews, landmarks, detectionresults или interpretationresults)
      * @param $path - название папки в бакете (соответствует id записи из БД)
-     * @param $fileName - имя файла (без пути
+     * @param $fileName - имя файла с расширением без пути
      * @return mixed - файл с Object Storage
      */
     public function downloadFileFromObjectStorage($bucketName, $path, $fileName)
@@ -149,5 +149,37 @@ class OSConnector
         } catch (S3Exception $e) {
             echo "При скачивании файла произошла ошибка.\n";
         }
+
+        return false;
+    }
+
+    /**
+     * Сохранение объекта файла из Object Storage на сервер Yandex.Cloud.
+     *
+     * @param $bucketName - название бакета (videointerviews, landmarks, detectionresults или interpretationresults)
+     * @param $path - название папки в бакете (соответствует id записи из БД)
+     * @param $fileName - имя файла с расширением без пути
+     * @param $serverPath - название папки на сервере
+     * @return bool|mixed - файл с Object Storage
+     */
+    public function saveFileToServer($bucketName, $path, $fileName, $serverPath)
+    {
+        $sdk = new Sdk($this->sharedConfig);
+        $s3Client = $sdk->createS3();
+        try {
+            $result = $s3Client->getObject([
+                'Bucket' => $bucketName,
+                'Key' => ($path != null) ? $path . '/' . $fileName : $fileName,
+                'Range' => 1000000000000,
+                'SaveAs' => $serverPath . $fileName
+            ]);
+
+            return $result["Body"];
+        } catch (S3Exception $e) {
+            echo "При сохранении файла на сервер произошла ошибка.\n";
+            echo $fileName;
+        }
+
+        return false;
     }
 }

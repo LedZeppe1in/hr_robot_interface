@@ -82,20 +82,21 @@ class AnalysisResultController extends Controller
             'knowledge-base.txt'
         );
         // Получение json-файла с результатами интерпретации признаков
-        $interpretationResult = $osConnector->getFileContentFromObjectStorage(
+        $jsonFile = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
             $model->id,
             $model->interpretation_result_file_name
         );
+        $interpretationResult = json_decode($jsonFile, true);
 
         return $this->render('view', [
             'model' => $model,
-            'eyeFeatures' => (isset($faceData['eye'])) ? $faceData['eye'] : null,
-            'mouthFeatures' => (isset($faceData['mouth'])) ? $faceData['mouth'] : null,
-            'browFeatures' => (isset($faceData['brow'])) ? $faceData['brow'] : null,
-            'eyebrowFeatures' => (isset($faceData['eyebrow'])) ? $faceData['eyebrow'] : null,
-            'noseFeatures' => (isset($faceData['nose'])) ? $faceData['nose'] : null,
-            'chinFeatures' => (isset($faceData['chin'])) ? $faceData['chin'] : null,
+            'eyeFeatures' => (isset($faceData['eye'])) ? $faceData['eye']['VALUES_REL'] : null,
+            'mouthFeatures' => (isset($faceData['mouth'])) ? $faceData['mouth']['VALUES_REL'] : null,
+            'browFeatures' => (isset($faceData['brow'])) ? $faceData['brow']['VALUES_REL'] : null,
+            'eyebrowFeatures' => (isset($faceData['eyebrow'])) ? $faceData['eyebrow']['VALUES_REL'] : null,
+            'noseFeatures' => (isset($faceData['nose'])) ? $faceData['nose']['VALUES_REL'] : null,
+            'chinFeatures' => (isset($faceData['chin'])) ? $faceData['chin']['VALUES_REL'] : null,
             'facts' => $facts,
             'knowledgeBase' => $knowledgeBase,
             'interpretationResult' => $interpretationResult
