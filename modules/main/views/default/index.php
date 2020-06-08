@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 <div class="main-default-index">
     <div class="jumbotron">
-        <h1>Welcome to HR Robot!</h1>
+        <h1>Добро пожаловать в HR Robot!</h1>
     </div>
     <div class="body-content">
         <h4><b>HR Robot</b> —  это веб-ориентированная интеллектуальная программная система поддержки
