@@ -287,6 +287,8 @@ class VideoInterviewController extends Controller
             $videoResultFiles = array();
             $jsonResultFiles = array();
             $questions = array();
+            // Массив для хранения сообщений об ошибках
+            $errorMassages = array();
             // Выборка всех цифровых масок у данного видеоинтервью
             $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
             // Обход по всем найденным цифровым маскам
@@ -319,46 +321,48 @@ class VideoInterviewController extends Controller
             fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
             // Закрытие файла
             fclose($jsonFile);
-            // Статус обработки видеоинтервью
-            $success = false;
             // Запуск программы обработки видео
             chdir($mainPath);
             exec('./venv/bin/python ./main.py ./test.json');
-            // Отлов ошибки выполнения программы обработки видео
-            try {
-                $index = 0;
-                // Обход по всем найденным цифровым маскам
-                foreach ($landmarks as $landmark) {
-                    // Получение значения текста вопроса
-                    $questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
-                    // Если поле текста вопроса содержит значение "hidden"
-                    if ($questionText != 'hidden') {
-                        // Создание и сохранение новой модели вопроса
-                        $questionModel = new Question();
-                        $questionModel->text = $questionText;
-                        $questionModel->save();
-                        // Формирование id вопроса
-                        $landmark->question_id = $questionModel->id;
-                    }
-                    // Увеличение индекса на 1
-                    $index++;
-                    // Формирование названия json-файла с результатами обработки видео
-                    $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
-                    // Формирование описания цифровой маски
-                    $landmark->description = $model->description . ' (время нарезки: ' .
-                        $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
-                    // Формирование значения поворота
-                    $landmark->rotation = $rotation;
-                    // Формирование значения наличия отзеркаливания
-                    $landmark->mirroring = boolval($mirroring);
-                    // Обновление атрибутов цифровой маски в БД
-                    $landmark->updateAttributes(['landmark_file_name', 'description', 'rotation',
-                        'mirroring', 'question_id']);
-                    // Проверка существования json-файл с результатами обработки видео
-                    if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
-                        // Получение json-файла с результатами обработки видео в виде цифровой маски
-                        $landmarkFile = file_get_contents($jsonResultPath .
-                            $landmark->landmark_file_name, true);
+            $index = 0;
+            // Обход по всем найденным цифровым маскам
+            foreach ($landmarks as $landmark) {
+                // Получение значения текста вопроса
+                $questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
+                // Если поле текста вопроса содержит значение "hidden"
+                if ($questionText != 'hidden') {
+                    // Создание и сохранение новой модели вопроса
+                    $questionModel = new Question();
+                    $questionModel->text = $questionText;
+                    $questionModel->save();
+                    // Формирование id вопроса
+                    $landmark->question_id = $questionModel->id;
+                }
+                // Увеличение индекса на 1
+                $index++;
+                // Формирование названия json-файла с результатами обработки видео
+                $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
+                // Формирование описания цифровой маски
+                $landmark->description = $model->description . ' (время нарезки: ' .
+                    $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
+                // Формирование значения поворота
+                $landmark->rotation = $rotation;
+                // Формирование значения наличия отзеркаливания
+                $landmark->mirroring = boolval($mirroring);
+                // Обновление атрибутов цифровой маски в БД
+                $landmark->updateAttributes(['landmark_file_name', 'description', 'rotation',
+                    'mirroring', 'question_id']);
+                $success = false;
+                // Проверка существования json-файл с результатами обработки видео
+                if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
+                    // Получение json-файла с результатами обработки видео в виде цифровой маски
+                    $landmarkFile = file_get_contents($jsonResultPath .
+                        $landmark->landmark_file_name, true);
+                    // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+                    $jsonLandmarkFile = json_decode($landmarkFile, true);
+                    // Если в json-файле с цифровой маской нет текста с ошибкой
+                    if (!isset($jsonLandmarkFile['err_msg'])) {
+                        $success = true;
                         // Сохранение файла с лицевыми точками на Object Storage
                         $osConnector->saveFileToObjectStorage(
                             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
@@ -367,15 +371,12 @@ class VideoInterviewController extends Controller
                             $landmarkFile
                         );
                     } else
-                        // Удаление записи о цифровой маски для которой не сформирован json-файл
-                        Landmark::findOne($landmark->id)->delete();
+                        // Добавление в массив ошибок сообщения об ошибке
+                        array_push($errorMassages, $jsonLandmarkFile['err_msg']);
                 }
-                // Изменение статуса обработки видеоинтервью
-                $success = true;
-            } catch (Exception $e) {
-                // Вывод сообщения об ошибке обработки видеоинтервью
-                Yii::$app->getSession()->setFlash('error',
-                    'При обработке видеоинтервью возникли ошибки!');
+                if ($success == false)
+                    // Удаление записи о цифровой маски для которой не сформирован json-файл
+                    Landmark::findOne($landmark->id)->delete();
             }
             // Удаление файла с видеоинтервью
             if (file_exists($videoPath . $model->video_file_name))
@@ -390,26 +391,51 @@ class VideoInterviewController extends Controller
             foreach ($jsonResultFiles as $jsonResultFile)
                 if (file_exists($jsonResultPath . $jsonResultFile))
                     unlink($jsonResultPath . $jsonResultFile);
-            // Если видеоинтервью обработалось корректно
-            if ($success) {
-                // Выборка последней добавленной цифровой маски для данного видеоинтервью
-                $landmark = Landmark::find()
-                    ->where(['video_interview_id' => $model->id])
-                    ->orderBy(['id' => SORT_DESC])
-                    ->one();
-                if ($landmark != '') {
-                    // Вывод сообщения об успешном анализе видеоинтервью
-                    Yii::$app->getSession()->setFlash('success',
-                        'Вы успешно сформировали цифровые маски!');
+            // Выборка последней добавленной цифровой маски для данного видеоинтервью
+            $landmark = Landmark::find()
+                ->where(['video_interview_id' => $model->id])
+                ->orderBy(['id' => SORT_DESC])
+                ->one();
+            // Если цифровая маска найдена
+            if ($landmark != '') {
+                // Вывод сообщения об успешном формировании цифровой маски
+                Yii::$app->getSession()->setFlash('success',
+                    'Вы успешно сформировали цифровую маску!');
 
-                    return $this->redirect(['/landmark/view/' . $landmark->id]);
-                } else {
-                    // Вывод сообщения о неуспешном анализе видеоинтервью
-                    Yii::$app->getSession()->setFlash('error',
-                        'Цифровые маски сформировать не удалось!');
-
-                    return $this->redirect(['/landmark/list/']);
+                return $this->redirect(['/landmark/view/' . $landmark->id]);
+            } else {
+                // Текст сообщения об ошибке
+                $errorMessage = 'Для данного видеоинтервью не удалось сформировать цифровцю маску!';
+                // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
+                if (file_exists($mainPath . 'error.json')) {
+                    // Получение json-файл с ошибками обработки видеоинтервью
+                    $jsonFile = file_get_contents($mainPath . 'error.json', true);
+                    // Декодирование json
+                    $jsonFile = json_decode($jsonFile, true);
+                    // Дополнение текста сообщения об ошибке
+                    $errorMessage .= PHP_EOL . $jsonFile['err_msg'];
+                    // Удаление json-файла с сообщением ошибки
+                    unlink($mainPath . 'error.json');
                 }
+                // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
+                if (file_exists($jsonResultPath . 'out_error.json')) {
+                    // Получение json-файл с ошибками обработки видеоинтервью
+                    $jsonFile = file_get_contents($jsonResultPath . 'out_error.json', true);
+                    // Декодирование json
+                    $jsonFile = json_decode($jsonFile, true);
+                    // Дополнение текста сообщения об ошибке
+                    $errorMessage .= PHP_EOL . $jsonFile['err_msg'];
+                    // Удаление json-файла с сообщением ошибки
+                    unlink($jsonResultPath . 'out_error.json');
+                }
+                // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
+                if (!empty($errorMassages))
+                    foreach ($errorMassages as $errorMassage)
+                        $errorMessage .= PHP_EOL . $errorMassage;
+                // Вывод сообщения о неуспешном формировании цифровой маски
+                Yii::$app->getSession()->setFlash('error', $errorMessage);
+
+                return $this->redirect(['/video-interview/view/' . $model->id]);
             }
         }
 

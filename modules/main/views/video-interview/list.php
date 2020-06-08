@@ -46,7 +46,20 @@ $this->params['breadcrumbs'][] = $this->title;
                     return $data->respondent->name;
                 },
             ],
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'action-column'],
+                'template' => '{view} {update} {get-landmarks} {delete}',
+                'buttons' => [
+                    'get-landmarks' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-save-file',
+                                'title' => 'Сформировать цифровую маску']);
+                        $url = ['/video-interview/get-landmarks/' . $model->id];
+                        return Html::a($icon, $url);
+                    },
+                ],
+            ],
         ],
     ]); ?>
 

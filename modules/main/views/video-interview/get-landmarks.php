@@ -8,6 +8,7 @@ use yii\helpers\Html;
 /* @var $questions app\modules\main\controllers\VideoInterviewController */
 
 $this->title = 'Формирование цифровой маски';
+$this->params['breadcrumbs'][] = ['label' => 'Видеоинтервью', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
