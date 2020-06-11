@@ -144,7 +144,7 @@ class DefaultController extends Controller
 //                    $parameters['indexesTriagnleStats'] = [[31, 48, 51], [35, 51, 54], [31, 48, 74], [35, 54, 75],
 //                        [48, 74, 76], [54, 75, 77], [48, 59, 76], [54, 55, 77], [7, 57, 59], [9, 55, 57], [7, 9, 57],
 //                        [31, 40, 74], [35, 47, 75], [40, 41, 74], [46, 47, 75]];
-                    $parameters['indexesTriagnleStats'] = [[21, 22, 28], [21, 48, 74], [31, 40, 74], [35, 54, 75],
+                    $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
                         [35, 47, 75], [27, 35, 42], [27, 31, 39]];
                     $parameters['rotate_mode'] = $rotation;
                     $parameters['questions'] = $questions;

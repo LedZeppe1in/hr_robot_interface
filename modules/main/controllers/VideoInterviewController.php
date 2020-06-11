@@ -309,7 +309,7 @@ class VideoInterviewController extends Controller
             $parameters['nameVidFilesIn'] = 'video/' . $model->video_file_name;
             $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
             $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
-            $parameters['indexesTriagnleStats'] = [[21, 22, 28], [21, 48, 74], [31, 40, 74], [35, 54, 75],
+            $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
                 [35, 47, 75], [27, 35, 42], [27, 31, 39]];
             $parameters['rotate_mode'] = $rotation;
             $parameters['questions'] = $questions;

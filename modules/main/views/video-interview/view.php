@@ -17,8 +17,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Видеоинтервью: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Сформировать цифровую маску', ['get-landmarks', 'id' => $model->id],
-            ['class' => 'btn btn-success']) ?>
+        <?= ($model->video_file_name != '') ? Html::a('Сформировать цифровую маску',
+            ['get-landmarks', 'id' => $model->id], ['class' => 'btn btn-success']) : false ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',

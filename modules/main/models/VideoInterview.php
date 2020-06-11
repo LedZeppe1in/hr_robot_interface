@@ -33,7 +33,7 @@ class VideoInterview extends \yii\db\ActiveRecord
     const TYPE_MIRRORING_TRUE  = true;  // Отзеркаливание есть
     const TYPE_MIRRORING_FALSE = false; // Отзеркаливания нет
 
-    const TYPE_RAW_POINTS  = 0;       // Обработка сырых точек
+    const TYPE_RAW_POINTS        = 0; // Обработка сырых точек
     const TYPE_NORMALIZED_POINTS = 1; // Обраблотка нормализованных точек
 
     public $videoInterviewFile; // Файл видео-интервью

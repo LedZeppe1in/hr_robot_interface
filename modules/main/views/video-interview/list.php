@@ -52,10 +52,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '{view} {update} {get-landmarks} {delete}',
                 'buttons' => [
                     'get-landmarks' => function ($url, $model, $key) {
-                        $icon = Html::tag('span', '',
+                        $icon = ($model->video_file_name != '') ? Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-save-file',
-                                'title' => 'Сформировать цифровую маску']);
-                        $url = ['/video-interview/get-landmarks/' . $model->id];
+                                'title' => 'Сформировать цифровую маску']) : false;
+                        $url = ($model->video_file_name != '') ? ['/video-interview/get-landmarks/' . $model->id] :
+                            false;
                         return Html::a($icon, $url);
                     },
                 ],
