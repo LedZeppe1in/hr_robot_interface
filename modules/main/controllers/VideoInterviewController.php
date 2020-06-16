@@ -263,7 +263,7 @@ class VideoInterviewController extends Controller
         // Формирование списка вопросов
         $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // Загрузка и сохранение данных, пришедших методом POST
-        if ($model->loadAll(Yii::$app->request->post()) && $model->saveAll()) {
+        if ($model->loadAll(Yii::$app->request->post()) && $model->save()) {
             // Путь к программе обработки видео
             $mainPath = '/home/-Common/-ivan/';
             // Путь к файлу видеоинтервью
@@ -287,10 +287,24 @@ class VideoInterviewController extends Controller
             $videoResultFiles = array();
             $jsonResultFiles = array();
             $questions = array();
-            // Массив для хранения сообщений об ошибках
-            $errorMassages = array();
-            // Выборка всех цифровых масок у данного видеоинтервью
-            $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
+            // Массив для хранения сообщений о предупреждениях
+            $warningMassages = array();
+            // Создание цифровых масок в БД
+            $index = 0;
+            for ($i = 0; $i <= 100; $i++)
+                if (isset(Yii::$app->request->post('Landmark')[$index])) {
+                    $landmarkModel = new Landmark();
+                    $landmarkModel->start_time = Yii::$app->request->post('Landmark')[$index]['start_time'];
+                    $landmarkModel->finish_time = Yii::$app->request->post('Landmark')[$index]['finish_time'];
+                    $landmarkModel->questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
+                    $landmarkModel->video_interview_id = $model->id;
+                    $landmarkModel->save();
+                    $index++;
+                }
+            // Выборка всех созданных цифровых масок у данного видеоинтервью при запросе
+            $landmarks = Landmark::find()
+                ->where(['video_interview_id' => $model->id, 'landmark_file_name' => null])
+                ->all();
             // Обход по всем найденным цифровым маскам
             foreach ($landmarks as $landmark) {
                 // Добавление в массив названия видео-файла с результатами обработки видео
@@ -337,9 +351,10 @@ class VideoInterviewController extends Controller
                     $questionModel->save();
                     // Формирование id вопроса
                     $landmark->question_id = $questionModel->id;
-                }
-                // Увеличение индекса на 1
-                $index++;
+                } else
+                    // Формирование id вопроса
+                    $landmark->question_id = Question::findOne(Yii::$app->request
+                        ->post('Landmark')[$index]['question_id'])->id;
                 // Формирование названия json-файла с результатами обработки видео
                 $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
                 // Формирование описания цифровой маски
@@ -358,25 +373,26 @@ class VideoInterviewController extends Controller
                     // Получение json-файла с результатами обработки видео в виде цифровой маски
                     $landmarkFile = file_get_contents($jsonResultPath .
                         $landmark->landmark_file_name, true);
+                    // Сохранение файла с лицевыми точками на Object Storage
+                    $osConnector->saveFileToObjectStorage(
+                        OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                        $landmark->id,
+                        $landmark->landmark_file_name,
+                        $landmarkFile
+                    );
                     // Декодирование json-файла с результатами обработки видео в виде цифровой маски
                     $jsonLandmarkFile = json_decode($landmarkFile, true);
-                    // Если в json-файле с цифровой маской нет текста с ошибкой
-                    if (!isset($jsonLandmarkFile['err_msg'])) {
-                        $success = true;
-                        // Сохранение файла с лицевыми точками на Object Storage
-                        $osConnector->saveFileToObjectStorage(
-                            OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                            $landmark->id,
-                            $landmark->landmark_file_name,
-                            $landmarkFile
-                        );
-                    } else
-                        // Добавление в массив ошибок сообщения об ошибке
-                        array_push($errorMassages, $jsonLandmarkFile['err_msg']);
+                    // Если в json-файле с цифровой маской есть текст с предупреждением
+                    if (isset($jsonLandmarkFile['err_msg']))
+                        // Добавление в массив предупреждений сообщения о предупреждении
+                        array_push($warningMassages, $jsonLandmarkFile['err_msg']);
+                    $success = true;
                 }
                 if ($success == false)
                     // Удаление записи о цифровой маски для которой не сформирован json-файл
                     Landmark::findOne($landmark->id)->delete();
+                // Увеличение индекса на 1
+                $index++;
             }
             // Удаление файла с видеоинтервью
             if (file_exists($videoPath . $model->video_file_name))
@@ -398,9 +414,18 @@ class VideoInterviewController extends Controller
                 ->one();
             // Если цифровая маска найдена
             if ($landmark != '') {
-                // Вывод сообщения об успешном формировании цифровой маски
-                Yii::$app->getSession()->setFlash('success',
-                    'Вы успешно сформировали цифровую маску!');
+                // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
+                if (empty($warningMassages))
+                    // Вывод сообщения об успешном формировании цифровой маски
+                    Yii::$app->getSession()->setFlash('success',
+                        'Вы успешно сформировали цифровую маску!');
+                else {
+                    // Формирование сообщения с предупреждением
+                    $message = 'Цифровая маска сформирована! Внимание! ';
+                    foreach ($warningMassages as $warningMassage)
+                        $message .= PHP_EOL . $warningMassage;
+                    Yii::$app->getSession()->setFlash('warning', $message);
+                }
 
                 return $this->redirect(['/landmark/view/' . $landmark->id]);
             } else {
@@ -428,10 +453,6 @@ class VideoInterviewController extends Controller
                     // Удаление json-файла с сообщением ошибки
                     unlink($jsonResultPath . 'out_error.json');
                 }
-                // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
-                if (!empty($errorMassages))
-                    foreach ($errorMassages as $errorMassage)
-                        $errorMessage .= PHP_EOL . $errorMassage;
                 // Вывод сообщения о неуспешном формировании цифровой маски
                 Yii::$app->getSession()->setFlash('error', $errorMessage);
 

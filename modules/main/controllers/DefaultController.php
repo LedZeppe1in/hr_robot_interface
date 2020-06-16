@@ -115,10 +115,12 @@ class DefaultController extends Controller
                     $videoResultFiles = array();
                     $jsonResultFiles = array();
                     $questions = array();
-                    // Массив для хранения сообщений об ошибках
-                    $errorMassages = array();
+                    // Массив для хранения сообщений о предупреждениях
+                    $warningMassages = array();
                     // Выборка всех цифровых масок у данного видео-интервью
-                    $landmarks = Landmark::find()->where(['video_interview_id' => $videoInterviewModel->id])->all();
+                    $landmarks = Landmark::find()
+                        ->where(['video_interview_id' => $videoInterviewModel->id, 'landmark_file_name' => null])
+                        ->all();
                     // Обход по всем найденным цифровым маскам
                     foreach ($landmarks as $landmark) {
                         // Формирование названия видео-файла с результатами обработки видео
@@ -175,8 +177,6 @@ class DefaultController extends Controller
                             // Формирование id вопроса
                             $landmark->question_id = $questionModel->id;
                         }
-                        // Увеличение индекса на 1
-                        $index++;
                         // Формирование названия json-файла с результатами обработки видео
                         $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
                         // Формирование описания цифровой маски
@@ -195,94 +195,95 @@ class DefaultController extends Controller
                             // Получение json-файла с результатами обработки видео в виде цифровой маски
                             $landmarkFile = file_get_contents($jsonResultPath .
                                 $landmark->landmark_file_name, true);
+                            // Сохранение файла с лицевыми точками на Object Storage
+                            $osConnector->saveFileToObjectStorage(
+                                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                $landmark->id,
+                                $landmark->landmark_file_name,
+                                $landmarkFile
+                            );
+                            // Получение типа обработки получаемых цифровых масок
+                            $processingType = Yii::$app->request->post('VideoInterview')['processingType'];
+                            // Создание модели для результатов определения признаков
+                            $analysisResultModel = new AnalysisResult();
+                            $analysisResultModel->landmark_id = $landmark->id;
+                            $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
+                            $analysisResultModel->facts_file_name = 'facts.json';
+                            $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
+                                    ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
+                            $analysisResultModel->save();
+                            // Получение содержимого json-файла с лицевыми точками из Object Storage
+                            $faceData = $osConnector->getFileContentFromObjectStorage(
+                                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                $landmark->id,
+                                $landmark->landmark_file_name
+                            );
+                            // Создание объекта обнаружения лицевых признаков
+                            $facialFeatureDetector = new FacialFeatureDetector();
+                            // Выявление признаков для лица
+                            $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, $processingType);
+                            // Сохранение json-файла с результатами определения признаков на Object Storage
+                            $osConnector->saveFileToObjectStorage(
+                                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                                $analysisResultModel->id,
+                                $analysisResultModel->detection_result_file_name,
+                                $facialFeatures
+                            );
+                            // Преобразование массива с результатами определения признаков в массив фактов
+                            $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
+                            // Если в json-файле цифровой маски есть данные по Action Units
+                            if (strpos($faceData, 'AUs') !== false) {
+                                // Формирование json-строки
+                                $faceData = str_replace('{"AUs"', ',{"AUs"', $faceData);
+                                $faceData = trim($faceData, ',');
+                                $faceData = '[' . $faceData . ']';
+                                // Конвертация данных по Action Units в набор фактов
+                                $initialData = json_decode($faceData);
+                                if ((count($facts) > 0) && (count($initialData) > 0)) {
+                                    $frameData = $initialData[0];
+                                    $targetPropertyName = 'AUs';
+                                    if (property_exists($frameData, $targetPropertyName) === True)
+                                        foreach ($initialData as $frameIndex => $frameData) {
+                                            $actionUnits = $frameData->{$targetPropertyName};
+                                            $actionUnitsAsFacts = $facialFeatureDetector
+                                                ->convertActionUnitsToFacts(
+                                                    $actionUnits,
+                                                    $frameIndex
+                                                );
+                                            if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
+                                                $facts[$frameIndex] = array_merge($facts[$frameIndex],
+                                                    $actionUnitsAsFacts);
+                                        }
+                                }
+                            }
+                            // Сохранение json-файла с результатами конвертации определенных признаков в
+                            // набор фактов на Object Storage
+                            $osConnector->saveFileToObjectStorage(
+                                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                                $analysisResultModel->id,
+                                $analysisResultModel->facts_file_name,
+                                $facts
+                            );
+                            // Формирование строки из всех id результатов анализа
+                            if ($analysisResultIds == '')
+                                $analysisResultIds = $analysisResultModel->id;
+                            else
+                                $analysisResultIds .= ', ' . $analysisResultModel->id;
+                            // Запоминание последнего id анализа результата
+                            $lastAnalysisResultId = $analysisResultModel->id;
                             // Декодирование json-файла с результатами обработки видео в виде цифровой маски
                             $jsonLandmarkFile = json_decode($landmarkFile, true);
-                            // Если в json-файле с цифровой маской нет текста с ошибкой
-                            if (!isset($jsonLandmarkFile['err_msg'])) {
-                                $success = true;
-                                // Сохранение файла с лицевыми точками на Object Storage
-                                $osConnector->saveFileToObjectStorage(
-                                    OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                                    $landmark->id,
-                                    $landmark->landmark_file_name,
-                                    $landmarkFile
-                                );
-                                // Получение типа обработки получаемых цифровых масок
-                                $processingType = Yii::$app->request->post('VideoInterview')['processingType'];
-                                // Создание модели для результатов определения признаков
-                                $analysisResultModel = new AnalysisResult();
-                                $analysisResultModel->landmark_id = $landmark->id;
-                                $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
-                                $analysisResultModel->facts_file_name = 'facts.json';
-                                $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
-                                        ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
-                                $analysisResultModel->save();
-                                // Получение содержимого json-файла с лицевыми точками из Object Storage
-                                $faceData = $osConnector->getFileContentFromObjectStorage(
-                                    OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                                    $landmark->id,
-                                    $landmark->landmark_file_name
-                                );
-                                // Создание объекта обнаружения лицевых признаков
-                                $facialFeatureDetector = new FacialFeatureDetector();
-                                // Выявление признаков для лица
-                                $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, $processingType);
-                                // Сохранение json-файла с результатами определения признаков на Object Storage
-                                $osConnector->saveFileToObjectStorage(
-                                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                                    $analysisResultModel->id,
-                                    $analysisResultModel->detection_result_file_name,
-                                    $facialFeatures
-                                );
-                                // Преобразование массива с результатами определения признаков в массив фактов
-                                $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
-                                // Если в json-файле цифровой маски есть данные по Action Units
-                                if (strpos($faceData, 'AUs') !== false) {
-                                    // Формирование json-строки
-                                    $faceData = str_replace('{"AUs"', ',{"AUs"', $faceData);
-                                    $faceData = trim($faceData, ',');
-                                    $faceData = '[' . $faceData . ']';
-                                    // Конвертация данных по Action Units в набор фактов
-                                    $initialData = json_decode($faceData);
-                                    if ((count($facts) > 0) && (count($initialData) > 0)) {
-                                        $frameData = $initialData[0];
-                                        $targetPropertyName = 'AUs';
-                                        if (property_exists($frameData, $targetPropertyName) === True)
-                                            foreach ($initialData as $frameIndex => $frameData) {
-                                                $actionUnits = $frameData->{$targetPropertyName};
-                                                $actionUnitsAsFacts = $facialFeatureDetector
-                                                    ->convertActionUnitsToFacts(
-                                                        $actionUnits,
-                                                        $frameIndex
-                                                    );
-                                                if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
-                                                    $facts[$frameIndex] = array_merge($facts[$frameIndex],
-                                                        $actionUnitsAsFacts);
-                                            }
-                                    }
-                                }
-                                // Сохранение json-файла с результатами конвертации определенных признаков в
-                                // набор фактов на Object Storage
-                                $osConnector->saveFileToObjectStorage(
-                                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                                    $analysisResultModel->id,
-                                    $analysisResultModel->facts_file_name,
-                                    $facts
-                                );
-                                // Формирование строки из всех id результатов анализа
-                                if ($analysisResultIds == '')
-                                    $analysisResultIds = $analysisResultModel->id;
-                                else
-                                    $analysisResultIds .= ', ' . $analysisResultModel->id;
-                                // Запоминание последнего id анализа результата
-                                $lastAnalysisResultId = $analysisResultModel->id;
-                            } else
-                                // Добавление в массив ошибок сообщения об ошибке
-                                array_push($errorMassages, $jsonLandmarkFile['err_msg']);
+                            // Если в json-файле с цифровой маской есть текст с предупреждением
+                            if (isset($jsonLandmarkFile['err_msg']))
+                                // Добавление в массив предупреждений сообщения о предупреждении
+                                array_push($warningMassages, $jsonLandmarkFile['err_msg']);
+                            $success = true;
                         }
                         if ($success == false)
                             // Удаление записи о цифровой маски для которой не сформирован json-файл
                             Landmark::findOne($landmark->id)->delete();
+                        // Увеличение индекса на 1
+                        $index++;
                     }
                     // Если есть результаты определения признаков
                     if ($analysisResultIds != '') {
@@ -317,9 +318,18 @@ class DefaultController extends Controller
                             unlink($jsonResultPath . $jsonResultFile);
                     // Если был сформирован результат анализа
                     if ($lastAnalysisResultId != null) {
-                        // Вывод сообщения об успешном анализе видеоинтервью
-                        Yii::$app->getSession()->setFlash('success',
-                            'Вы успешно проанализировали видеоинтервью!');
+                        // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
+                        if (empty($warningMassages))
+                            // Вывод сообщения об успешном формировании цифровой маски
+                            Yii::$app->getSession()->setFlash('success',
+                                'Вы успешно проанализировали видеоинтервью!');
+                        else {
+                            // Формирование сообщения с предупреждением
+                            $message = 'Видеоинтервью проанализировано! Внимание! ';
+                            foreach ($warningMassages as $warningMassage)
+                                $message .= PHP_EOL . $warningMassage;
+                            Yii::$app->getSession()->setFlash('warning', $message);
+                        }
 
                         return $this->redirect(['/analysis-result/view/' . $lastAnalysisResultId]);
                     } else {
@@ -348,10 +358,6 @@ class DefaultController extends Controller
                             // Удаление json-файла с сообщением ошибки
                             unlink($jsonResultPath . 'out_error.json');
                         }
-                        // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
-                        if (!empty($errorMassages))
-                            foreach ($errorMassages as $errorMassage)
-                                $errorMessage .= PHP_EOL . $errorMassage;
                         // Вывод сообщения о неуспешном формировании цифровой маски
                         Yii::$app->getSession()->setFlash('error', $errorMessage);
 
