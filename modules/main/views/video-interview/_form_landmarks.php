@@ -3,7 +3,6 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use janisto\timepicker\TimePicker;
-use app\modules\main\models\Respondent;
 use app\modules\main\models\VideoInterview;
 use wbraganca\dynamicform\DynamicFormWidget;
 

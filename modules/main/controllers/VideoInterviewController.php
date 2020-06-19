@@ -286,6 +286,7 @@ class VideoInterviewController extends Controller
             // Массивы для хранения параметров результатов обработки видео
             $videoResultFiles = array();
             $jsonResultFiles = array();
+            $audioResultFiles = array();
             $questions = array();
             // Массив для хранения сообщений о предупреждениях
             $warningMassages = array();
@@ -312,6 +313,8 @@ class VideoInterviewController extends Controller
                     pathinfo($model->video_file_name, PATHINFO_EXTENSION));
                 // Добавление в массив названия json-файла с результатами обработки видео
                 array_push($jsonResultFiles, 'out_' . $landmark->id . '.json');
+                // Добавление в массив названия аудио-файла (mp3) с результатами обработки видео
+                array_push($audioResultFiles, 'out_' . $landmark->id . '.mp3');
                 // Формирование информации по вопросу
                 $question['id'] = $landmark->id;
                 $question['start'] = $landmark->start_time;
@@ -323,6 +326,7 @@ class VideoInterviewController extends Controller
             $parameters['nameVidFilesIn'] = 'video/' . $model->video_file_name;
             $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
             $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
+            $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
             $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
                 [35, 47, 75], [27, 35, 42], [27, 31, 39]];
             $parameters['rotate_mode'] = $rotation;
@@ -407,6 +411,9 @@ class VideoInterviewController extends Controller
             foreach ($jsonResultFiles as $jsonResultFile)
                 if (file_exists($jsonResultPath . $jsonResultFile))
                     unlink($jsonResultPath . $jsonResultFile);
+            foreach ($audioResultFiles as $audioResultFile)
+                if (file_exists($jsonResultPath . $audioResultFile))
+                    unlink($jsonResultPath . $audioResultFile);
             // Выборка последней добавленной цифровой маски для данного видеоинтервью
             $landmark = Landmark::find()
                 ->where(['video_interview_id' => $model->id])

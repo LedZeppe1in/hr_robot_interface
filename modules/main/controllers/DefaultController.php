@@ -114,6 +114,7 @@ class DefaultController extends Controller
                     // Массивы для хранения параметров результатов обработки видео
                     $videoResultFiles = array();
                     $jsonResultFiles = array();
+                    $audioResultFiles = array();
                     $questions = array();
                     // Массив для хранения сообщений о предупреждениях
                     $warningMassages = array();
@@ -123,15 +124,13 @@ class DefaultController extends Controller
                         ->all();
                     // Обход по всем найденным цифровым маскам
                     foreach ($landmarks as $landmark) {
-                        // Формирование названия видео-файла с результатами обработки видео
-                        $videoResultFileName = 'out_' . $landmark->id . '.' .
-                            $videoInterviewModel->videoInterviewFile->extension;
                         // Добавление в массив названия видео-файла с результатами обработки видео
-                        array_push($videoResultFiles, $videoResultFileName);
-                        // Формирование названия json-файла с результатами обработки видео
-                        $jsonResultFileName = 'out_' . $landmark->id . '.json';
+                        array_push($videoResultFiles, 'out_' . $landmark->id . '.' .
+                            $videoInterviewModel->videoInterviewFile->extension);
                         // Добавление в массив названия json-файла с результатами обработки видео
-                        array_push($jsonResultFiles, $jsonResultFileName);
+                        array_push($jsonResultFiles, 'out_' . $landmark->id . '.json');
+                        // Добавление в массив названия аудио-файла (mp3) с результатами обработки видео
+                        array_push($audioResultFiles, 'out_' . $landmark->id . '.mp3');
                         // Формирование информации по вопросу
                         $question['id'] = $landmark->id;
                         $question['start'] = $landmark->start_time;
@@ -143,6 +142,7 @@ class DefaultController extends Controller
                     $parameters['nameVidFilesIn'] = 'video/' . $videoInterviewModel->video_file_name;
                     $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
                     $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
+                    $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
 //                    $parameters['indexesTriagnleStats'] = [[31, 48, 51], [35, 51, 54], [31, 48, 74], [35, 54, 75],
 //                        [48, 74, 76], [54, 75, 77], [48, 59, 76], [54, 55, 77], [7, 57, 59], [9, 55, 57], [7, 9, 57],
 //                        [31, 40, 74], [35, 47, 75], [40, 41, 74], [46, 47, 75]];
@@ -316,6 +316,9 @@ class DefaultController extends Controller
                     foreach ($jsonResultFiles as $jsonResultFile)
                         if (file_exists($jsonResultPath . $jsonResultFile))
                             unlink($jsonResultPath . $jsonResultFile);
+                    foreach ($audioResultFiles as $audioResultFile)
+                        if (file_exists($jsonResultPath . $audioResultFile))
+                            unlink($jsonResultPath . $audioResultFile);
                     // Если был сформирован результат анализа
                     if ($lastAnalysisResultId != null) {
                         // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
