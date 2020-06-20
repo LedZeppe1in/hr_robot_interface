@@ -81,13 +81,13 @@ class DefaultController extends Controller
             $videoInterviewFile = UploadedFile::getInstance($videoInterviewModel, 'videoInterviewFile');
             $videoInterviewModel->videoInterviewFile = $videoInterviewFile;
             // Валидация поля файла видеоинтервью
-            if ($videoInterviewModel->validate(['videoInterviewFile'])) {
+            //if ($videoInterviewModel->validate(['videoInterviewFile'])) {
                 // Если пользователь загрузил файл видеоинтервью
                 if ($videoInterviewFile && $videoInterviewFile->tempName)
                     $videoInterviewModel->video_file_name = $videoInterviewModel->videoInterviewFile->baseName . '.' .
                         $videoInterviewModel->videoInterviewFile->extension;
                 // Сохранение данных о видеоинтервью в БД
-                if ($videoInterviewModel->saveAll()) {
+                if ($videoInterviewModel->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
                     $osConnector = new OSConnector();
                     // Сохранение файла видеоинтервью на Object Storage
@@ -118,6 +118,18 @@ class DefaultController extends Controller
                     $questions = array();
                     // Массив для хранения сообщений о предупреждениях
                     $warningMassages = array();
+                    // Создание цифровых масок в БД
+                    $index = 0;
+                    for ($i = 0; $i <= 100; $i++)
+                        if (isset(Yii::$app->request->post('Landmark')[$index])) {
+                            $landmarkModel = new Landmark();
+                            $landmarkModel->start_time = Yii::$app->request->post('Landmark')[$index]['start_time'];
+                            $landmarkModel->finish_time = Yii::$app->request->post('Landmark')[$index]['finish_time'];
+                            $landmarkModel->questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
+                            $landmarkModel->video_interview_id = $videoInterviewModel->id;
+                            $landmarkModel->save();
+                            $index++;
+                        }
                     // Выборка всех цифровых масок у данного видео-интервью
                     $landmarks = Landmark::find()
                         ->where(['video_interview_id' => $videoInterviewModel->id, 'landmark_file_name' => null])
@@ -176,7 +188,10 @@ class DefaultController extends Controller
                             $questionModel->save();
                             // Формирование id вопроса
                             $landmark->question_id = $questionModel->id;
-                        }
+                        } else
+                            // Формирование id вопроса
+                            $landmark->question_id = Question::findOne(Yii::$app->request
+                                ->post('Landmark')[$index]['question_id'])->id;
                         // Формирование названия json-файла с результатами обработки видео
                         $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
                         // Формирование описания цифровой маски
@@ -294,9 +309,9 @@ class DefaultController extends Controller
                             'AddressForInitialConditionsRetrieval' =>
                                 'http://84.201.129.65/analysis-result/facts-download/',
                             'IDsOfInitialConditions' => '[' . $analysisResultIds . ']',
-                            'AddressToSendResults' => 'http://84.201.129.65:9999/Drools/RetrieveData.php');
+                            'AddressToSendResults' => 'https://84.201.129.65:9999/Drools/RetrieveData.php');
                         // Вызов модуля интерпретации признаков через CURL
-                        $request = curl_init('http://84.201.129.65:9999/Drools/RetrieveData.php');
+                        $request = curl_init('https://84.201.129.65:9999/Drools/RetrieveData.php');
                         $dataToSend = http_build_query($parameters);
                         curl_setopt($request, CURLOPT_POSTFIELDS, $dataToSend);
                         curl_setopt($request, CURLOPT_RETURNTRANSFER, True);
@@ -309,6 +324,9 @@ class DefaultController extends Controller
                     // Удаление файла с параметрами запуска программы обработки видео
                     if (file_exists($mainPath . 'test.json'))
                         unlink($mainPath . 'test.json');
+                    // Удаление файла с выходной аудио-информацией
+                    if (file_exists($mainPath . 'audio_out.mp3'))
+                        unlink($mainPath . 'audio_out.mp3');
                     // Удаление файлов с результатами обработки видеоинтервью
                     foreach ($videoResultFiles as $videoResultFile)
                         if (file_exists($jsonResultPath . $videoResultFile))
@@ -367,7 +385,7 @@ class DefaultController extends Controller
                         return $this->redirect(['/video-interview/view/' . $videoInterviewModel->id]);
                     }
                 }
-            }
+            //}
         }
 
         return $this->render('analysis', [

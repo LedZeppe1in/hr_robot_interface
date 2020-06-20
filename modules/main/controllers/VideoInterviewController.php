@@ -404,6 +404,9 @@ class VideoInterviewController extends Controller
             // Удаление файла с параметрами запуска программы обработки видео
             if (file_exists($mainPath . 'test.json'))
                 unlink($mainPath . 'test.json');
+            // Удаление файла с выходной аудио-информацией
+            if (file_exists($mainPath . 'audio_out.mp3'))
+                unlink($mainPath . 'audio_out.mp3');
             // Удаление файлов с результатами обработки видеоинтервью
             foreach ($videoResultFiles as $videoResultFile)
                 if (file_exists($jsonResultPath . $videoResultFile))

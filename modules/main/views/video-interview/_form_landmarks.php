@@ -83,6 +83,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
         'model' => $landmarkModels[0],
         'formId' => 'get-landmarks-form',
         'formFields' => [
+            'question_id',
             'questionText',
             'start_time',
             'finish_time'

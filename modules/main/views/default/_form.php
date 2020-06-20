@@ -92,6 +92,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
         'model' => $landmarkModels[0],
         'formId' => 'video-interview-analysis-form',
         'formFields' => [
+            'question_id',
             'questionText',
             'start_time',
             'finish_time'
