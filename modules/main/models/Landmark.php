@@ -17,6 +17,7 @@ use yii\behaviors\TimestampBehavior;
  * @property bool $mirroring
  * @property int $start_time
  * @property int $finish_time
+ * @property int $type
  * @property int $video_interview_id
  * @property int $question_id
  *
@@ -34,6 +35,9 @@ class Landmark extends \yii\db\ActiveRecord
 
     const TYPE_MIRRORING_TRUE  = true;  // Отзеркаливание есть
     const TYPE_MIRRORING_FALSE = false; // Отзеркаливания нет
+
+    const TYPE_LANDMARK_IVAN_MODULE   = 0; // Цифровая маска получена от программы Ивана
+    const TYPE_LANDMARK_ANDREW_MODULE = 1; // Цифровая маска получена от программы Андрея
 
     public $landmarkFile; // Файл с лицевыми точками
     public $questionText; // Текст вопроса
@@ -56,7 +60,7 @@ class Landmark extends \yii\db\ActiveRecord
             [['start_time', 'finish_time', 'video_interview_id', 'questionText'], 'required'],
             [['video_interview_id'], 'integer'],
             [['landmark_file_name', 'description', 'questionText'], 'string',],
-            [['rotation', 'mirroring', 'start_time', 'finish_time'], 'safe'],
+            [['rotation', 'mirroring', 'start_time', 'finish_time', 'type'], 'safe'],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
@@ -80,6 +84,7 @@ class Landmark extends \yii\db\ActiveRecord
             'mirroring' => 'Наличие отзеркаливания',
             'start_time' => 'Время начала нарезки',
             'finish_time' => 'Время окончания нарезки',
+            'type' => 'Тип',
             'video_interview_id' => 'ID видеоинтервью',
             'question_id' => 'ID вопроса',
             'landmarkFile' => 'Файл с лицевыми точками',
@@ -221,5 +226,28 @@ class Landmark extends \yii\db\ActiveRecord
     public function getMirroring()
     {
         return ArrayHelper::getValue(self::getMirroringValues(), $this->mirroring);
+    }
+
+    /**
+     * Получение списка значений для типов цифровых масок.
+     *
+     * @return array - массив всех возможных типов цифровых масок
+     */
+    public static function getTypes()
+    {
+        return [
+            self::TYPE_LANDMARK_IVAN_MODULE => 'От Ивана',
+            self::TYPE_LANDMARK_ANDREW_MODULE => 'От Андрея',
+        ];
+    }
+
+    /**
+     * Получение значения типа цифровой маски.
+     *
+     * @return mixed
+     */
+    public function getType()
+    {
+        return ArrayHelper::getValue(self::getTypes(), $this->type);
     }
 }

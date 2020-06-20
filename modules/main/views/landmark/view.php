@@ -63,6 +63,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Название файла видеоинтервью',
                 'value' => $model->videoInterview->video_file_name,
             ],
+            [
+                'attribute' => 'type',
+                'label' => 'Цифровая маска получена',
+                'value' => $model->type ? $model->getType() : null,
+            ],
             'question_id',
             [
                 'attribute' => 'question_id',

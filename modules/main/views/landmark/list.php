@@ -37,6 +37,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
             [
+                'attribute'=>'type',
+                'label' => 'Цифровая маска получена',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->type != '') ? $data->getType() : null;
+                },
+            ],
+            [
                 'attribute'=>'question_id',
                 'label' => 'Вопрос',
                 'format' => 'raw',
