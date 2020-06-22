@@ -58,9 +58,9 @@ class OSConnector
             // Если пришел массив
             if (is_array($file))
                 $content = json_encode($file, JSON_UNESCAPED_UNICODE);
-            // Если пришел не json-текст (файл)
-            if (is_string($file) && !is_array(json_decode($file, true)))
-                $content = fopen($file, 'r');
+//            // Если пришел не json-текст (файл)
+//            if (is_string($file) && !is_array(json_decode($file, true)))
+//                $content = fopen($file, 'r');
             $s3Client->putObject([
                 'Bucket' => $bucketName,
                 'Key' => ($path != null) ? $path . '/' . $fileName : $fileName,

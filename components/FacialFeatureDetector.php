@@ -2172,6 +2172,18 @@ class FacialFeatureDetector
         else return false;
     }
 
+    public function isLine($point1,$point2,$point3,$constr)
+    {
+        $denominator = $point2['Y'] - $point1['Y'];
+        if ($denominator == 0) $denominator = 1;
+        // if abs((x_3 - x_1) / (x_2 - x_1) - (y_3 - y_1) / (y_2 - y_1)) <= Tol
+        if (abs(($point3['X'] - $point1['X']) / ($point2['X'] - $point1['X']) -
+                ($point3['Y'] - $point1['Y']) / $denominator) <= $constr)
+            return true;
+        else
+            return false;
+    }
+
     /**
      * Обнаружение признаков бровей.
      *
@@ -2406,6 +2418,51 @@ class FacialFeatureDetector
 
                 $targetFaceData[$facePart]["right_eyebrow_movement_x"][$i]["val"] = $xMov;
                 $targetFaceData[$facePart]["right_eyebrow_movement_y"][$i]["val"] = $yMov;
+
+                //определение формы бровей: дуга вверх, линия, треугольник;
+                $leftEyebrowForm = 'none';
+                $rightEyebrowForm = 'none';
+
+                if(($sourceFaceData[$i][17]['Y'] < $sourceFaceData[$i][19]['Y']) &&
+                    ($sourceFaceData[$i][21]['Y'] < $sourceFaceData[$i][19]['Y'])) $leftEyebrowForm = 'down';
+                     else $leftEyebrowForm = 'up';
+                if(($sourceFaceData[$i][22]['Y'] < $sourceFaceData[$i][24]['Y']) &&
+                    ($sourceFaceData[$i][26]['Y'] < $sourceFaceData[$i][24]['Y'])) $rightEyebrowForm = 'down';
+                    else $rightEyebrowForm = 'up';
+
+
+                $c1 = $coefs_['coefLineDetection']; //допустимая погрешность в пикселях для определения линий
+                if($this->isLine($sourceFaceData[$i][17], $sourceFaceData[$i][19],$sourceFaceData[$i][21],$c1) == true)
+                    $leftEyebrowForm = 'line';
+                if($this->isLine($sourceFaceData[$i][22], $sourceFaceData[$i][24],$sourceFaceData[$i][26],$c1) == true)
+                    $rightEyebrowForm = 'line';
+
+                //определение треугольника
+                /*
+                //лев. 17-18-19 и 19-20-21 должны быть линии, тогда как 18-19-20 не линия
+                //прав. 22-23-24 и 24-25-26 должны быть линии, тогда как 23-24-25 не линия
+                if(($this->isLine($sourceFaceData[$i][17], $sourceFaceData[$i][18],$sourceFaceData[$i][19],$c1) == true) &&
+                    ($this->isLine($sourceFaceData[$i][19], $sourceFaceData[$i][20],$sourceFaceData[$i][21],$c1) == true) &&
+                    ($this->isLine($sourceFaceData[$i][18], $sourceFaceData[$i][19],$sourceFaceData[$i][20],$c1) != true)
+                ) $leftEyebrowForm = 'triangle';
+                if(($this->isLine($sourceFaceData[$i][22], $sourceFaceData[$i][23],$sourceFaceData[$i][24],$c1) == true) &&
+                    ($this->isLine($sourceFaceData[$i][24], $sourceFaceData[$i][25],$sourceFaceData[$i][26],$c1) == true) &&
+                    ($this->isLine($sourceFaceData[$i][23], $sourceFaceData[$i][24],$sourceFaceData[$i][25],$c1) != true)
+                ) $rightEyebrowForm = 'triangle';*/
+
+                //лев. 18-19-20 должны быть на линии, тогда как 19-20-21 не на линии
+                //прав. 23-24-25 должны быть на линии, тогда как 22-23-24 не на линии
+                if(($this->isLine($sourceFaceData[$i][18], $sourceFaceData[$i][19],$sourceFaceData[$i][20],$c1) == true) &&
+                    ($this->isLine($sourceFaceData[$i][19], $sourceFaceData[$i][20],$sourceFaceData[$i][21],$c1) != true)
+                ) $leftEyebrowForm = 'triangle';
+                if(($this->isLine($sourceFaceData[$i][23], $sourceFaceData[$i][24],$sourceFaceData[$i][25],$c1) == true) &&
+                    ($this->isLine($sourceFaceData[$i][22], $sourceFaceData[$i][23],$sourceFaceData[$i][24],$c1) != true)
+                ) $rightEyebrowForm = 'triangle';
+
+                $targetFaceData[$facePart]["left_eyebrow_form"][$i]["force"] = 0;
+                $targetFaceData[$facePart]["right_eyebrow_form"][$i]["force"] = 0;
+                $targetFaceData[$facePart]["left_eyebrow_form"][$i]["val"] = $leftEyebrowForm;
+                $targetFaceData[$facePart]["right_eyebrow_form"][$i]["val"] = $rightEyebrowForm;
             }
             return $targetFaceData[$facePart];
         }
@@ -2957,10 +3014,43 @@ class FacialFeatureDetector
                         $targetFaceData[$facePart]["mouth_form"][$i]["val"] = 'rectangle';
                 else
                     $targetFaceData[$facePart]["mouth_form"][$i]["val"] = 'line';
+
+                //определение формы рта и губ
+                //- рот: дуга вверх, дуга вниз; 48-62.66-54
+                //- губы: дуга вверх, дуга вниз. 60-62-64, 60-66-64.
+                $mouthForm2 = 'none';
+                if(($sourceFaceData[$i][48]['Y'] < ($sourceFaceData[$i][62]['Y'] + $sourceFaceData[$i][66]['Y'])/2) &&
+                    ($sourceFaceData[$i][54]['Y'] < ($sourceFaceData[$i][62]['Y'] + $sourceFaceData[$i][66]['Y'])/2)) $leftEyebrowForm = 'down';
+                else $mouthForm2 = 'up';
+                $targetFaceData[$facePart]["mouth_form2"][$i]["force"] = 0;
+                $targetFaceData[$facePart]["mouth_form2"][$i]["val"] = $mouthForm2;
+
+                $lipUpForm = 'none';
+                if(($sourceFaceData[$i][60]['Y'] < $sourceFaceData[$i][62]['Y']) &&
+                    ($sourceFaceData[$i][64]['Y'] < $sourceFaceData[$i][62]['Y'])) $lipUpForm = 'down';
+                else $lipUpForm = 'up';
+                $lipLowForm = 'none';
+                if(($sourceFaceData[$i][60]['Y'] < $sourceFaceData[$i][66]['Y']) &&
+                    ($sourceFaceData[$i][64]['Y'] < $sourceFaceData[$i][66]['Y'])) $lipLowForm = 'down';
+                else $lipLowForm = 'up';
+
+                $lipsForm = 'none';
+                if($lipUpForm == $lipLowForm) $lipsForm = $lipUpForm;
+
+                $targetFaceData[$facePart]["mouth_lips_form"][$i]["force"] = 0;
+                $targetFaceData[$facePart]["mouth_lips_form"][$i]["val"] = $lipsForm;
+
+
             }
 
             return $targetFaceData[$facePart];
         } else return false;
+    }
+
+    public function basicFrameDetection($sourceFaceData1){
+
+
+        return true;
     }
 
     /**
@@ -3892,11 +3982,10 @@ class FacialFeatureDetector
                  }
 
                  //add to the end of the array new values
-                 for ($i1 = (count($sourceFaceData1[$k])  - $shiftCnt);
-                       $i1 < (count($sourceFaceData1[$k])); $i1++) {
-                     if (is_array($resFaceData[$k]))
-                      array_push($resFaceData[$k], $sourceFaceData1[$k][$i1]);
-                 }
+                 for ($i1 = (count($sourceFaceData1[$k])  - $shiftCnt); $i1 < (count($sourceFaceData1[$k])); $i1++)
+                     if (is_array($resFaceData[$k]) && isset($sourceFaceData1[$k][$i1]))
+                         array_push($resFaceData[$k], $sourceFaceData1[$k][$i1]);
+
              } elseif (($v != null)  && ($k == 'contours')){
 //        echo $k.' '.$v.'<br>';
                  for ($i = 0; $i < count($sourceFaceData1[$k]); $i++) {
@@ -3999,7 +4088,8 @@ class FacialFeatureDetector
             'coefNoseMovMax' => 0.3,
             'coefNoseWingYMax' => 0.5,
             'coefEyeForceLevelX' => 80,
-            'coefEyeForceLevelY' => 55
+            'coefEyeForceLevelY' => 55,
+            'coefLineDetection' => 3
         );
         //----------------------------------------------------------------------------
         //----------------- norm points processing -----------------------------------
@@ -4138,9 +4228,11 @@ class FacialFeatureDetector
         /* Соответствия для брови */
         if ($sourceFacePart == 'eyebrow')
             $targetValues['targetFacePart'] = 'Бровь';
-        if (($sourceFeatureName == 'left_eyebrow_movement_x') || ($sourceFeatureName == 'left_eyebrow_movement_y'))
+        if (($sourceFeatureName == 'left_eyebrow_movement_x') || ($sourceFeatureName == 'left_eyebrow_movement_y')
+            || ($sourceFeatureName == 'left_eyebrow_form'))
             $targetValues['targetFacePart'] = 'Левая бровь';
-        if (($sourceFeatureName == 'right_eyebrow_movement_x') || ($sourceFeatureName == 'right_eyebrow_movement_y') )
+        if (($sourceFeatureName == 'right_eyebrow_movement_x') || ($sourceFeatureName == 'right_eyebrow_movement_y')
+            || ($sourceFeatureName == 'right_eyebrow_form'))
             $targetValues['targetFacePart'] = 'Правая бровь';
 /*
         if ((($sourceFeatureName == 'left_eyebrow_movement_x') || ($sourceFeatureName == 'right_eyebrow_movement_x')
@@ -4149,6 +4241,26 @@ class FacialFeatureDetector
             $targetValues['featureChangeType'] = 'Отсутствие типа';
             $targetValues['changeDirection'] = 'Отсутствие направления';
         }*/
+        if ((($sourceFeatureName == 'left_eyebrow_form') || ($sourceFeatureName == 'right_eyebrow_form')) && ($sourceValue == 'triangle')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Тругольник';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_form') || ($sourceFeatureName == 'right_eyebrow_form')) && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_form') || ($sourceFeatureName == 'right_eyebrow_form')) && ($sourceValue == 'line')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Линия';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_form') || ($sourceFeatureName == 'right_eyebrow_form')) && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Дуга вверх';
+        }
+        if ((($sourceFeatureName == 'left_eyebrow_form') || ($sourceFeatureName == 'right_eyebrow_form')) && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Дуга вниз';
+        }
         if ((($sourceFeatureName == 'left_eyebrow_movement_x') || ($sourceFeatureName == 'right_eyebrow_movement_x')) &&
             ($sourceValue == 'none')) {
             $targetValues['featureChangeType'] = 'Изменение положения по горизонтали';
@@ -4502,8 +4614,24 @@ class FacialFeatureDetector
         // Размер и форма рта
         if ($sourceFacePart == 'mouth')
             $targetValues['targetFacePart'] = 'Рот';
-        if ($sourceFeatureName == 'mouth_form')
+        if (($sourceFeatureName == 'mouth_form') || ($sourceFeatureName == 'mouth_form2') || ($sourceFeatureName == 'mouth_lips_form'))
             $targetValues['targetFacePart'] = 'Рот';
+        if (($sourceFeatureName == 'mouth_form2') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение формы губ';
+            $targetValues['changeDirection'] = 'Дуга вниз';
+        }
+        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы губ';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение формы губ';
+            $targetValues['changeDirection'] = 'Дуга вверх';
+        }
         if (($sourceFeatureName == 'mouth_form') && ($sourceValue == 'ellipse')) {
             $targetValues['featureChangeType'] = 'Изменение формы';
             $targetValues['changeDirection'] = 'Овал';

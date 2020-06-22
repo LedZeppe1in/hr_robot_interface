@@ -41,7 +41,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Цифровая маска получена',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return ($data->type != '') ? $data->getType() : null;
+                    return $data->getType();
                 },
             ],
             [

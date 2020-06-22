@@ -58,6 +58,75 @@ class DefaultController extends Controller
     }
 
     /**
+     * Создание модели результатов анализа и запуск модуля определения признаков.
+     *
+     * @param $landmark - модель цифровой маски
+     * @param $processingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
+     * @param $osConnector - объект соединения с Yandex.Cloud Object Storage
+     * @return int - id результатов анализа
+     */
+    public static function getAnalysisResult($landmark, $processingType, $osConnector)
+    {
+        // Создание модели для результатов определения признаков
+        $analysisResultModel = new AnalysisResult();
+        $analysisResultModel->landmark_id = $landmark->id;
+        $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
+        $analysisResultModel->facts_file_name = 'facts.json';
+        $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
+            ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
+        $analysisResultModel->save();
+        // Получение содержимого json-файла с лицевыми точками из Object Storage
+        $faceData = $osConnector->getFileContentFromObjectStorage(
+            OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+            $landmark->id,
+            $landmark->landmark_file_name
+        );
+        // Создание объекта обнаружения лицевых признаков
+        $facialFeatureDetector = new FacialFeatureDetector();
+        // Выявление признаков для лица
+        $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, $processingType);
+        // Сохранение json-файла с результатами определения признаков на Object Storage
+        $osConnector->saveFileToObjectStorage(
+            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $analysisResultModel->id,
+            $analysisResultModel->detection_result_file_name,
+            $facialFeatures
+        );
+        // Преобразование массива с результатами определения признаков в массив фактов
+        $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
+        // Если в json-файле цифровой маски есть данные по Action Units
+        if (strpos($faceData, 'AUs') !== false) {
+            // Формирование json-строки
+            $faceData = str_replace('{"AUs"', ',{"AUs"', $faceData);
+            $faceData = trim($faceData, ',');
+            $faceData = '[' . $faceData . ']';
+            // Конвертация данных по Action Units в набор фактов
+            $initialData = json_decode($faceData);
+            if ((count($facts) > 0) && (count($initialData) > 0)) {
+                $frameData = $initialData[0];
+                $targetPropertyName = 'AUs';
+                if (property_exists($frameData, $targetPropertyName) === True)
+                    foreach ($initialData as $frameIndex => $frameData) {
+                        $actionUnits = $frameData->{$targetPropertyName};
+                        $actionUnitsAsFacts = $facialFeatureDetector->convertActionUnitsToFacts($actionUnits,
+                            $frameIndex);
+                        if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
+                            $facts[$frameIndex] = array_merge($facts[$frameIndex], $actionUnitsAsFacts);
+                    }
+            }
+        }
+        // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
+        $osConnector->saveFileToObjectStorage(
+            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+            $analysisResultModel->id,
+            $analysisResultModel->facts_file_name,
+            $facts
+        );
+
+        return $analysisResultModel->id;
+    }
+
+    /**
      * Страница анализа видео-интервью (полная цепочка анализа от загрузки исходного видеоинтервью до результатов
      * интерпретации признаков).
      *
@@ -81,7 +150,7 @@ class DefaultController extends Controller
             $videoInterviewFile = UploadedFile::getInstance($videoInterviewModel, 'videoInterviewFile');
             $videoInterviewModel->videoInterviewFile = $videoInterviewFile;
             // Валидация поля файла видеоинтервью
-            //if ($videoInterviewModel->validate(['videoInterviewFile'])) {
+            if ($videoInterviewModel->validate(['videoInterviewFile'])) {
                 // Если пользователь загрузил файл видеоинтервью
                 if ($videoInterviewFile && $videoInterviewFile->tempName)
                     $videoInterviewModel->video_file_name = $videoInterviewModel->videoInterviewFile->baseName . '.' .
@@ -98,7 +167,7 @@ class DefaultController extends Controller
                             $videoInterviewModel->video_file_name,
                             $videoInterviewFile->tempName
                         );
-                    // Путь к программе обработки видео
+                    // Путь к программе обработки видео от Ивана
                     $mainPath = '/home/-Common/-ivan/';
                     // Путь к файлу видеоинтервью
                     $videoPath = $mainPath . 'video/';
@@ -107,10 +176,6 @@ class DefaultController extends Controller
                     // Сохранение файла видеоинтервью на сервере
                     $videoInterviewModel->videoInterviewFile->saveAs($videoPath .
                         $videoInterviewModel->video_file_name);
-                    // Получение значения поворота
-                    $rotation = (int)Yii::$app->request->post('VideoInterview')['rotationParameter'];
-                    // Получение значения наличия отзеркаливания
-                    $mirroring = Yii::$app->request->post('VideoInterview')['mirroringParameter'];
                     // Массивы для хранения параметров результатов обработки видео
                     $videoResultFiles = array();
                     $jsonResultFiles = array();
@@ -118,15 +183,26 @@ class DefaultController extends Controller
                     $questions = array();
                     // Массив для хранения сообщений о предупреждениях
                     $warningMassages = array();
+                    // Получение значения поворота
+                    $rotation = (int)Yii::$app->request->post('VideoInterview')['rotationParameter'];
+                    // Получение типа обработки получаемых цифровых масок
+                    $processingType = Yii::$app->request->post('VideoInterview')['processingType'];
                     // Создание цифровых масок в БД
                     $index = 0;
                     for ($i = 0; $i <= 100; $i++)
                         if (isset(Yii::$app->request->post('Landmark')[$index])) {
                             $landmarkModel = new Landmark();
-                            $landmarkModel->start_time = Yii::$app->request->post('Landmark')[$index]['start_time'];
-                            $landmarkModel->finish_time = Yii::$app->request->post('Landmark')[$index]['finish_time'];
-                            $landmarkModel->questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
+                            $landmarkModel->start_time = Yii::$app->request
+                                ->post('Landmark')[$index]['start_time'];
+                            $landmarkModel->finish_time = Yii::$app->request
+                                ->post('Landmark')[$index]['finish_time'];
+                            $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                            $landmarkModel->rotation = $rotation;
+                            $landmarkModel->mirroring = boolval(Yii::$app->request
+                                ->post('VideoInterview')['mirroringParameter']);
                             $landmarkModel->video_interview_id = $videoInterviewModel->id;
+                            $landmarkModel->questionText = Yii::$app->request
+                                ->post('Landmark')[$index]['questionText'];
                             $landmarkModel->save();
                             $index++;
                         }
@@ -137,8 +213,7 @@ class DefaultController extends Controller
                     // Обход по всем найденным цифровым маскам
                     foreach ($landmarks as $landmark) {
                         // Добавление в массив названия видео-файла с результатами обработки видео
-                        array_push($videoResultFiles, 'out_' . $landmark->id . '.' .
-                            $videoInterviewModel->videoInterviewFile->extension);
+                        array_push($videoResultFiles, 'out_' . $landmark->id . '.avi');
                         // Добавление в массив названия json-файла с результатами обработки видео
                         array_push($jsonResultFiles, 'out_' . $landmark->id . '.json');
                         // Добавление в массив названия аудио-файла (mp3) с результатами обработки видео
@@ -170,7 +245,7 @@ class DefaultController extends Controller
                     fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
                     // Закрытие файла
                     fclose($jsonFile);
-                    // Запуск программы обработки видео
+                    // Запуск программы обработки видео Ивана
                     chdir($mainPath);
                     exec('./venv/bin/python ./main.py ./test.json');
                     $index = 0;
@@ -190,20 +265,14 @@ class DefaultController extends Controller
                             $landmark->question_id = $questionModel->id;
                         } else
                             // Формирование id вопроса
-                            $landmark->question_id = Question::findOne(Yii::$app->request
-                                ->post('Landmark')[$index]['question_id'])->id;
+                            $landmark->question_id = Yii::$app->request->post('Landmark')[$index]['question_id'];
                         // Формирование названия json-файла с результатами обработки видео
                         $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
                         // Формирование описания цифровой маски
                         $landmark->description = $videoInterviewModel->description . ' (время нарезки: ' .
                             $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
-                        // Формирование значения поворота
-                        $landmark->rotation = $rotation;
-                        // Формирование значения наличия отзеркаливания
-                        $landmark->mirroring = boolval($mirroring);
                         // Обновление атрибутов цифровой маски в БД
-                        $landmark->updateAttributes(['landmark_file_name', 'description', 'rotation',
-                            'mirroring', 'question_id']);
+                        $landmark->updateAttributes(['landmark_file_name', 'description', 'question_id']);
                         $success = false;
                         // Проверка существования json-файл с результатами обработки видео
                         if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
@@ -217,75 +286,15 @@ class DefaultController extends Controller
                                 $landmark->landmark_file_name,
                                 $landmarkFile
                             );
-                            // Получение типа обработки получаемых цифровых масок
-                            $processingType = Yii::$app->request->post('VideoInterview')['processingType'];
-                            // Создание модели для результатов определения признаков
-                            $analysisResultModel = new AnalysisResult();
-                            $analysisResultModel->landmark_id = $landmark->id;
-                            $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
-                            $analysisResultModel->facts_file_name = 'facts.json';
-                            $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
-                                    ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
-                            $analysisResultModel->save();
-                            // Получение содержимого json-файла с лицевыми точками из Object Storage
-                            $faceData = $osConnector->getFileContentFromObjectStorage(
-                                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                                $landmark->id,
-                                $landmark->landmark_file_name
-                            );
-                            // Создание объекта обнаружения лицевых признаков
-                            $facialFeatureDetector = new FacialFeatureDetector();
-                            // Выявление признаков для лица
-                            $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, $processingType);
-                            // Сохранение json-файла с результатами определения признаков на Object Storage
-                            $osConnector->saveFileToObjectStorage(
-                                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                                $analysisResultModel->id,
-                                $analysisResultModel->detection_result_file_name,
-                                $facialFeatures
-                            );
-                            // Преобразование массива с результатами определения признаков в массив фактов
-                            $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
-                            // Если в json-файле цифровой маски есть данные по Action Units
-                            if (strpos($faceData, 'AUs') !== false) {
-                                // Формирование json-строки
-                                $faceData = str_replace('{"AUs"', ',{"AUs"', $faceData);
-                                $faceData = trim($faceData, ',');
-                                $faceData = '[' . $faceData . ']';
-                                // Конвертация данных по Action Units в набор фактов
-                                $initialData = json_decode($faceData);
-                                if ((count($facts) > 0) && (count($initialData) > 0)) {
-                                    $frameData = $initialData[0];
-                                    $targetPropertyName = 'AUs';
-                                    if (property_exists($frameData, $targetPropertyName) === True)
-                                        foreach ($initialData as $frameIndex => $frameData) {
-                                            $actionUnits = $frameData->{$targetPropertyName};
-                                            $actionUnitsAsFacts = $facialFeatureDetector
-                                                ->convertActionUnitsToFacts(
-                                                    $actionUnits,
-                                                    $frameIndex
-                                                );
-                                            if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
-                                                $facts[$frameIndex] = array_merge($facts[$frameIndex],
-                                                    $actionUnitsAsFacts);
-                                        }
-                                }
-                            }
-                            // Сохранение json-файла с результатами конвертации определенных признаков в
-                            // набор фактов на Object Storage
-                            $osConnector->saveFileToObjectStorage(
-                                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                                $analysisResultModel->id,
-                                $analysisResultModel->facts_file_name,
-                                $facts
-                            );
+                            // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+                            $analysisResultId = self::getAnalysisResult($landmark, $processingType, $osConnector);
                             // Формирование строки из всех id результатов анализа
                             if ($analysisResultIds == '')
-                                $analysisResultIds = $analysisResultModel->id;
+                                $analysisResultIds = $analysisResultId;
                             else
-                                $analysisResultIds .= ', ' . $analysisResultModel->id;
+                                $analysisResultIds .= ', ' . $analysisResultId;
                             // Запоминание последнего id анализа результата
-                            $lastAnalysisResultId = $analysisResultModel->id;
+                            $lastAnalysisResultId = $analysisResultId;
                             // Декодирование json-файла с результатами обработки видео в виде цифровой маски
                             $jsonLandmarkFile = json_decode($landmarkFile, true);
                             // Если в json-файле с цифровой маской есть текст с предупреждением
@@ -300,6 +309,88 @@ class DefaultController extends Controller
                         // Увеличение индекса на 1
                         $index++;
                     }
+
+                    // Обход видео-файлов нарезки исходного загруженного видео
+                    foreach ($videoResultFiles as $key => $videoResultFile)
+                        if (file_exists($jsonResultPath . $videoResultFile)) {
+                            // Путь к программе обработки видео от Андрея
+                            $mainAndrewModulePath = '/home/-Common/-andrey/';
+                            // Путь к json-файлу результатов обработки видеоинтервью от Андрея
+                            $jsonAndrewResultPath = $mainAndrewModulePath . 'Records/';
+                            // Отлов ошибки выполнения программы обработки видео Андрея
+                            try {
+                                // Запуск программы обработки видео Андрея
+                                chdir($mainAndrewModulePath);
+                                exec('./EmotionDetection -f ' . $jsonResultPath . $videoResultFile);
+                                // Получение имени файла без расширения
+                                $jsonFileName = preg_replace('/\.\w+$/', '', $videoResultFile);
+                                // Проверка существования json-файл с результатами обработки видео
+                                if (file_exists($jsonAndrewResultPath . $jsonFileName . '.json')) {
+                                    // Создание цифровой маски в БД
+                                    $landmarkModel = new Landmark();
+                                    $landmarkModel->landmark_file_name = $videoResultFile;
+                                    $landmarkModel->start_time = Yii::$app->request
+                                        ->post('Landmark')[$key]['start_time'];
+                                    $landmarkModel->finish_time = Yii::$app->request
+                                        ->post('Landmark')[$key]['finish_time'];
+                                    $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
+                                    $landmarkModel->rotation = $rotation;
+                                    $landmarkModel->mirroring = boolval(Yii::$app->request
+                                        ->post('VideoInterview')['mirroringParameter']);
+                                    $landmarkModel->description = $videoInterviewModel->description .
+                                        ' (время нарезки: ' . $landmarkModel->start_time . ' - ' .
+                                        $landmarkModel->finish_time . ')';
+                                    // Получение значения текста вопроса
+                                    $landmarkModel->questionText = Yii::$app->request
+                                        ->post('Landmark')[$key]['questionText'];
+                                    // Если поле текста вопроса содержит значение "hidden"
+                                    if ($landmarkModel->questionText != 'hidden') {
+                                        // Формирование id вопроса
+                                        $question = Question::find()
+                                            ->where(['text' => $landmarkModel->questionText])
+                                            ->one();
+                                        $landmarkModel->question_id = $question->id;
+                                    } else
+                                        // Формирование id вопроса
+                                        $landmarkModel->question_id = Yii::$app->request
+                                            ->post('Landmark')[$key]['question_id'];
+                                    $landmarkModel->video_interview_id = $videoInterviewModel->id;
+                                    $landmarkModel->save();
+                                    // Формирование названия json-файла с результатами обработки видео
+                                    $landmarkModel->landmark_file_name = 'out_' . $landmarkModel->id . '.json';
+                                    // Обновление атрибута цифровой маски в БД
+                                    $landmarkModel->updateAttributes(['landmark_file_name']);
+                                    // Получение json-файла с результатами обработки видео в виде цифровой маски
+                                    $landmarkFile = file_get_contents($jsonAndrewResultPath .
+                                        $jsonFileName . '.json', true);
+                                    // Сохранение файла с лицевыми точками на Object Storage
+                                    $osConnector->saveFileToObjectStorage(
+                                        OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                        $landmarkModel->id,
+                                        $landmarkModel->landmark_file_name,
+                                        $landmarkFile
+                                    );
+                                    // Получение рузультатов анализа видеоинтервью
+                                    // (обработка модулем определения признаков)
+                                    $analysisResultId = self::getAnalysisResult($landmarkModel, $processingType,
+                                        $osConnector);
+                                    // Формирование строки из всех id результатов анализа
+                                    if ($analysisResultIds == '')
+                                        $analysisResultIds = $analysisResultId;
+                                    else
+                                        $analysisResultIds .= ', ' . $analysisResultId;
+                                    // Запоминание последнего id анализа результата
+                                    $lastAnalysisResultId = $analysisResultId;
+                                    // Удаление json-файлов с результатами обработки видеоинтервью программой Андрея
+                                    unlink($jsonAndrewResultPath . $jsonFileName . '.json');
+                                }
+                            } catch (Exception $e) {
+                                // Вывод сообщения об ошибке обработки видеоинтервью от программы Андрея
+                                Yii::$app->getSession()->setFlash('error',
+                                    'При обработке видеоинтервью программой Андрея возникли ошибки!');
+                            }
+                        }
+
                     // Если есть результаты определения признаков
                     if ($analysisResultIds != '') {
                         // Формирование параметров запуска модуля интерпретации признаков
@@ -309,15 +400,16 @@ class DefaultController extends Controller
                             'AddressForInitialConditionsRetrieval' =>
                                 'http://84.201.129.65/analysis-result/facts-download/',
                             'IDsOfInitialConditions' => '[' . $analysisResultIds . ']',
-                            'AddressToSendResults' => 'https://84.201.129.65:9999/Drools/RetrieveData.php');
+                            'AddressToSendResults' => 'http://84.201.129.65:9999/Drools/RetrieveData.php');
                         // Вызов модуля интерпретации признаков через CURL
-                        $request = curl_init('https://84.201.129.65:9999/Drools/RetrieveData.php');
+                        $request = curl_init('http://84.201.129.65:9999/Drools/RetrieveData.php');
                         $dataToSend = http_build_query($parameters);
                         curl_setopt($request, CURLOPT_POSTFIELDS, $dataToSend);
                         curl_setopt($request, CURLOPT_RETURNTRANSFER, True);
                         curl_exec($request);
                         curl_close($request);
                     }
+
                     // Удаление файла с видеоинтервью
                     if (file_exists($videoPath . $videoInterviewModel->video_file_name))
                         unlink($videoPath . $videoInterviewModel->video_file_name);
@@ -327,16 +419,19 @@ class DefaultController extends Controller
                     // Удаление файла с выходной аудио-информацией
                     if (file_exists($mainPath . 'audio_out.mp3'))
                         unlink($mainPath . 'audio_out.mp3');
-                    // Удаление файлов с результатами обработки видеоинтервью
-                    foreach ($videoResultFiles as $videoResultFile)
+                    // Удаление видео-файлов с результатами обработки видеоинтервью
+                    foreach ($videoResultFiles as $key => $videoResultFile)
                         if (file_exists($jsonResultPath . $videoResultFile))
                             unlink($jsonResultPath . $videoResultFile);
+                    // Удаление json-файлов с результатами обработки видеоинтервью программой Ивана
                     foreach ($jsonResultFiles as $jsonResultFile)
                         if (file_exists($jsonResultPath . $jsonResultFile))
                             unlink($jsonResultPath . $jsonResultFile);
+                    // Удаление фудио-файлов с результатами обработки видеоинтервью программой Ивана
                     foreach ($audioResultFiles as $audioResultFile)
                         if (file_exists($jsonResultPath . $audioResultFile))
                             unlink($jsonResultPath . $audioResultFile);
+
                     // Если был сформирован результат анализа
                     if ($lastAnalysisResultId != null) {
                         // Дополнение текста сообщения об ошибке - ошибками по отдельным вопросам
@@ -385,7 +480,7 @@ class DefaultController extends Controller
                         return $this->redirect(['/video-interview/view/' . $videoInterviewModel->id]);
                     }
                 }
-            //}
+            }
         }
 
         return $this->render('analysis', [
