@@ -62,7 +62,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         $icon = Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-user',
                                 'title' => 'Посмотреть в редакторе маски']);
-                        $url = 'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
+                        $url = 'https://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
                             '&detection_result_id=none';
                         return Html::a($icon, $url);
                     },

@@ -26,13 +26,11 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?= Html::a('Интерпретировать признаки',
-            'http://84.201.129.65:9999/Drools/Main.php?IDOfDataForReasoningProcess=' . $model->id .
-                '&IDOfFile=' . $model->id,
-            ['class' => 'btn btn-success']) ?>
+            'https://84.201.129.65:9999/Drools/Main.php?IDOfDataForReasoningProcess=' . $model->id .
+                '&IDOfFile=' . $model->id, ['class' => 'btn btn-success']) ?>
         <?= Html::a('Посмотреть в редакторе маски',
-            'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->landmark->id .
-            '&detection_result_id=' . $model->id,
-            ['class' => 'btn btn-primary']) ?>
+            'https://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->landmark->id .
+                '&detection_result_id=' . $model->id, ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',

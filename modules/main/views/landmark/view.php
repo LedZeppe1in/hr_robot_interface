@@ -32,9 +32,8 @@ $this->params['breadcrumbs'][] = $this->title;
             ]);
         } ?>
         <?= Html::a('Посмотреть в редакторе маски',
-            'http://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
-                '&detection_result_id=none',
-            ['class' => 'btn btn-primary']) ?>
+            'https://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
+                '&detection_result_id=none', ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
