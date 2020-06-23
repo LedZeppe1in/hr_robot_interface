@@ -2,9 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\components\FacialFeatureDetector;
-use app\modules\main\models\Question;
-use DirectoryIterator;
 use Yii;
 use Exception;
 use yii\data\ActiveDataProvider;
@@ -16,6 +13,7 @@ use yii\web\UploadedFile;
 use app\components\OSConnector;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\Question;
 use app\modules\main\models\AnalysisResult;
 
 /**
@@ -300,8 +298,8 @@ class VideoInterviewController extends Controller
                     $landmarkModel->rotation = $rotation;
                     $landmarkModel->mirroring = boolval(Yii::$app->request
                         ->post('VideoInterview')['mirroringParameter']);
+                    $landmarkModel->question_id = Yii::$app->request->post('Landmark')[$index]['question_id'];
                     $landmarkModel->video_interview_id = $model->id;
-                    $landmarkModel->questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
                     $landmarkModel->save();
                     $index++;
                 }
@@ -347,26 +345,13 @@ class VideoInterviewController extends Controller
             $index = 0;
             // Обход по всем найденным цифровым маскам
             foreach ($landmarks as $landmark) {
-                // Получение значения текста вопроса
-                $questionText = Yii::$app->request->post('Landmark')[$index]['questionText'];
-                // Если поле текста вопроса содержит значение "hidden"
-                if ($questionText != 'hidden') {
-                    // Создание и сохранение новой модели вопроса
-                    $questionModel = new Question();
-                    $questionModel->text = $questionText;
-                    $questionModel->save();
-                    // Формирование id вопроса
-                    $landmark->question_id = $questionModel->id;
-                } else
-                    // Формирование id вопроса
-                    $landmark->question_id = Yii::$app->request->post('Landmark')[$index]['question_id'];
                 // Формирование названия json-файла с результатами обработки видео
                 $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
                 // Формирование описания цифровой маски
                 $landmark->description = $model->description . ' (время нарезки: ' .
                     $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
                 // Обновление атрибутов цифровой маски в БД
-                $landmark->updateAttributes(['landmark_file_name', 'description', 'question_id']);
+                $landmark->updateAttributes(['landmark_file_name', 'description']);
                 $success = false;
                 // Проверка существования json-файл с результатами обработки видео
                 if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
@@ -430,18 +415,8 @@ class VideoInterviewController extends Controller
                                 ->post('VideoInterview')['mirroringParameter']);
                             $landmarkModel->description = $model->description . ' (время нарезки: ' .
                                 $landmarkModel->start_time . ' - ' . $landmarkModel->finish_time . ')';
-                            // Получение значения текста вопроса
-                            $landmarkModel->questionText = Yii::$app->request
-                                ->post('Landmark')[$key]['questionText'];
-                            // Если поле текста вопроса содержит значение "hidden"
-                            if ($landmarkModel->questionText != 'hidden') {
-                                // Формирование id вопроса
-                                $question = Question::find()->where(['text' => $landmarkModel->questionText])->one();
-                                $landmarkModel->question_id = $question->id;
-                            } else
-                                // Формирование id вопроса
-                                $landmarkModel->question_id = Yii::$app->request
-                                    ->post('Landmark')[$key]['question_id'];
+                            $landmarkModel->question_id = Yii::$app->request
+                                ->post('Landmark')[$key]['question_id'];
                             $landmarkModel->video_interview_id = $model->id;
                             $landmarkModel->save();
                             // Формирование названия json-файла с результатами обработки видео

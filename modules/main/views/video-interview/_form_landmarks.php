@@ -38,27 +38,6 @@ use wbraganca\dynamicform\DynamicFormWidget;
                 jQuery(this).html("Вопрос №" + (index + 1) + ":")
             });
         });
-        // Обработка выбора значения в откидном списке с вопросами
-        $(document).on("change", ".question-list", function() {
-            // Формирование названия id для поля ввода текста вопроса
-            let questionInputName = this.id.slice(0, this.id.indexOf("-question")) + "-questiontext";
-            // Получение элемента поля ввода текста вопроса по id
-            let element = document.getElementById(questionInputName);
-            // Получение элемента метки для поля ввода текста вопроса
-            let label = document.querySelector("label[for='" + questionInputName + "']");
-            // Получение значения в откидном поле
-            let questionId = this.value;
-            // Если значение не задано, то раскрываем поле ввода текста вопроса
-            if (questionId === '') {
-                element.style.display = "";
-                element.value = "";
-                label.style.display = "";
-            } else {
-                element.style.display = "none";
-                element.value = "hidden";
-                label.style.display = "none";
-            }
-        });
     });
 </script>
 
@@ -84,7 +63,6 @@ use wbraganca\dynamicform\DynamicFormWidget;
         'formId' => 'get-landmarks-form',
         'formFields' => [
             'question_id',
-            'questionText',
             'start_time',
             'finish_time'
         ],
@@ -110,12 +88,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
                     <div class="panel-body">
                         <div class="landmark-questions">
                             <?= $form->field($landmarkModel, "[{$index}]question_id")->dropDownList($questions,
-                                ['prompt' => 'Ввести новый вопрос...', 'class' => 'form-control question-list'])
-                                    ->label('Вопрос') ?>
-                        </div>
-                        <div class="landmark-question">
-                            <?= $form->field($landmarkModel, "[{$index}]questionText")
-                                ->textInput(['maxlength' => true]) ?>
+                                ['class' => 'form-control question-list'])->label('Вопрос') ?>
                         </div>
                         <div class="landmark-start-time">
                             <?= $form->field($landmarkModel, "[{$index}]start_time")

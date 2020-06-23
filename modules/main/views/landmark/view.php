@@ -66,7 +66,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'type',
                 'label' => 'Цифровая маска получена',
-                'value' => $model->getType(),
+                'value' => ($model->type !== null) ? $model->getType() : null,
             ],
             'question_id',
             [

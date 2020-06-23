@@ -135,6 +135,9 @@ class LandmarkController extends Controller
     {
         // Поиск модели цифровой маски по id
         $model = $this->findModel($id);
+        // Подстановка времени в правильном формате
+        $model->start_time = $model->getStartTime();
+        $model->finish_time = $model->getFinishTime();
         // Формирование списка вопросов
         $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // POST-запрос
