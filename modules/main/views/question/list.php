@@ -23,6 +23,22 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             'text',
+            [
+                'attribute'=>'type',
+                'label' => 'Тип',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->type !== null) ? $data->getType() : null;
+                },
+            ],
+            [
+                'attribute'=>'time',
+                'label' => 'Время',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->time !== null) ? $data->getTime() : null;
+                },
+            ],
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

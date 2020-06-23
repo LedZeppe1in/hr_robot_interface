@@ -46,7 +46,7 @@ $config = [
                 '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',
                 '/customer/<_cus:(view|update|delete)>/<id:\d+>' => 'main/customer/<_cus>',
                 '/question/<_ques:(list|create)>' => 'main/question/<_ques>',
-                '/question/<_ques:(view|update|delete)>/<id:\d+>' => 'main/question/<_ques>',
+                '/question/<_ques:(view|update|delete|audio-file-download)>/<id:\d+>' => 'main/question/<_ques>',
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
                 '/video-interview/<_vi:(view|update|delete|video-download|get-landmarks)>/<id:\d+>' =>
                     'main/video-interview/<_vi>',

@@ -14,6 +14,8 @@ class OSConnector
     const OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET        = 'knowledgebase';
     // Название бакета для файлов видеоинтервью в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_VIDEO_BUCKET                 = 'videointerviews';
+    // Название бакета для файлов с озвучкой вопросов в Object Storage на Yandex.Cloud
+    const OBJECT_STORAGE_AUDIO_BUCKET                 = 'questionvoiceactings';
     // Название бакета для json-файлов цифровых масок в Object Storage на Yandex.Cloud
     const OBJECT_STORAGE_LANDMARK_BUCKET              = 'landmarks';
     // Название бакета для json-файлов результатов определения признаков в Object Storage на Yandex.Cloud

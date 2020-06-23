@@ -3,11 +3,14 @@
 namespace app\modules\main\controllers;
 
 use Yii;
-use app\modules\main\models\Question;
+use Exception;
 use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\UploadedFile;
+use app\components\OSConnector;
+use app\modules\main\models\Question;
 
 /**
  * QuestionController implements the CRUD actions for Question model.
@@ -66,13 +69,36 @@ class QuestionController extends Controller
      */
     public function actionCreate()
     {
-        $model = new Question();
+        // Создание модели вопроса со сценарием создания нового вопроса
+        $model = new Question(['scenario' => Question::CREATE_QUESTION_SCENARIO]);
+        // Загрузка полей модели через POST-запрос
+        if ($model->load(Yii::$app->request->post())) {
+            // Загрузка файла с формы
+            $audioFile = UploadedFile::getInstance($model, 'audioFile');
+            $model->audioFile = $audioFile;
+            // Валидация поля файла
+            if ($model->validate(['audioFile'])) {
+                // Если пользователь загрузил файл с озвучкой вопроса
+                if ($audioFile && $audioFile->tempName)
+                    $model->audio_file_name = $model->audioFile->baseName . '.' . $model->audioFile->extension;
+                // Сохранение данных о вопросе в БД
+                if ($model->save()) {
+                    // Создание объекта коннектора с Yandex.Cloud Object Storage
+                    $osConnector = new OSConnector();
+                    // Сохранение файла с озвучкой вопроса на Object Storage
+                    if ($model->audio_file_name != '')
+                        $osConnector->saveFileToObjectStorage(
+                            OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                            $model->id,
+                            $model->audio_file_name,
+                            $audioFile->tempName
+                        );
+                    // Вывод сообщения об удачном вводе нового вопроса
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно добавили новый вопрос!');
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            // Вывод сообщения об удачном вводе нового вопроса
-            Yii::$app->getSession()->setFlash('success', 'Вы успешно добавили новый вопрос!');
-
-            return $this->redirect(['view', 'id' => $model->id]);
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+            }
         }
 
         return $this->render('create', [
@@ -89,13 +115,44 @@ class QuestionController extends Controller
      */
     public function actionUpdate($id)
     {
+        // Поиск модели вопроса по id
         $model = $this->findModel($id);
+        // Подстановка времени в правильном формате
+        $model->time = $model->getTime();
+        // Загрузка полей модели через POST-запрос
+        if ($model->load(Yii::$app->request->post())) {
+            // Загрузка файла с формы
+            $audioFile = UploadedFile::getInstance($model, 'audioFile');
+            $model->audioFile = $audioFile;
+            // Валидация поля файла
+            if ($model->validate(['audioFile'])) {
+                // Старое название файла с озвучкой вопроса
+                $old_audio_file_name = $model->audio_file_name;
+                // Если пользователь загрузил файл с озвучкой вопроса
+                if ($audioFile && $audioFile->tempName)
+                    $model->audio_file_name = $model->audioFile->baseName . '.' . $model->audioFile->extension;
+                // Сохранение данных о вопросе в БД
+                if ($model->save()) {
+                    // Если пользователь загрузил файл с озвучкой вопроса
+                    if ($audioFile && $audioFile->tempName) {
+                        // Создание объекта коннектора с Yandex.Cloud Object Storage
+                        $osConnector = new OSConnector();
+                        // Удаление старого файла с озвучкой вопроса на Object Storage
+                        $osConnector->removeFileFromObjectStorage(
+                            OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                            $model->id,
+                            $old_audio_file_name
+                        );
+                        // Сохранение нового файла с озвучкой вопроса на Object Storage
+                        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                            $model->id, $model->audio_file_name, $audioFile->tempName);
+                    }
+                    // Вывод сообщения об удачном обновлении
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили вопрос!');
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            // Вывод сообщения об удачном обновлении
-            Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили текст вопроса!');
-
-            return $this->redirect(['view', 'id' => $model->id]);
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+            }
         }
 
         return $this->render('update', [
@@ -114,11 +171,46 @@ class QuestionController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        // Поиск модели вопроса по id
+        $model = $this->findModel($id);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Удаление файла с озвучкой вопроса на Object Storage
+        $osConnector->removeFileFromObjectStorage(
+            OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+            $model->id,
+            $model->audio_file_name
+        );
+        // Удалние записи из БД
+        $model->delete();
         // Вывод сообщения об успешном удалении
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили вопрос!');
 
         return $this->redirect(['list']);
+    }
+
+    /**
+     * Скачивание файла с озвучкой вопроса.
+     *
+     * @param $id
+     * @return \yii\console\Response|\yii\web\Response
+     * @throws NotFoundHttpException
+     */
+    public function actionAudioFileDownload($id)
+    {
+        $model = $this->findModel($id);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Скачивание файла с озвучкой вопроса с Object Storage
+        if ($model->audio_file_name != '') {
+            $result = $osConnector->downloadFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                $model->id,
+                $model->audio_file_name
+            );
+            return $result;
+        }
+        throw new Exception('Файл не найден!');
     }
 
     /**

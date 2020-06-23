@@ -40,6 +40,26 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
             'text:ntext',
+            [
+                'attribute' => 'type',
+                'label' => 'Тип',
+                'value' => ($model->type !== null) ? $model->getType() : null,
+            ],
+            [
+                'attribute' => 'time',
+                'value' => ($model->time !== null) ? $model->getTime() : null,
+            ],
+            [
+                'label' => 'Описание',
+                'value' => ($model->description != '') ? $model->description : null,
+                'format' => 'raw'
+            ],
+            [
+                'label' => 'Файл озвучки вопроса',
+                'value' => ($model->audio_file_name != '') ? Html::a('скачать',
+                    ['/question/audio-file-download/' . $model->id], ['target' => '_blank']) : null,
+                'format' => 'raw'
+            ],
         ],
     ]) ?>
 
