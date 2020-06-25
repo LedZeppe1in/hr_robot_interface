@@ -21,6 +21,9 @@ class m200619_073533_profile_survey extends Migration
             'profile_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
+        $this->createIndex('idx_profile_survey', '{{%profile_survey}}',
+            ['survey_id', 'profile_id'], true);
+
         $this->addForeignKey("profile_survey_survey_fk", "{{%profile_survey}}", "survey_id",
             "{{%survey}}", "id", 'CASCADE');
         $this->addForeignKey("profile_survey_profile_fk", "{{%profile_survey}}", "profile_id",

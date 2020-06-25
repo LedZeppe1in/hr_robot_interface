@@ -18,7 +18,7 @@ class m200619_073923_template_answer_variant extends Migration
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
             'text' => $this->text(),
-            'index' => $this->integer()->notNull(),
+            'index' => $this->integer()->notNull()->defaultValue(0),
             'answer_template_id' => $this->integer()->notNull(),
         ], $tableOptions);
 

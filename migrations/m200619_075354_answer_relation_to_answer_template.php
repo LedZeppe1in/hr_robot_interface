@@ -21,6 +21,10 @@ class m200619_075354_answer_relation_to_answer_template extends Migration
             'answer_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
+        $this->createIndex('idx_answer_relation_to_answer_template',
+            '{{%answer_relation_to_answer_template}}',
+            ['answer_template_id', 'answer_id'], true);
+
         $this->addForeignKey("answer_relation_to_answer_template_answer_template_fk",
             "{{%answer_relation_to_answer_template}}", "answer_template_id",
             "{{%answer_template}}", "id", 'CASCADE');

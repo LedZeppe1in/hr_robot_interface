@@ -21,6 +21,10 @@ class m200619_075959_test_question_relation_to_evaluated_question extends Migrat
             'test_question_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
+        $this->createIndex('idx_test_question_relation_to_evaluated_question',
+            '{{%test_question_relation_to_evaluated_question}}',
+            ['evaluated_question_id', 'test_question_id'], true);
+
         $this->addForeignKey("test_question_relation_to_evaluated_evaluated_question_fk",
             "{{%test_question_relation_to_evaluated_question}}", "evaluated_question_id",
             "{{%evaluated_question}}", "id", 'CASCADE');

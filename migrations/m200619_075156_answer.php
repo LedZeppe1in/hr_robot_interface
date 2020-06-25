@@ -20,6 +20,7 @@ class m200619_075156_answer extends Migration
             'type' => $this->smallInteger()->notNull()->defaultValue(0),
             'text' => $this->text(),
             'description' => $this->text(),
+            'index' => $this->integer()->notNull()->defaultValue(0),
             'test_question_id' => $this->integer()->notNull(),
         ], $tableOptions);
 

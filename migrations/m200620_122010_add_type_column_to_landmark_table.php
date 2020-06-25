@@ -9,7 +9,7 @@ class m200620_122010_add_type_column_to_landmark_table extends Migration
 {
     public function up()
     {
-        $this->addColumn('{{%landmark}}', 'type', $this->smallInteger());
+        $this->addColumn('{{%landmark}}', 'type', $this->smallInteger()->defaultValue(0));
     }
 
     public function down()

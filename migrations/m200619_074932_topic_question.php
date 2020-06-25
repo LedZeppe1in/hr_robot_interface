@@ -21,6 +21,9 @@ class m200619_074932_topic_question extends Migration
             'test_question_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
+        $this->createIndex('idx_topic_question', '{{%topic_question}}',
+            ['topic_id', 'test_question_id'], true);
+
         $this->addForeignKey("topic_question_topic_fk", "{{%topic_question}}", "topic_id",
             "{{%topic}}", "id", 'CASCADE');
         $this->addForeignKey("topic_question_test_question_fk", "{{%topic_question}}",

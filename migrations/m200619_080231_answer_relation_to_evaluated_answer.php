@@ -21,6 +21,10 @@ class m200619_080231_answer_relation_to_evaluated_answer extends Migration
             'answer_id' => $this->integer()->notNull(),
         ], $tableOptions);
 
+        $this->createIndex('idx_answer_relation_to_evaluated_answer',
+            '{{%answer_relation_to_evaluated_answer}}',
+            ['evaluated_answer_id', 'answer_id'], true);
+
         $this->addForeignKey("answer_relation_to_evaluated_answer_evaluated_answer_fk",
             "{{%answer_relation_to_evaluated_answer}}", "evaluated_answer_id",
             "{{%evaluated_answer}}", "id", 'CASCADE');
