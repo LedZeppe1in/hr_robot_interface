@@ -22,6 +22,9 @@ use yii\helpers\Html;
             психологического тестирования.
         </h4><br />
         <p>
+            <?= Html::a('Записать видеоинтервью', ['record'], ['class' => 'btn btn-primary']) ?>
+        </p>
+        <p>
             <?= Html::a('Анализ видеоинтервью', ['analysis'], ['class' => 'btn btn-success']) ?>
         </p>
     </div>

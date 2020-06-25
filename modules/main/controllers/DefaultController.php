@@ -30,6 +30,7 @@ class DefaultController extends Controller
                 'class' => VerbFilter::className(),
                 'actions' => [
                     'logout' => ['post'],
+                    //'upload' => ['post']
                 ],
             ],
         ];
@@ -347,8 +348,11 @@ class DefaultController extends Controller
                                     );
                                     // Получение рузультатов анализа видеоинтервью
                                     // (обработка модулем определения признаков)
-                                    $analysisResultId = self::getAnalysisResult($landmarkModel, $processingType,
-                                        $osConnector);
+                                    $analysisResultId = self::getAnalysisResult(
+                                        $landmarkModel,
+                                        VideoInterview::TYPE_RAW_POINTS,
+                                        $osConnector
+                                    );
                                     // Формирование строки из всех id результатов анализа
                                     if ($analysisResultIds == '')
                                         $analysisResultIds = $analysisResultId;
@@ -463,6 +467,30 @@ class DefaultController extends Controller
             'landmarkModels' => $landmarkModels,
             'questions' => $questions
         ]);
+    }
+
+    /**
+     * Страница записи видеоинтервью.
+     *
+     * @return string
+     */
+    public function actionRecord()
+    {
+        return $this->render('record');
+    }
+
+    /**
+     * Страница загрузки записанного видеоинтервью на сервер.
+     *
+     * @return string
+     */
+    public function actionUpload()
+    {
+        // Реализация кроссдоменных запросов XMLHTTPRequest
+        header('Access-Control-Allow-Origin: *');
+        Yii::$app->getSession()->setFlash('success', 'Upload');
+
+        return $this->render('upload');
     }
 
     /**
