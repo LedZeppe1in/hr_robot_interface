@@ -1492,22 +1492,24 @@ class FacialFeatureDetector
         //35x54x75 35x47x75 - right_nasolabial_fold
         //27x35x42 и 27x31x39 - right and left nose wrinkle zones
         //21x22x28 central nose wrinkle zones
-        if ((isset($sourceFaceData0[0]['31x48x74']))
+ /*       if (
+ (isset($sourceFaceData0[0]['31x48x74']))
             && (isset($sourceFaceData0[0]['31x40x74']))
             && (isset($sourceFaceData0[0]['35x54x75']))
             && (isset($sourceFaceData0[0]['35x47x75']))
             && (isset($sourceFaceData0[0]['27x35x42']))
             && (isset($sourceFaceData0[0]['27x31x39']))
             && (isset($sourceFaceData0[0]['21x22x28']))
-        ) {
+        ) {*/
 //            echo '1';
-            $nLNF1 = $sourceFaceData0[0]['31x48x74']['s_wrinkles'];
-            $nLNF2 = $sourceFaceData0[0]['31x40x74']['s_wrinkles'];
-            $nRNF1 = $sourceFaceData0[0]['35x54x75']['s_wrinkles'];
-            $nRNF2 = $sourceFaceData0[0]['35x47x75']['s_wrinkles'];
-            $nLNWZ = $sourceFaceData0[0]['27x31x39']['s_wrinkles'];
-            $nRNWZ = $sourceFaceData0[0]['27x35x42']['s_wrinkles'];
-            $nCNWZ = $sourceFaceData0[0]['21x22x28']['s_wrinkles'];
+            $nLNF1 = 0; $nLNF2 = 0; $nRNF1 = 0; $nRNF2 = 0; $nLNWZ = 0; $nRNWZ = 0; $nCNWZ = 0;
+            if (isset($sourceFaceData0[0]['31x48x74'])) $nLNF1 = $sourceFaceData0[0]['31x48x74']['s_wrinkles'];
+            if (isset($sourceFaceData0[0]['31x40x74'])) $nLNF2 = $sourceFaceData0[0]['31x40x74']['s_wrinkles'];
+            if (isset($sourceFaceData0[0]['35x54x75'])) $nRNF1 = $sourceFaceData0[0]['35x54x75']['s_wrinkles'];
+            if (isset($sourceFaceData0[0]['35x47x75'])) $nRNF2 = $sourceFaceData0[0]['35x47x75']['s_wrinkles'];
+            if (isset($sourceFaceData0[0]['27x31x39'])) $nLNWZ = $sourceFaceData0[0]['27x31x39']['s_wrinkles'];
+            if (isset($sourceFaceData0[0]['27x35x42'])) $nRNWZ = $sourceFaceData0[0]['27x35x42']['s_wrinkles'];
+            if (isset($sourceFaceData0[0]['21x22x28'])) $nCNWZ = $sourceFaceData0[0]['21x22x28']['s_wrinkles'];
 
             $maxLNF1 = $this->getFaceDataMaxForKeyV2($sourceFaceData0, '31x48x74', 's_wrinkles');
             $minLNF1 = $this->getFaceDataMinForKeyV2($sourceFaceData0, '31x48x74', 's_wrinkles');
@@ -1531,22 +1533,34 @@ class FacialFeatureDetector
             $minCNWZ = $this->getFaceDataMinForKeyV2($sourceFaceData0, '21x22x28', 's_wrinkles');
             $scaleCNWZ = $maxCNWZ - $minCNWZ;
 
-            for ($i = 0; $i < count($sourceFaceData0); $i++)
-                if ((isset($sourceFaceData0[$i]['31x48x74']))
+                for ($i = 0; $i < count($sourceFaceData0); $i++)
+//foreach ($basicPoints as $k1 => $v1) {
+/*                if ((isset($sourceFaceData0[$i]['31x48x74']))
                     && (isset($sourceFaceData0[$i]['31x40x74']))
                     && (isset($sourceFaceData0[$i]['35x54x75']))
                     && (isset($sourceFaceData0[$i]['35x47x75']))
                     && (isset($sourceFaceData0[$i]['27x35x42']))
                     && (isset($sourceFaceData0[$i]['27x31x39']))
                     && (isset($sourceFaceData0[$i]['21x22x28']))
-                ) {
-                    $cLNF1 = $sourceFaceData0[$i]['31x48x74']['s_wrinkles'] - $nLNF1;
-                    $cLNF2 = $sourceFaceData0[$i]['31x40x74']['s_wrinkles'] - $nLNF2;
-                    $cRNF1 = $sourceFaceData0[$i]['35x54x75']['s_wrinkles'] - $nRNF1;
-                    $cRNF2 = $sourceFaceData0[$i]['35x47x75']['s_wrinkles'] - $nRNF2;
-                    $cLNWZ = $sourceFaceData0[$i]['27x31x39']['s_wrinkles'] - $nLNWZ;
-                    $cRNWZ = $sourceFaceData0[$i]['27x35x42']['s_wrinkles'] - $nRNWZ;
-                    $cCNWZ = $sourceFaceData0[$i]['21x22x28']['s_wrinkles'] - $nCNWZ;
+                ) */
+{
+
+                if (isset($sourceFaceData0[$i]['31x48x74'])) $cLNF1 = $sourceFaceData0[$i]['31x48x74']['s_wrinkles'] - $nLNF1;
+                 else $cLNF1 = 0;
+                if (isset($sourceFaceData0[$i]['31x40x74'])) $cLNF2 = $sourceFaceData0[$i]['31x40x74']['s_wrinkles'] - $nLNF2;
+                 else $cLNF2 = 0;
+                if (isset($sourceFaceData0[$i]['35x54x75'])) $cRNF1 = $sourceFaceData0[$i]['35x54x75']['s_wrinkles'] - $nRNF1;
+                 else $cRNF1 = 0;
+                if (isset($sourceFaceData0[$i]['35x47x75'])) $cRNF2 = $sourceFaceData0[$i]['35x47x75']['s_wrinkles'] - $nRNF2;
+                 else $cRNF2 = 0;
+                if (isset($sourceFaceData0[$i]['27x31x39'])) $cLNWZ = $sourceFaceData0[$i]['27x31x39']['s_wrinkles'] - $nLNWZ;
+                 else $cLNWZ = 0;
+                if (isset($sourceFaceData0[$i]['27x35x42'])) $cRNWZ = $sourceFaceData0[$i]['27x35x42']['s_wrinkles'] - $nRNWZ;
+                 else $cRNWZ = 0;
+                if (isset($sourceFaceData0[$i]['21x22x28'])) $cCNWZ = $sourceFaceData0[$i]['21x22x28']['s_wrinkles'] - $nCNWZ;
+                 else $cCNWZ = 0;
+
+ //       echo $i.':: '.$cLNF1.'/'.$cLNF2.'/'.$cRNF1.'/'.$cRNF2.'/'.$cLNWZ.'/'.$cRNWZ.'/'.$cCNWZ.'<br>';
 
                     $forceLNF1 = $this->getForce($scaleLNF1, abs($cLNF1));
                     $forceLNF2 = $this->getForce($scaleLNF2, abs($cLNF2));
@@ -1558,8 +1572,10 @@ class FacialFeatureDetector
 
                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement".$postFix]["max"] = $maxLNF1;
                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement".$postFix]["min"] = $minLNF1;
-                    $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['31x48x74']))
+                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['31x48x74']['s_wrinkles'];
+                     else $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement".$postFix][$i]["delta"] =
                         $cLNF1;
 
@@ -1573,8 +1589,10 @@ class FacialFeatureDetector
                         $maxLNF2;
                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement_2".$postFix]["min"] =
                         $minLNF2;
-                    $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement_2".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['31x40x74']))
+                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement_2".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['31x40x74']['s_wrinkles'];
+                     else $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement_2".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["left_nasolabial_fold_movement_2".$postFix][$i]["delta"] =
                         $cLNF2;
 
@@ -1588,8 +1606,10 @@ class FacialFeatureDetector
                         $maxRNF1;
                     $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement".$postFix]["min"] =
                         $minRNF1;
-                    $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['35x54x75']))
+                     $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['35x54x75']['s_wrinkles'];
+                     else  $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement".$postFix][$i]["delta"] =
                         $cRNF1;
 
@@ -1603,8 +1623,10 @@ class FacialFeatureDetector
                         $maxRNF2;
                     $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement_2".$postFix]["min"] =
                         $minRNF2;
-                    $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement_2".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['35x47x75']))
+                     $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement_2".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['35x47x75']['s_wrinkles'];
+                    else $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement_2".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["right_nasolabial_fold_movement_2".$postFix][$i]["delta"] =
                         $cRNF2;
 
@@ -1616,8 +1638,10 @@ class FacialFeatureDetector
 
                     $targetFaceData[$facePart]['VALUES_REL']["left_nose_wrinkle_zone".$postFix]["max"] = $maxLNWZ;
                     $targetFaceData[$facePart]['VALUES_REL']["left_nose_wrinkle_zone".$postFix]["min"] = $minLNWZ;
-                    $targetFaceData[$facePart]['VALUES_REL']["left_nose_wrinkle_zone".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['27x31x39']))
+                     $targetFaceData[$facePart]['VALUES_REL']["left_nose_wrinkle_zone".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['27x31x39']['s_wrinkles'];
+                    else $targetFaceData[$facePart]['VALUES_REL']["left_nose_wrinkle_zone".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["left_nose_wrinkle_zone".$postFix][$i]["delta"] = $cLNWZ;
 
                     $targetFaceData[$facePart]["left_nose_wrinkle_zone".$postFix][$i]["force"] = $forceLNWZ;
@@ -1628,8 +1652,10 @@ class FacialFeatureDetector
 
                     $targetFaceData[$facePart]['VALUES_REL']["right_nose_wrinkle_zone".$postFix]["max"] = $maxRNWZ;
                     $targetFaceData[$facePart]['VALUES_REL']["right_nose_wrinkle_zone".$postFix]["min"] = $minRNWZ;
-                    $targetFaceData[$facePart]['VALUES_REL']["right_nose_wrinkle_zone".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['27x35x42']))
+                     $targetFaceData[$facePart]['VALUES_REL']["right_nose_wrinkle_zone".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['27x35x42']['s_wrinkles'];
+                    else $targetFaceData[$facePart]['VALUES_REL']["right_nose_wrinkle_zone".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["right_nose_wrinkle_zone".$postFix][$i]["delta"] = $cRNWZ;
 
                     $targetFaceData[$facePart]["right_nose_wrinkle_zone".$postFix][$i]["force"] = $forceRNWZ;
@@ -1640,8 +1666,10 @@ class FacialFeatureDetector
 
                     $targetFaceData[$facePart]['VALUES_REL']["central_nose_wrinkle_zone".$postFix]["max"] = $maxCNWZ;
                     $targetFaceData[$facePart]['VALUES_REL']["central_nose_wrinkle_zone".$postFix]["min"] = $minCNWZ;
-                    $targetFaceData[$facePart]['VALUES_REL']["central_nose_wrinkle_zone".$postFix][$i]["val"] =
+                    if (isset($sourceFaceData0[$i]['21x22x28']))
+                     $targetFaceData[$facePart]['VALUES_REL']["central_nose_wrinkle_zone".$postFix][$i]["val"] =
                         $sourceFaceData0[$i]['21x22x28']['s_wrinkles'];
+                    else $targetFaceData[$facePart]['VALUES_REL']["central_nose_wrinkle_zone".$postFix][$i]["val"] = 0;
                     $targetFaceData[$facePart]['VALUES_REL']["central_nose_wrinkle_zone".$postFix][$i]["delta"] = $cCNWZ;
 
                     $targetFaceData[$facePart]["central_nose_wrinkle_zone".$postFix][$i]["force"] = $forceCNWZ;
@@ -1650,7 +1678,7 @@ class FacialFeatureDetector
                     if ($cCNWZ < 0) $val = '-';
                     $targetFaceData[$facePart]["central_nose_wrinkle_zone".$postFix][$i]["val"] = $val;
                 }
-        }
+ //       }
 
         return $targetFaceData;
     }
@@ -4573,6 +4601,7 @@ class FacialFeatureDetector
         $arr = array(61,62, 63, 65, 66, 67, 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35,
             19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
         $resFrame = array();
+
         if ((isset($FaceData['normmask'])) && ($pointsFlag == 1))
             $resFrame = $this->basicFrameDetection($FaceData['normmask'],$detectedFeaturesWithTrends,$arr);
         if ((isset($FaceData['points'])) && ($pointsFlag == 0))
