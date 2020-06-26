@@ -30,7 +30,7 @@ class DefaultController extends Controller
                 'class' => VerbFilter::className(),
                 'actions' => [
                     'logout' => ['post'],
-                    //'upload' => ['post']
+                    'upload' => ['post'],
                 ],
             ],
         ];
@@ -486,11 +486,30 @@ class DefaultController extends Controller
      */
     public function actionUpload()
     {
-        // Реализация кроссдоменных запросов XMLHTTPRequest
-        header('Access-Control-Allow-Origin: *');
-        Yii::$app->getSession()->setFlash('success', 'Upload');
+        // Если пришел POST-запрос
+        if (Yii::$app->request->isPost) {
+            // Создание модели видеоинтервью
+            $model = new VideoInterview();
+            $videoInterviewFile = UploadedFile::getInstanceByName('FileToUpload');
+            $model->videoInterviewFile = $videoInterviewFile;
+            $model->video_file_name = $model->videoInterviewFile->baseName . '.' .
+                $model->videoInterviewFile->extension;
+            $model->description = 'Видео-интервью для профиля кассира.';
+            $model->respondent_id = 1;
+            $model->save();
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Сохранение файла видеоинтервью на Object Storage
+            if ($model->video_file_name != '')
+                $osConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                    $model->id,
+                    $model->video_file_name,
+                    $videoInterviewFile->tempName
+                );
+        }
 
-        return $this->render('upload');
+        return false;
     }
 
     /**

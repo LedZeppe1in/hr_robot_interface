@@ -10,6 +10,11 @@ $this->title = 'Запись видеоинтервью';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
+<script type="text/javascript">
+    // CSRF-токен
+    var _csrf = '<?= Yii::$app->request->csrfToken ?>';
+</script>
+
 <!-- Подключение js-скрипта -->
 <?php $this->registerJsFile('/js/MediaRecorder.js') ?>
 

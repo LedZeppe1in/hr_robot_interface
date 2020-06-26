@@ -173,6 +173,7 @@ function upload()
   var xhr = new XMLHttpRequest();
   var formData = new FormData();
   formData.append("FileToUpload", blob, Date.now() + ".mp4");
+  formData.append("_csrf", _csrf);
 
   // отслеживаем процесс отправки
   xhr.upload.onprogress = function(event)
@@ -193,7 +194,7 @@ function upload()
      }
    }
 
-  xhr.open("GET", '/upload/', true);
+  xhr.open("POST", '/upload');
   xhr.send(formData);
  }
 

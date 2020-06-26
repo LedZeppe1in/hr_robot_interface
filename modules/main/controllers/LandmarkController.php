@@ -86,17 +86,6 @@ class LandmarkController extends Controller
                 // Если пользователь загрузил файл с лицевыми точками
                 if ($landmarkFile && $landmarkFile->tempName)
                     $model->landmark_file_name = $model->landmarkFile->baseName . '.' . $model->landmarkFile->extension;
-                // Получение значения текста вопроса
-                $questionText = Yii::$app->request->post('Landmark')['questionText'];
-                // Если поле текста вопроса содержит значение "hidden"
-                if ($questionText != 'hidden') {
-                    // Создание и сохранение новой модели вопроса
-                    $questionModel = new Question();
-                    $questionModel->text = $questionText;
-                    $questionModel->save();
-                    // Формирование id вопроса
-                    $model->question_id = $questionModel->id;
-                }
                 // Сохранение данных о цифровой маски в БД
                 if ($model->save()) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
