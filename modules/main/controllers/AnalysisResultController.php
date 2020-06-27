@@ -138,6 +138,9 @@ class AnalysisResultController extends Controller
     {
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);
+        // Если цифровая маска получена программой Андрея, то меняем тип обработки на сырые точки
+        if ($landmark->type == Landmark::TYPE_LANDMARK_ANDREW_MODULE)
+            $processingType = 0;
         // Создание модели для результатов определения признаков
         $model = new AnalysisResult();
         $model->detection_result_file_name = 'feature-detection-result.json';
@@ -156,8 +159,10 @@ class AnalysisResultController extends Controller
         );
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
-        // Выявление признаков для лица
-        $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, (int)$processingType);
+        // Определение нулевого кадра (нейтрального состояния лица)
+        $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection($faceData, (int)$processingType);
+        // Выявление лицевых признаков + нулевой кадр (нейтральное состояние лица)
+        $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, (int)$processingType, $basicFrame);
         // Сохранение json-файла с результатами определения признаков на Object Storage
         $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->detection_result_file_name, $facialFeatures);

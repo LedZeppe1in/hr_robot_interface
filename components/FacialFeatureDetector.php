@@ -3067,8 +3067,10 @@ class FacialFeatureDetector
 
                 $targetFaceData[$facePart]["mouth_lips_form"][$i]["force"] = 0;
                 $targetFaceData[$facePart]["mouth_lips_form"][$i]["val"] = $lipsForm;
-
-
+                $targetFaceData[$facePart]["mouth_lowerlip_form"][$i]["force"] = 0;
+                $targetFaceData[$facePart]["mouth_lowerlip_form"][$i]["val"] = $lipLowForm;
+                $targetFaceData[$facePart]["mouth_upperlip_form"][$i]["force"] = 0;
+                $targetFaceData[$facePart]["mouth_upperlip_form"][$i]["val"] = $lipUpForm;
             }
 
             return $targetFaceData[$facePart];
@@ -3117,10 +3119,10 @@ class FacialFeatureDetector
             }}
 
         reset($resSums); //получение первого элемента массива - номер первого экстремального фрейма
-//        $res = key($resSums);
+        $res = key($resSums);
 //        print_r($resSums);
 //        echo '<br>';
-        if(isset($sourceFaceData1[key($resSums)])) $res = $sourceFaceData1[key($resSums)];
+//        if(isset($sourceFaceData1[key($resSums)])) $res = $sourceFaceData1[key($resSums)];
         return $res;
     }
 
@@ -4281,18 +4283,43 @@ class FacialFeatureDetector
      */
     public function detectFeaturesV2($json, $pointsFlag, $basicFrame)
     {
+
+//        $basicFrame = '{"AUs":{"AU01":{"intensity":0.43,"presence":0},"AU02":{"intensity":0.44,"presence":0},"AU04":{"intensity":0.0,"presence":0},"AU05":{"intensity":0.35,"presence":0},"AU06":{"intensity":2.27,"presence":1},"AU07":{"intensity":3.16,"presence":1},"AU09":{"intensity":0.49,"presence":0},"AU10":{"intensity":1.78,"presence":1},"AU12":{"intensity":3.23,"presence":1},"AU14":{"intensity":0.58,"presence":1},"AU15":{"intensity":0.17,"presence":0},"AU17":{"intensity":0.47,"presence":0},"AU20":{"intensity":0.31,"presence":0},"AU23":{"intensity":0.54,"presence":0},"AU25":{"intensity":0.54,"presence":0},"AU26":{"intensity":0.51,"presence":0},"AU28":{"intensity":0.0,"presence":0},"AU45":{"intensity":0.66,"presence":0}},"Emotions":{"Happy":1.0},"confidence":0.98,"frame":1,"gaze angle":{"x":0.019,"y":0.197},"gaze direction":{"x_0":0.24024,"x_1":-0.203498,"y_0":0.168279,"y_1":0.213106,"z_0":-0.956016,"z_1":-0.955601},"landmarks_2D":{"0":{"x":360.6,"y":271.9},"1":{"x":364.2,"y":342.0},"10":{"x":748.9,"y":638.1},"11":{"x":799.2,"y":585.6},"12":{"x":838.7,"y":528.0},"13":{"x":863.3,"y":463.8},"14":{"x":874.5,"y":397.7},"15":{"x":881.2,"y":331.2},"16":{"x":884.9,"y":263.7},"17":{"x":402.1,"y":231.2},"18":{"x":427.7,"y":192.4},"19":{"x":469.7,"y":171.0},"2":{"x":370.6,"y":411.7},"20":{"x":518.7,"y":168.7},"21":{"x":565.6,"y":180.6},"22":{"x":676.1,"y":176.8},"23":{"x":727.8,"y":162.3},"24":{"x":775.9,"y":162.7},"25":{"x":820.9,"y":182.4},"26":{"x":844.8,"y":219.1},"27":{"x":624.9,"y":246.6},"28":{"x":625.4,"y":290.8},"29":{"x":626.1,"y":334.8},"3":{"x":382.0,"y":479.0},"30":{"x":627.3,"y":380.3},"31":{"x":563.0,"y":406.6},"32":{"x":593.6,"y":417.1},"33":{"x":625.0,"y":427.1},"34":{"x":656.9,"y":415.7},"35":{"x":685.0,"y":405.4},"36":{"x":462.9,"y":265.9},"37":{"x":492.8,"y":250.9},"38":{"x":524.9,"y":250.0},"39":{"x":552.9,"y":264.9},"4":{"x":407.9,"y":541.0},"40":{"x":523.6,"y":269.5},"41":{"x":491.7,"y":270.8},"42":{"x":689.8,"y":260.1},"43":{"x":719.7,"y":243.2},"44":{"x":752.0,"y":243.3},"45":{"x":779.6,"y":256.7},"46":{"x":753.7,"y":263.1},"47":{"x":722.4,"y":263.6},"48":{"x":496.1,"y":482.5},"49":{"x":540.6,"y":463.5},"5":{"x":449.8,"y":598.1},"50":{"x":591.4,"y":458.4},"51":{"x":622.9,"y":464.8},"52":{"x":658.9,"y":457.7},"53":{"x":708.7,"y":461.9},"54":{"x":752.0,"y":476.9},"55":{"x":710.4,"y":536.9},"56":{"x":662.0,"y":564.2},"57":{"x":623.3,"y":569.5},"58":{"x":588.3,"y":566.3},"59":{"x":537.5,"y":540.6},"6":{"x":499.1,"y":647.8},"60":{"x":512.3,"y":485.1},"61":{"x":591.1,"y":481.6},"62":{"x":623.3,"y":484.7},"63":{"x":659.7,"y":480.1},"64":{"x":737.5,"y":481.4},"65":{"x":660.5,"y":526.9},"66":{"x":623.1,"y":532.5},"67":{"x":589.8,"y":529.3},"7":{"x":557.5,"y":687.8},"8":{"x":625.9,"y":698.4},"9":{"x":692.2,"y":681.6},"count":68},"landmarks_2d":{"0":{"x":393.0,"y":294.1},"1":{"x":394.9,"y":354.8},"10":{"x":742.0,"y":631.1},"11":{"x":784.2,"y":575.6},"12":{"x":817.4,"y":520.7},"13":{"x":838.4,"y":461.8},"14":{"x":847.9,"y":402.0},"15":{"x":850.8,"y":343.0},"16":{"x":848.9,"y":286.1},"17":{"x":406.5,"y":236.7},"18":{"x":427.3,"y":193.1},"19":{"x":465.5,"y":164.3},"2":{"x":399.5,"y":415.7},"20":{"x":513.3,"y":154.8},"21":{"x":561.7,"y":161.2},"22":{"x":680.7,"y":157.4},"23":{"x":732.6,"y":150.5},"24":{"x":778.3,"y":158.3},"25":{"x":818.4,"y":185.0},"26":{"x":836.8,"y":226.3},"27":{"x":625.7,"y":229.9},"28":{"x":626.6,"y":273.6},"29":{"x":627.9,"y":319.6},"3":{"x":408.2,"y":475.1},"30":{"x":629.8,"y":370.8},"31":{"x":556.8,"y":404.7},"32":{"x":590.4,"y":416.1},"33":{"x":626.3,"y":427.3},"34":{"x":662.2,"y":414.4},"35":{"x":692.8,"y":403.1},"36":{"x":458.8,"y":262.7},"37":{"x":488.5,"y":245.8},"38":{"x":521.5,"y":244.4},"39":{"x":550.1,"y":259.1},"4":{"x":428.1,"y":531.5},"40":{"x":519.2,"y":262.9},"41":{"x":486.1,"y":264.7},"42":{"x":692.0,"y":254.6},"43":{"x":722.7,"y":237.6},"44":{"x":755.5,"y":238.4},"45":{"x":782.7,"y":253.3},"46":{"x":758.4,"y":257.3},"47":{"x":726.4,"y":257.2},"48":{"x":495.3,"y":483.9},"49":{"x":534.6,"y":467.1},"5":{"x":462.5,"y":585.9},"50":{"x":588.0,"y":462.9},"51":{"x":623.6,"y":470.4},"52":{"x":664.5,"y":462.2},"53":{"x":716.1,"y":465.5},"54":{"x":752.2,"y":478.3},"55":{"x":716.2,"y":545.4},"56":{"x":667.2,"y":581.9},"57":{"x":623.8,"y":588.8},"58":{"x":584.5,"y":583.6},"59":{"x":531.6,"y":549.3},"6":{"x":503.5,"y":639.1},"60":{"x":511.2,"y":486.7},"61":{"x":587.9,"y":488.4},"62":{"x":623.9,"y":492.4},"63":{"x":664.7,"y":487.0},"64":{"x":738.4,"y":483.2},"65":{"x":664.9,"y":538.7},"66":{"x":623.5,"y":545.6},"67":{"x":586.5,"y":540.9},"7":{"x":555.9,"y":691.9},"8":{"x":625.0,"y":707.8},"9":{"x":691.6,"y":685.3},"count":68},"pose":{"Rx":0.016,"Ry":-0.002,"Rz":-0.013,"Tx":-4.5,"Ty":9.5,"Tz":235.6},"timestamp":0.0}
+//';
+//        $basicFrame = '{"FACES":[1,[461,846,204,590,[645,323],-0.37417901609309]],"POINTS":[[451,377],[458,425],[466,471],[475,516],[495,557],[527,589],[568,612],[611,627],[660,628],[708,622],[747,601],[782,575],[807,540],[819,498],[822,452],[826,405],[829,357],[488,331],[508,301],[541,282],[581,273],[622,275],[661,273],[701,272],[740,280],[772,297],[792,326],[645,323],[647,351],[649,378],[651,406],[614,440],[632,443],[651,446],[669,442],[685,437],[538,351],[557,339],[580,335],[602,345],[582,351],[559,354],[685,343],[705,332],[728,334],[748,345],[728,350],[705,348],[586,515],[609,494],[631,484],[650,487],[667,483],[688,490],[711,508],[689,511],[669,514],[652,516],[633,516],[611,516],[596,510],[632,499],[651,501],[668,498],[700,504],[667,497],[650,500],[632,499],[640,281],[634,198],[482,248],[535,199],[734,197],[786,243],[530,468],[765,456],[549,561],[755,549]],"NORM_POINTS":[[-35,336],[-17,404],[0,465],[17,520],[47,569],[89,606],[141,632],[194,650],[255,654],[315,650],[368,629],[417,602],[457,562],[483,511],[498,450],[516,384],[534,310],[10,266],[35,217],[84,184],[147,168],[213,171],[277,167],[343,164],[407,178],[457,209],[483,258],[248,253],[250,298],[251,340],[253,381],[199,428],[224,433],[251,437],[277,432],[300,426],[86,297],[113,279],[148,272],[181,288],[151,298],[117,302],[309,286],[342,268],[378,272],[408,290],[375,297],[340,294],[161,523],[192,498],[222,486],[248,491],[272,486],[300,496],[330,520],[300,522],[272,525],[249,527],[224,526],[195,525],[175,518],[223,505],[249,509],[272,505],[315,514],[271,504],[247,507],[223,505],[242,181],[236,22],[-12,124],[66,28],[414,16],[495,108],[84,463],[414,454],[115,576],[385,571]],"NORM_IRISES":[[131,283],[361,280]],"ORIG_IRISES":[[36,12],[38,12]],"AUDIO_DATA":[0,0,-9999],"CONTOURS":{"21x22x28":[[273,176,439,792,4298],[240,234,310,365,4298],[245,183,69,69,4298],[213,174,13,28,4298],[252,211,19,19,4298]],"35x54x75":[[329,512,102,785,5088],[300,435,24,71,5088]],"27x31x39":[[240,234,1,365,5198],[231,309,62,96,5198],[201,388,60,61,5198],[238,281,41,48,5198],[210,264,18,60,5198],[206,372,21,21,5198]],"27x35x42":[[311,280,19,197,4606],[305,312,70,109,4606],[280,361,56,108,4606],[273,328,82,94,4606],[273,288,75,75,4606],[272,302,53,53,4606],[292,361,34,34,4606]],"31x48x74":[[180,505,9,191,4942],[122,501,3,41,4942],[159,515,24,26,4942]],"35x47x75":[[322,335,33,104,8287],[379,408,34,34,8287],[337,292,2,24,8287]],"31x40x74":[[175,405,78,78,8521],[155,328,26,26,8521]]},"21x22x28":[[247,214,246,214],[-991.11351281404,-53.304354233667,651.55271188215,15.041314834871,1605]],"31x48x74":[[148,472,148,473],[1093.8101934493,877.23961888254,631.16994167837,313.88269010193,2866]],"31x40x74":[[144,399,144,400],[711.70066659153,1699.3303407431,325.30060612968,772.35548995435,4332]],"35x54x75":[[348,467,348,467],[345.63977733254,-785.38106455654,547.3945683545,304.06025720623,2697]],"35x47x75":[[352,394,352,393],[-42.767876237631,-1498.1718788445,221.88026934923,697.05828706089,3889]],"27x35x42":[[286,325,286,324],[-152.92961074412,-489.62214787863,90.441846512677,137.45183199337,2015]],"27x31x39":[[209,326,209,327],[-363.1109264642,226.38684104383,157.16604001303,44.263897197406,2303]]}';
         // load data
+        //patch for AJson
         if(strpos($json,'AUs') !== false) {
             $json = str_replace('{"AUs"',',{"AUs"',$json);
             $json =  trim($json, ',');
             $json = '['.$json.']';
         }
 
+        //patch for IJson
         $json = str_ireplace('Infinity','99999',$json);
+        $basicFrame = str_ireplace('Infinity','99999',$basicFrame);
+
+//        echo $basicFrame.'<br>';
         $FaceData_ = json_decode($json, true);
+        if(Trim($basicFrame) != '') {
+            if (strpos($json, 'NORM_POINTS') !== false) {//I format
+                $ar_basicFrame = array();
+                $ar_basicFrame['frame_#B'] = json_decode($basicFrame,true);
+                $FaceData_ = array_merge($ar_basicFrame, $FaceData_);
+//                array_unshift($FaceData_, $ar_basicFrame);
+            }
+                else
+                array_unshift($FaceData_, json_decode($basicFrame,true));
+        }
+//        echo json_encode($FaceData_).'<br>';
+/*        $fd = fopen('test_added_basicFrame.json', "w");
+        fwrite($fd,json_encode($FaceData_));
+        fclose($fd);
+*/
         // check input format and convert the I and A formats to AB
-        if(strpos($json,'NORM_POINTS') !== false) //I format
+        if(strpos($json,'NORM_POINTS') !== false)  //I format
             $FaceData = $this->convertIJson($FaceData_);
+
         elseif(strpos($json,'AUs') !== false)   //A format
             $FaceData = $this->convertAJson($FaceData_);
         else
@@ -4338,7 +4365,7 @@ class FacialFeatureDetector
         //----------------- norm points processing -----------------------------------
         if ((isset($FaceData['normmask'])) && ($pointsFlag == 1)) {
 
-            if(Trim($basicFrame) != '') array_unshift($FaceData['normmask'],$basicFrame);
+//            if(Trim($basicFrame) != '') array_unshift($FaceData['normmask'],$basicFrame);
 
             $detectedFeatures = $this->addPointsToResults('normmask',
                 'NORM_POINTS_ORIGIN', $FaceData, $detectedFeatures, '');
@@ -4359,7 +4386,7 @@ class FacialFeatureDetector
 
         if ((isset($FaceData['points'])) && ($pointsFlag == 0)) {
 
-            if(Trim($basicFrame) != '') array_unshift($FaceData['points'],$basicFrame);
+ //           if(Trim($basicFrame) != '') array_unshift($FaceData['points'],$basicFrame);
             //-------------------------- orig points processing ----------------------
             $detectedFeatures = $this->addPointsToResults('points',
                 'POINTS_ORIGIN',$FaceData,$detectedFeatures,'');
@@ -4602,11 +4629,25 @@ class FacialFeatureDetector
             19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
         $resFrame = array();
 
-        if ((isset($FaceData['normmask'])) && ($pointsFlag == 1))
-            $resFrame = $this->basicFrameDetection($FaceData['normmask'],$detectedFeaturesWithTrends,$arr);
-        if ((isset($FaceData['points'])) && ($pointsFlag == 0))
-            $resFrame = $this->basicFrameDetection($FaceData['points'],$detectedFeaturesWithTrends,$arr);
-        $res = json_encode($resFrame);
+         if ((isset($FaceData['normmask'])) && ($pointsFlag == 1)) {
+             $resFrame = $this->basicFrameDetection($FaceData['normmask'], $detectedFeaturesWithTrends, $arr);
+             // v.2
+//             echo $resFrame;
+//             print_r($FaceData_['frame_#'.$resFrame]);
+             if(isset($FaceData_['frame_#'.$resFrame])) $res = json_encode($FaceData_['frame_#'.$resFrame]);
+         }
+        if ((isset($FaceData['points'])) && ($pointsFlag == 0)) {
+            $resFrame = $this->basicFrameDetection($FaceData['points'], $detectedFeaturesWithTrends, $arr);
+//            echo $resFrame;
+//            print_r($FaceData_[$resFrame]);
+            if(isset($FaceData_[$resFrame])) $res = json_encode($FaceData_[$resFrame]);
+        }
+        // v.1
+        //$res = json_encode($resFrame);
+
+//        $fd = fopen('test_basicFrame.json', "w");
+//        fwrite($fd,$res);
+//        fclose($fd);
 //        echo $res;
         return $res;
     }
@@ -5024,13 +5065,38 @@ class FacialFeatureDetector
         // Размер и форма рта
         if ($sourceFacePart == 'mouth')
             $targetValues['targetFacePart'] = 'Рот';
-        if (($sourceFeatureName == 'mouth_form') || ($sourceFeatureName == 'mouth_form2') || ($sourceFeatureName == 'mouth_lips_form'))
+        if (($sourceFeatureName == 'mouth_form') || ($sourceFeatureName == 'mouth_form2') || ($sourceFeatureName == 'mouth_lips_form')
+            || ($sourceFeatureName == 'mouth_lowerlip_form') || ($sourceFeatureName == 'mouth_upperlip_form'))
             $targetValues['targetFacePart'] = 'Рот';
         if (($sourceFeatureName == 'mouth_form2') && ($sourceValue == 'none')) {
             $targetValues['featureChangeType'] = 'Изменение формы';
             $targetValues['changeDirection'] = 'Не определено';
         }
-        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'down')) {
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
+            $targetValues['changeDirection'] = 'Дуга вниз';
+        }
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
+            $targetValues['changeDirection'] = 'Дуга вверх';
+        }
+        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
+            $targetValues['changeDirection'] = 'Дуга вниз';
+        }
+        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
+            $targetValues['changeDirection'] = 'Дуга вверх';
+        }
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'down')) {
             $targetValues['featureChangeType'] = 'Изменение формы губ';
             $targetValues['changeDirection'] = 'Дуга вниз';
         }

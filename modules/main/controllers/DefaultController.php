@@ -62,11 +62,12 @@ class DefaultController extends Controller
      * Создание модели результатов анализа и запуск модуля определения признаков.
      *
      * @param $landmark - модель цифровой маски
+     * @param $basicFrame - нулевой кадр (нейтральное состояние лица)
      * @param $processingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
      * @param $osConnector - объект соединения с Yandex.Cloud Object Storage
      * @return int - id результатов анализа
      */
-    public static function getAnalysisResult($landmark, $processingType, $osConnector)
+    public static function getAnalysisResult($landmark, $basicFrame, $processingType, $osConnector)
     {
         // Создание модели для результатов определения признаков
         $analysisResultModel = new AnalysisResult();
@@ -85,7 +86,7 @@ class DefaultController extends Controller
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
         // Выявление признаков для лица
-        $facialFeatures = $facialFeatureDetector->detectFeatures($faceData, $processingType);
+        $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, $processingType, $basicFrame);
         // Сохранение json-файла с результатами определения признаков на Object Storage
         $osConnector->saveFileToObjectStorage(
             OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
@@ -274,8 +275,26 @@ class DefaultController extends Controller
                                 $landmark->landmark_file_name,
                                 $landmarkFile
                             );
+                            // Если обрабатывается первая цифровая маска
+                            $basicFrame = array();
+                            if ($index == 0) {
+                                // Получение содержимого json-файла с лицевыми точками из Object Storage
+                                $faceData = $osConnector->getFileContentFromObjectStorage(
+                                    OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                    $landmark->id,
+                                    $landmark->landmark_file_name
+                                );
+                                // Создание объекта обнаружения лицевых признаков
+                                $facialFeatureDetector = new FacialFeatureDetector();
+                                // Определение нулевого кадра (нейтрального состояния лица)
+                                $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
+                                    $faceData,
+                                    $processingType
+                                );
+                            }
                             // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                            $analysisResultId = self::getAnalysisResult($landmark, $processingType, $osConnector);
+                            $analysisResultId = self::getAnalysisResult($landmark, $basicFrame,
+                                $processingType, $osConnector);
                             // Формирование строки из всех id результатов анализа
                             if ($analysisResultIds == '')
                                 $analysisResultIds = $analysisResultId;
@@ -346,10 +365,28 @@ class DefaultController extends Controller
                                         $landmarkModel->landmark_file_name,
                                         $landmarkFile
                                     );
+                                    // Если обрабатывается первая цифровая маска
+                                    $basicFrame = array();
+                                    if ($index == 0) {
+                                        // Получение содержимого json-файла с лицевыми точками из Object Storage
+                                        $faceData = $osConnector->getFileContentFromObjectStorage(
+                                            OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                            $landmarkModel->id,
+                                            $landmarkModel->landmark_file_name
+                                        );
+                                        // Создание объекта обнаружения лицевых признаков
+                                        $facialFeatureDetector = new FacialFeatureDetector();
+                                        // Определение нулевого кадра (нейтрального состояния лица)
+                                        $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
+                                            $faceData,
+                                            $processingType
+                                        );
+                                    }
                                     // Получение рузультатов анализа видеоинтервью
                                     // (обработка модулем определения признаков)
                                     $analysisResultId = self::getAnalysisResult(
                                         $landmarkModel,
+                                        $basicFrame,
                                         VideoInterview::TYPE_RAW_POINTS,
                                         $osConnector
                                     );
