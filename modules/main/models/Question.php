@@ -16,8 +16,10 @@ use yii\behaviors\TimestampBehavior;
  * @property int $time
  * @property string $audio_file_name
  * @property string $description
+ * @property int $test_question_id
  *
  * @property Landmark[] $landmarks
+ * @property TestQuestion $testQuestion
  */
 class Question extends \yii\db\ActiveRecord
 {
@@ -45,6 +47,7 @@ class Question extends \yii\db\ActiveRecord
             [['audioFile'], 'required', 'on' => self::CREATE_QUESTION_SCENARIO],
             [['text', 'type', 'time'], 'required'],
             [['text', 'audio_file_name', 'description'], 'string'],
+            [['test_question_id'], 'integer'],
             ['time', 'safe'],
             [['audioFile'], 'file', 'extensions' => 'mp3', 'checkExtensionByMimeType' => false],
         ];
@@ -65,6 +68,7 @@ class Question extends \yii\db\ActiveRecord
             'audio_file_name' => 'Название файла с озвучкой вопроса',
             'description' => 'Описание',
             'audioFile' => 'Файл озвучки вопроса',
+            'test_question_id' => 'ID вопроса опроса',
         ];
     }
 
@@ -83,6 +87,16 @@ class Question extends \yii\db\ActiveRecord
     public function getLandmarks()
     {
         return $this->hasMany(Landmark::className(), ['question_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[TestQuestion]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTestQuestion()
+    {
+        return $this->hasOne(TestQuestion::className(), ['id' => 'test_question_id']);
     }
 
     /**
@@ -158,5 +172,15 @@ class Question extends \yii\db\ActiveRecord
     public function getType()
     {
         return ArrayHelper::getValue(self::getTypes(), $this->type);
+    }
+
+    /**
+     * Получение списка вопросов.
+     *
+     * @return array - массив всех вопросов
+     */
+    public static function getQuestions()
+    {
+        return ArrayHelper::map(self::find()->all(), 'id', 'text');
     }
 }

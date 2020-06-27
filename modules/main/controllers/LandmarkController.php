@@ -74,8 +74,6 @@ class LandmarkController extends Controller
     {
         // Создание модели цифровой маски со сценарием загрузки новой цифровой маски
         $model = new Landmark(['scenario' => Landmark::UPLOAD_LANDMARK_SCENARIO]);
-        // Формирование списка вопросов
-        $questions = ArrayHelper::map(Question::find()->all(), 'id', 'text');
         // POST-запрос
         if ($model->load(Yii::$app->request->post())) {
             // Загрузка файла с формы
@@ -109,7 +107,6 @@ class LandmarkController extends Controller
 
         return $this->render('upload', [
             'model' => $model,
-            'questions' => $questions,
         ]);
     }
 

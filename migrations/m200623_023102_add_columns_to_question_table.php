@@ -13,6 +13,9 @@ class m200623_023102_add_columns_to_question_table extends Migration
         $this->addColumn('{{%question}}', 'time', $this->integer());
         $this->addColumn('{{%question}}', 'audio_file_name', $this->string());
         $this->addColumn('{{%question}}', 'description', $this->text());
+        $this->addColumn('{{%question}}', 'test_question_id', $this->integer());
+        $this->addForeignKey("test_question_video_interview_question_fk", "{{%question}}",
+            "test_question_id", "{{%test_question}}", "id", 'CASCADE');
     }
 
     public function down()
@@ -21,5 +24,6 @@ class m200623_023102_add_columns_to_question_table extends Migration
         $this->dropColumn('{{%question}}', 'time');
         $this->dropColumn('{{%question}}', 'audio_file_name');
         $this->dropColumn('{{%question}}', 'description');
+        $this->dropForeignKey('test_question_video_interview_question_fk', '{{%question}}');
     }
 }

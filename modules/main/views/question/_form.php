@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use janisto\timepicker\TimePicker;
 use app\modules\main\models\Question;
+use app\modules\main\models\TestQuestion;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\Question */
@@ -13,6 +14,9 @@ use app\modules\main\models\Question;
 <div class="question-form">
 
     <?php $form = ActiveForm::begin(); ?>
+
+    <?= $form->field($model, 'test_question_id')->dropDownList(TestQuestion::getTestQuestions())
+        ->label('Вопрос опроса') ?>
 
     <?= $form->field($model, 'type')->dropDownList(Question::getTypes()) ?>
 

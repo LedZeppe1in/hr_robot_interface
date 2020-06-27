@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use janisto\timepicker\TimePicker;
+use app\modules\main\models\Question;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\VideoInterview;
 
@@ -27,7 +28,8 @@ use app\modules\main\models\VideoInterview;
 
         <?= $form->field($model, 'mirroring')->dropDownList(Landmark::getMirroringValues()) ?>
 
-        <?= $form->field($model, 'question_id')->dropDownList($questions)->label('Вопрос') ?>
+        <?= $form->field($model, 'question_id')->dropDownList(Question::getQuestions())
+            ->label('Вопрос') ?>
 
         <?= $form->field($model, 'start_time')->widget(TimePicker::className(), ['mode' => 'time',
             'clientOptions'=> [
