@@ -865,7 +865,8 @@ class FacialFeatureDetector
                             $FaceData_['points'][$i][$k1]['Y'] = $v1[1];
                         }
                     //CONTOURS processing
-                    if (isset($v['CONTOURS']))
+                    $arrContours = array('31x48x74', '31x40x74', '35x54x75','35x47x75','27x35x42','27x31x39','21x22x28');
+                    if (isset($v['CONTOURS'])) {
                         foreach ($v['CONTOURS'] as $k1 => $v1) {
                             $sWrinkles = 0;
                             $s2Wrinkles = 0;
@@ -874,10 +875,10 @@ class FacialFeatureDetector
                             //35x54x75 35x47x75 - right_nasolabial_fold
                             //27x35x42 и 27x31x39 - right and left nose wrinkle zones
                             //21х22х28 - central nose wrinkle zone
-                            foreach ($v1 as $k2 => $v2){
-                              $sWrinkles = $sWrinkles + $v2[2];
-                              $s2Wrinkles = $s2Wrinkles + $v2[3];
-                              $pWrinkles = $pWrinkles + $v2[4];
+                            foreach ($v1 as $k2 => $v2) {
+                                $sWrinkles = $sWrinkles + $v2[2];
+                                $s2Wrinkles = $s2Wrinkles + $v2[3];
+                                $pWrinkles = $pWrinkles + $v2[4];
                             }
                             $cntWrinkles = count($v1);
                             $FaceData_['contours'][$i][$k1]['cnt_wrinkles'] = $cntWrinkles;
@@ -885,6 +886,17 @@ class FacialFeatureDetector
                             $FaceData_['contours'][$i][$k1]['s2_wrinkles'] = $s2Wrinkles;
                             $FaceData_['contours'][$i][$k1]['s3_wrinkles'] = $pWrinkles;
                         }
+                      //заполняем пропуски по данным для треугольников
+                       foreach ($arrContours as $k1 => $v1) {
+                        if(isset($v['CONTOURS'][$v1]) == false) {
+//                            echo $i.'::'.$v1.'<br>';
+                            $FaceData_['contours'][$i][$v1]['cnt_wrinkles'] = 0;
+                            $FaceData_['contours'][$i][$v1]['s_wrinkles'] = 0;
+                            $FaceData_['contours'][$i][$v1]['s2_wrinkles'] = 0;
+                            $FaceData_['contours'][$i][$v1]['s3_wrinkles'] = 0;
+                        }
+                       }
+                    }
                     //brow points processing
                     if (isset($v['brow']))
                         foreach ($v['brow'] as $k1 => $v1) {
@@ -4326,6 +4338,9 @@ class FacialFeatureDetector
             $FaceData =  $FaceData_; // use the AB format
 
 //        echo json_encode($FaceData['contours']).'<br>';
+/*                $fd = fopen('AB_result.json', "w");
+                fwrite($fd,json_encode($FaceData));
+                fclose($fd);*/
 
         $detectedFeatures = array();
 
@@ -4628,6 +4643,7 @@ class FacialFeatureDetector
         $arr = array(61,62, 63, 65, 66, 67, 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35,
             19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
         $resFrame = array();
+        $res = '';
 
          if ((isset($FaceData['normmask'])) && ($pointsFlag == 1)) {
              $resFrame = $this->basicFrameDetection($FaceData['normmask'], $detectedFeaturesWithTrends, $arr);
