@@ -63,7 +63,7 @@ class Landmark extends \yii\db\ActiveRecord
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
-            [['question_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
+            [['question_id'], 'exist', 'skipOnError' => true, 'targetClass' => Question::className(),
                 'targetAttribute' => ['question_id' => 'id']],
         ];
     }
