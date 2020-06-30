@@ -130,3 +130,11 @@ table.detail-view td {
 #ui-datepicker-div {
     width: 320px;
 }
+
+@media screen and (min-width: 768px) {
+    body { padding-top: 100px; }
+}
+
+@media screen and (min-width: 990px) {
+    body { padding-top: 0; }
+}

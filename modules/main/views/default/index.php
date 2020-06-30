@@ -22,10 +22,15 @@ use yii\helpers\Html;
             психологического тестирования.
         </h4><br />
         <p>
+            <?= Html::a('Пройти собеседование',
+                'https://84.201.129.65:8080/HRRMaskEditor/Sandbox/Libs/HRR/Server/PollEditor/GenerateR1Test.php',
+                ['class' => 'btn btn-success']) ?>
+        </p>
+        <p>
             <?= Html::a('Записать видеоинтервью', ['record'], ['class' => 'btn btn-primary']) ?>
         </p>
         <p>
-            <?= Html::a('Анализ видеоинтервью', ['analysis'], ['class' => 'btn btn-success']) ?>
+            <?= Html::a('Анализ видеоинтервью', ['analysis'], ['class' => 'btn btn-primary']) ?>
         </p>
     </div>
 </div>

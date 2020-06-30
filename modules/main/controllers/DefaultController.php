@@ -12,8 +12,10 @@ use app\components\OSConnector;
 use app\components\FacialFeatureDetector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
+use app\modules\main\models\TestQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\KnowledgeBaseFileForm;
 
 class DefaultController extends Controller
@@ -31,6 +33,7 @@ class DefaultController extends Controller
                 'actions' => [
                     'logout' => ['post'],
                     'upload' => ['post'],
+                    'interview-analysis' => ['post'],
                 ],
             ],
         ];
@@ -46,6 +49,17 @@ class DefaultController extends Controller
                 'class' => 'yii\web\ErrorAction',
             ],
         ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function beforeAction($action)
+    {
+        if (in_array($action->id, ['interview']))
+            $this->enableCsrfValidation = false;
+
+        return parent::beforeAction($action);
     }
 
     /**
@@ -276,7 +290,7 @@ class DefaultController extends Controller
                                 $landmarkFile
                             );
                             // Если обрабатывается первая цифровая маска
-                            $basicFrame = array();
+                            $basicFrame = '';
                             if ($index == 0) {
                                 // Получение содержимого json-файла с лицевыми точками из Object Storage
                                 $faceData = $osConnector->getFileContentFromObjectStorage(
@@ -366,7 +380,7 @@ class DefaultController extends Controller
                                         $landmarkFile
                                     );
                                     // Если обрабатывается первая цифровая маска
-                                    $basicFrame = array();
+                                    $basicFrame = '';
                                     if ($index == 0) {
                                         // Получение содержимого json-файла с лицевыми точками из Object Storage
                                         $faceData = $osConnector->getFileContentFromObjectStorage(
@@ -544,6 +558,159 @@ class DefaultController extends Controller
                     $model->video_file_name,
                     $videoInterviewFile->tempName
                 );
+
+            return $this->redirect(['/video-interview/view/' . $model->id]);
+        }
+
+        return false;
+    }
+
+    /**
+     * Страница интервьюирования респондента.
+     *
+     * @return string
+     */
+    public function actionInterview()
+    {
+        // Если пришел POST-запрос
+        if (Yii::$app->request->isPost) {
+            // Вывод сообщения об успешной передаче параметров
+            Yii::$app->getSession()->setFlash('success', 'Удачная передача параметров!');
+        }
+        // Создание модели видеоинтервью
+        $videoInterviewModel = new VideoInterview();
+        // Поиск вопросов связанных с определенным опросом и сортировка записей по индексу и id вопроса опроса
+        $surveyQuestions = SurveyQuestion::find()->where(['survey_id' => 29])->orderBy([
+            'index' => SORT_ASC,
+            'test_question_id' => SORT_ASC
+        ])->all();
+        // Формирование массива c id вопросов опроса
+        $testQuestionIds = array();
+        foreach ($surveyQuestions as $surveyQuestion)
+            array_push($testQuestionIds, $surveyQuestion->test_question_id);
+        // Поиск вопросов опросов по набору id
+        $testQuestions = TestQuestion::find()->where(['id' => $testQuestionIds])->all();
+        // Поиск всех вопросов для видеоинтервью связанных с вопросами опроса
+        $questions = Question::find()->where(['test_question_id' => $testQuestionIds])->all();
+        // Создание массива для моделей цифровой маски
+        $landmarkModels = array();
+        // Массив с максимальным временем ответов на вопросы
+        $answerMaxTimes = array();
+        $questionTexts = array();
+        $questionTimes = array();
+        $questionAudioFilePaths = array();
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Обход найденных вопросов
+        foreach ($questions as $question) {
+            // Формирование массива для максимального времени ответа на вопросы
+            foreach ($testQuestions as $testQuestion)
+                if ($testQuestion->id == $question->test_question_id)
+                    $answerMaxTimes[$question->id] = $testQuestion->maximum_time;
+            // Создание модели цифровой маски с полем id вопроса опроса
+            $landmarkModel = new Landmark();
+            $landmarkModel->question_id = $question->id;
+            // Формирование массива цифровых масок
+            array_push($landmarkModels, $landmarkModel);
+            // Создание директории для аудио-файла с озвучкой вопросов
+            if (!file_exists(Yii::getAlias('@webroot') . '/audio/' . $question->id))
+                mkdir(Yii::getAlias('@webroot') . '/audio/' . $question->id, 0777);
+            // Сохранение аудио-файла с озвучкой вопросов из Object Storage на сервер
+            $osConnector->saveFileToServer(
+                OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                $question->id,
+                $question->audio_file_name,
+                Yii::getAlias('@webroot') . '/audio/' . $question->id . '/'
+            );
+        }
+        // Формирование массива пар (id вопроса - текст вопроса)
+        $questionTexts = ArrayHelper::map($questions, 'id', 'text');
+        // Формирование массива пар (id вопроса - время вопроса)
+        $questionTimes = ArrayHelper::map($questions, 'id', 'time');
+        // Формирование массива пар (id вопроса - путь к аудио-файлу на сервере)
+        $questionAudioFilePaths = ArrayHelper::map($questions, 'id', function($model) {
+            return $model['id'] . '/' . $model['audio_file_name'];
+        });
+
+//        foreach ($surveyQuestions as $surveyQuestion)
+//            $answerMaxTimes[$surveyQuestion->test_question_id] = 'index: ' . $surveyQuestion->index .
+//                ' - test_question_id: ' . $surveyQuestion->test_question_id;
+
+        return $this->render('interview', [
+            'videoInterviewModel' => $videoInterviewModel,
+            'landmarkModels' => $landmarkModels,
+            'questionTexts' => $questionTexts,
+            'questionTimes' => $questionTimes,
+            'questionAudioFilePaths' => $questionAudioFilePaths,
+            'answerMaxTimes' => $answerMaxTimes,
+        ]);
+    }
+
+    /**
+     * Страница анализа записанного интервью респондента.
+     *
+     * @return string
+     */
+    public function actionInterviewAnalysis()
+    {
+        // Если пришел POST-запрос
+        if (Yii::$app->request->isPost) {
+            // Поиск вопросов связанных с определенным опросом
+            $testQuestions = array();
+            $surveyQuestions = SurveyQuestion::find()->where(['survey_id' => 29])->all();
+            // Формирование массива вопросов опроса
+            foreach ($surveyQuestions as $surveyQuestion)
+                array_push($testQuestions, $surveyQuestion->test_question_id);
+            // Поиск всех вопросов для видеоинтервью связанных с вопросами опроса
+            $questions = Question::find()->where(['test_question_id' => $testQuestions])
+                ->orderBy('test_question_id')->all();
+            // Удаление аудио-файлов с озвучкой вопросов
+            foreach ($questions as $question) {
+                // Пусть до аудио-файла
+                $path = Yii::getAlias('@webroot') . '/audio/' . $question->id;
+                if (file_exists($path)) {
+                    // Удаление аудио-файла
+                    unlink($path . '/' . $question->audio_file_name);
+                    // Удаление каталога
+                    rmdir($path);
+                }
+            }
+
+            // Создание модели видеоинтервью
+            $model = new VideoInterview();
+            $videoInterviewFile = UploadedFile::getInstanceByName('FileToUpload');
+            $model->videoInterviewFile = $videoInterviewFile;
+            $model->video_file_name = $model->videoInterviewFile->baseName . '.' .
+                $model->videoInterviewFile->extension;
+            $model->description = 'Видео-интервью для профиля кассира.';
+            $model->respondent_id = Yii::$app->request->post('VideoInterview')['respondent_id'];
+            $model->save();
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Сохранение файла видеоинтервью на Object Storage
+            if ($model->video_file_name != '')
+                $osConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                    $model->id,
+                    $model->video_file_name,
+                    $videoInterviewFile->tempName
+                );
+
+            // Создание цифровых масок в БД
+            $index = 0;
+            for ($i = 0; $i <= 100; $i++)
+                if (isset(Yii::$app->request->post('Landmark')[$index])) {
+                    $landmarkModel = new Landmark();
+                    $landmarkModel->start_time = Yii::$app->request->post('Landmark')[$index]['start_time'];
+                    $landmarkModel->finish_time = Yii::$app->request->post('Landmark')[$index]['finish_time'];
+                    $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                    $landmarkModel->rotation = VideoInterview::TYPE_ZERO;
+                    $landmarkModel->mirroring = VideoInterview::TYPE_MIRRORING_FALSE;
+                    $landmarkModel->question_id = Yii::$app->request->post('Landmark')[$index]['question_id'];
+                    $landmarkModel->video_interview_id = $model->id;
+                    $landmarkModel->save();
+                    $index++;
+                }
         }
 
         return false;
