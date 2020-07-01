@@ -8,7 +8,7 @@ namespace app\modules\main\models;
  * @property int $id
  * @property string|null $conclusion
  *
- * @property FinalResult $id0
+ * @property FinalResult $finalResult
  */
 class FinalConclusion extends \yii\db\ActiveRecord
 {
@@ -48,11 +48,11 @@ class FinalConclusion extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[Id0]].
+     * Gets query for [[FinalResult]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getId0()
+    public function getFinalResult()
     {
         return $this->hasOne(FinalResult::className(), ['id' => 'id']);
     }

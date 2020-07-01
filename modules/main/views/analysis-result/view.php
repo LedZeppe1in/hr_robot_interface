@@ -33,7 +33,7 @@ $this->params['breadcrumbs'][] = $this->title;
 <?php $this->registerJsFile('/js/jquery.ui.datepicker-ru.js') ?>
 <?php $this->registerJsFile('/js/grid.locale-ru.js') ?>
 <?php $this->registerJsFile('/js/jQueryGrid.js') ?>
-<?php $this->registerJsFile('http://84.201.129.65:9999/Drools/Integration.js') ?>
+<?php $this->registerJsFile('https://84.201.129.65:9999/Drools/Integration.js') ?>
 
 <script type="text/javascript">
     // Номер результата анализа (для набора фактов)

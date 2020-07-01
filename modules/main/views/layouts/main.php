@@ -51,9 +51,18 @@ AppAsset::register($this);
                 ],
                 ['label' => 'Результаты анализа', 'url' => '#',
                     'items' => [
-                        ['label' => 'Итоговые результаты анализа', 'url' => ['/analysis-result/list']],
+                        ['label' => 'Результаты определения и интерпретации признаков',
+                            'url' => ['/analysis-result/list']],
                         ['label' => 'Результаты определения признаков', 'url' => ['/detection-result/list']],
                         ['label' => 'Результаты интерпретации признаков', 'url' => ['/interpretation-result/list']],
+                    ],
+                ],
+                ['label' => 'Итоговые результаты', 'url' => '#',
+                    'items' => [
+                        ['label' => 'Итоговые заключения по тесту Герчикова',
+                            'url' => ['/gerchikov-test-conclusion/list']],
+                        ['label' => 'Итоговые заключения по видеоинтервью',
+                            'url' => ['/final-conclusion/list']],
                     ],
                 ],
                 ['label' => 'Редактор цифровой маски', 'url' => '#',
@@ -80,10 +89,10 @@ AppAsset::register($this);
                             'url' => 'https://84.201.129.65:8080/HRRTester/Polls/'],
                         ['label' => 'Отображение опроса',
                             'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php?pollmodel=someTest.json'],
+                        ['label' => 'Генератор теста Герчикова',
+                            'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
                     ],
                 ],
-                ['label' => 'Генератор теста Герчикова',
-                    'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
             ],
         ]);
         NavBar::end();

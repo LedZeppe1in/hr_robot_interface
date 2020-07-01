@@ -2,6 +2,8 @@
 
 namespace app\modules\main\models;
 
+use yii\helpers\ArrayHelper;
+
 /**
  * This is the model class for table "{{%gerchikov_test_conclusion}}".
  *
@@ -15,7 +17,7 @@ namespace app\modules\main\models;
  * @property int|null $avoid_motivation
  * @property string|null $description
  *
- * @property FinalResult $id0
+ * @property FinalResult $finalResult
  */
 class GerchikovTestConclusion extends \yii\db\ActiveRecord
 {
@@ -69,11 +71,11 @@ class GerchikovTestConclusion extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[Id0]].
+     * Gets query for [[FinalResult]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getId0()
+    public function getFinalResult()
     {
         return $this->hasOne(FinalResult::className(), ['id' => 'id']);
     }
@@ -90,5 +92,15 @@ class GerchikovTestConclusion extends \yii\db\ActiveRecord
             self::TYPE_PASSED => 'Тест пройден успешно',
             self::TYPE_NOT_ANSWER => 'Тест не пройден, так как респондент не ответил на достаточное количество вопросов',
         ];
+    }
+
+    /**
+     * Получение значения решения по тесту Герчикова.
+     *
+     * @return mixed
+     */
+    public function getAcceptTestDecisionValue()
+    {
+        return ArrayHelper::getValue(self::getAcceptTestDecisionValues(), $this->accept_test);
     }
 }

@@ -61,6 +61,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => $model->test_question_id ? $model->testQuestion->text : null,
             ],
             [
+                'label' => 'Название файла с озвучкой вопроса',
+                'value' => ($model->audio_file_name != '') ? $model->audio_file_name : null,
+                'format' => 'raw'
+            ],
+            [
                 'label' => 'Файл озвучки вопроса',
                 'value' => ($model->audio_file_name != '') ? Html::a('скачать',
                     ['/question/audio-file-download/' . $model->id], ['target' => '_blank']) : null,

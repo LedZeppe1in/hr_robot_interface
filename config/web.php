@@ -38,6 +38,7 @@ $config = [
             'rules' => [
                 '/' => 'main/default/index',
                 'interview' => 'main/default/interview',
+                'gerchikov-test-conclusion-view/<id:\d+>' => 'main/default/gerchikov-test-conclusion-view',
                 'interview-analysis' => 'main/default/interview-analysis',
                 'upload' => 'main/default/upload',
                 'record' => 'main/default/record',
@@ -66,6 +67,8 @@ $config = [
                 '/interpretation-result/<_ir:(list)>' => 'main/interpretation-result/<_ir>',
                 '/interpretation-result/<_ir:(view|update|delete|file-download)>/<id:\d+>' =>
                     'main/interpretation-result/<_ir>',
+                '/gerchikov-test-conclusion/<_gtc:(list)>' => 'main/gerchikov-test-conclusion/<_gtc>',
+                '/gerchikov-test-conclusion/<_gtc:(view|delete)>/<id:\d+>' => 'main/gerchikov-test-conclusion/<_gtc>',
             ],
         ],
         'cache' => [

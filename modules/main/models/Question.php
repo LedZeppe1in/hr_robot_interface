@@ -26,7 +26,7 @@ class Question extends \yii\db\ActiveRecord
     const CREATE_QUESTION_SCENARIO   = 'create-question'; // Сценарий создания нового вопроса
 
     const TYPE_CALIBRATION_QUESTION  = 0; // Калибровочный вопрос
-    const TYPE_MAIN_QUESTION         = 1; // Основной фопрос
+    const TYPE_MAIN_QUESTION         = 1; // Основной вопрос
 
     public $audioFile; // Файл с аудио-дорожкой озвучки вопроса
 
@@ -49,7 +49,7 @@ class Question extends \yii\db\ActiveRecord
             [['text', 'audio_file_name', 'description'], 'string'],
             [['test_question_id'], 'integer'],
             ['time', 'safe'],
-            [['audioFile'], 'file', 'extensions' => 'mp3', 'checkExtensionByMimeType' => false],
+            [['audioFile'], 'file', 'extensions' => ['mp3', 'wav'], 'checkExtensionByMimeType' => false],
         ];
     }
 
