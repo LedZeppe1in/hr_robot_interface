@@ -194,7 +194,7 @@ function upload()
      }
    }
 
-  xhr.open("POST", '/interview-analysis');
+  xhr.open("POST", '/interview-analysis/' + videoInterviewId);
   xhr.send(formData);
  }
 

@@ -5,6 +5,7 @@ use yii\bootstrap\Button;
 
 /* @var $this yii\web\View */
 /* @var $videoInterviewModel app\modules\main\models\VideoInterview */
+/* @var $gerchikovTestConclusionModel app\modules\main\models\GerchikovTestConclusion */
 /* @var $landmarkModels app\modules\main\models\Landmark */
 /* @var $questionTexts app\modules\main\controllers\DefaultController */
 /* @var $questionTimes app\modules\main\controllers\DefaultController */
@@ -18,6 +19,9 @@ $this->params['breadcrumbs'][] = $this->title;
 <script type="text/javascript">
     // CSRF-токен
     let _csrf = '<?= Yii::$app->request->csrfToken ?>';
+
+    // id видеоинтервью
+    let videoInterviewId = '<?= $videoInterviewModel->id ?>';
 
     // Перевод миллисекунд в формат времени
     function msToTime(s, flag) {
@@ -121,9 +125,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         nextQuestionButton.style.display = "none";
                         // Отображение завершения интервью (загрузки)
                         uploadButton.style.display = "inline-block";
-                        // Остановка таймера
-                        clearInterval(timer);
-                        answerTimeText.textContent = "Спасибо за ваши ответы!";
                     }
                 } else {
                     // Деактивация кнопки следующего вопроса
@@ -136,8 +137,10 @@ $this->params['breadcrumbs'][] = $this->title;
                 let sec = --answerTime;
                 let msec = sec * 1000;
                 answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(msec, false);
-                if (sec === 0)
+                if (sec === 0 && num < 10)
                     $("#next-question").trigger("click");
+                if (sec === 0 && num === 10)
+                    $("#upload").trigger("click");
             }, 1000);
             questionIndex++;
         });
@@ -164,6 +167,13 @@ $this->params['breadcrumbs'][] = $this->title;
                 num++;
             }
             questionIndex++;
+        });
+
+        // Обработка нажатия кнопки завершения интервью (загрузки)
+        $("#upload").click(function(e) {
+            // Остановка таймера
+            clearInterval(timer);
+            answerTimeText.textContent = "Ваши ответы приняты, не закрывайте страницу и ожидайте результат...";
         });
     });
 </script>
@@ -204,7 +214,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     ]
                 ]); ?>
         </div>
-        <div id="answer-time" class="col-md-4 well-sm well" style="font-weight: bold; padding-left: 30px;"></div>
+        <div id="answer-time" class="col-md-4 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px;"></div>
     </div>
 
     <div id="milliseconds" style="display: none">0</div>
@@ -222,6 +232,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <div class="row">
         <video id="gum" class="col-sm-12" autoplay muted playsinline></video>
+        <video id="recorded" autoplay loop playsinline></video>
     </div>
 
 </div>
