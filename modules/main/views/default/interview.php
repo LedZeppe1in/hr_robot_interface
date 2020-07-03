@@ -72,7 +72,7 @@ $this->params['breadcrumbs'][] = $this->title;
         // Таймер времени ответа
         let timer;
         // Запоминание времени ответа для первого вопроса
-        let answerTime = parseInt(answerTimes[questionIndex]) / 6;
+        let answerTime = parseInt(answerTimes[questionIndex]);
         // Слой таймера ответа
         let answerTimeText = document.getElementById("answer-time");
         // Установка таймера по первому времени ответа
@@ -96,7 +96,6 @@ $this->params['breadcrumbs'][] = $this->title;
             nextQuestionButton.style.display = "inline-block";
             // Отображение текста вопроса
             currentQuestionText.textContent = "Вопрос №" + (questionIndex + 1) + ": " + questionTexts[questionIndex];
-            //currentQuestionText.style.display = "inline-block";
             // Задание значения поля времени начала вопроса
             $("#landmark-" + questionIndex + "-start_time").val(msToTime(startTime, true));
             // Определение времени завершения вопроса
@@ -163,7 +162,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 audioPlayer.load();
                 audioPlayer.play();
                 // Запоминание времени для текущего ответа
-                answerTime = parseInt(answerTimes[questionIndex]) / 6;
+                answerTime = parseInt(answerTimes[questionIndex]);
                 num++;
             }
             questionIndex++;

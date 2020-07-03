@@ -72,7 +72,11 @@ class DefaultController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $model = new GerchikovTestConclusion();
+
+        return $this->render('index', [
+            'model' => $model,
+        ]);
     }
 
     /**
@@ -589,17 +593,24 @@ class DefaultController extends Controller
             $FinalResultModel->save();
             // Создание модели заключения по тесту Герчикова
             $gerchikovTestConclusionModel = new GerchikovTestConclusion();
+            // Установка первичного ключа с итогового результата
             $gerchikovTestConclusionModel->id = $FinalResultModel->id;
-            $gerchikovTestConclusionModel->accept_test = Yii::$app->request->post('AcceptTest');
-            $gerchikovTestConclusionModel->accept_level = Yii::$app->request->post('AcceptLevel');
-            $gerchikovTestConclusionModel->instrumental_motivation = Yii::$app->request
-                ->post('MotivInstrumental');
-            $gerchikovTestConclusionModel->professional_motivation = Yii::$app->request
-                ->post('MotivProfessional');
-            $gerchikovTestConclusionModel->patriot_motivation = Yii::$app->request->post('MotivPatriot');
-            $gerchikovTestConclusionModel->master_motivation = Yii::$app->request->post('MotivMaster');
-            $gerchikovTestConclusionModel->avoid_motivation = Yii::$app->request->post('MotivAvoid');
-            $gerchikovTestConclusionModel->description = 'Итоговое заключение по тесту Герчикова';
+            // Если пришли параметры с модуля опроса (теста Герчикова)
+            if (Yii::$app->request->post('AcceptTest')) {
+                $gerchikovTestConclusionModel->accept_test = Yii::$app->request->post('AcceptTest');
+                $gerchikovTestConclusionModel->accept_level = Yii::$app->request->post('AcceptLevel');
+                $gerchikovTestConclusionModel->instrumental_motivation = Yii::$app->request
+                    ->post('MotivInstrumental');
+                $gerchikovTestConclusionModel->professional_motivation = Yii::$app->request
+                    ->post('MotivProfessional');
+                $gerchikovTestConclusionModel->patriot_motivation = Yii::$app->request->post('MotivPatriot');
+                $gerchikovTestConclusionModel->master_motivation = Yii::$app->request->post('MotivMaster');
+                $gerchikovTestConclusionModel->avoid_motivation = Yii::$app->request->post('MotivAvoid');
+                $gerchikovTestConclusionModel->description = 'Итоговое заключение по тесту Герчикова';
+            } else
+                // Если нет, то загрузка параметров модели из формы
+                $gerchikovTestConclusionModel->load(Yii::$app->request->post());
+            // Сохранение модели заключения по тесту Герчикова
             $gerchikovTestConclusionModel->save();
 
             // Если респондент прошел тест Герчикова
@@ -802,21 +813,21 @@ class DefaultController extends Controller
                     $index++;
                 }
 
-            //Ajax-запрос
-            if (Yii::$app->request->isAjax) {
-                // Определение массива возвращаемых данных
-                $data = array();
-                // Установка формата JSON для возвращаемых данных
-                $response = Yii::$app->response;
-                $response->format = Response::FORMAT_JSON;
-                // Формирование данных о новом уровне
-                $data["success"] = 'Yes Yes Yes';
-                $data["video_id"] = $model->id;
-                // Возвращение данных
-                $response->data = $data;
-
-                return $response;
-            }
+//            //Ajax-запрос
+//            if (Yii::$app->request->isAjax) {
+//                // Определение массива возвращаемых данных
+//                $data = array();
+//                // Установка формата JSON для возвращаемых данных
+//                $response = Yii::$app->response;
+//                $response->format = Response::FORMAT_JSON;
+//                // Формирование данных о новом уровне
+//                $data["success"] = 'Yes Yes Yes';
+//                $data["video_id"] = $model->id;
+//                // Возвращение данных
+//                $response->data = $data;
+//
+//                return $response;
+//            }
 
 //            // Выборка всех цифровых масок у данного видео-интервью
 //            $landmarks = Landmark::find()
