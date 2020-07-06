@@ -27,6 +27,7 @@ class Question extends \yii\db\ActiveRecord
 
     const TYPE_CALIBRATION_QUESTION  = 0; // Калибровочный вопрос
     const TYPE_MAIN_QUESTION         = 1; // Основной вопрос
+    const TYPE_NOT_QUESTION          = 2; // Не вопрос
 
     public $audioFile; // Файл с аудио-дорожкой озвучки вопроса
 
@@ -161,6 +162,7 @@ class Question extends \yii\db\ActiveRecord
         return [
             self::TYPE_CALIBRATION_QUESTION => 'Калибровочный вопрос',
             self::TYPE_MAIN_QUESTION => 'Основной вопрос',
+            self::TYPE_NOT_QUESTION => 'Не вопрос',
         ];
     }
 

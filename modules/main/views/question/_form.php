@@ -15,8 +15,8 @@ use app\modules\main\models\TestQuestion;
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->field($model, 'test_question_id')->dropDownList(TestQuestion::getTestQuestions())
-        ->label('Вопрос опроса') ?>
+    <?= $form->field($model, 'test_question_id')->dropDownList(TestQuestion::getTestQuestions(),
+        ['prompt' => 'ВОПРОС НЕ ЗАДАН...'])->label('Вопрос опроса') ?>
 
     <?= $form->field($model, 'type')->dropDownList(Question::getTypes()) ?>
 

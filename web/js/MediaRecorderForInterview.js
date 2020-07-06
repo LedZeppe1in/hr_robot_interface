@@ -59,7 +59,7 @@ function successCallback(stream)
   window.stream = stream;
   gumVideo.srcObject = stream;
   recordButton.disabled = false;
-  recordButton.innerHTML = 'Начать интервью';
+  recordButton.innerHTML = 'Запись';
  }
 
 function errorCallback(error)
@@ -89,7 +89,7 @@ function handleStop(event)
 
 function toggleRecording()
  {
-  if (recordButton.textContent === 'Начать интервью')
+  if (recordButton.textContent === 'Запись')
    {
     startRecording();
    }
@@ -97,7 +97,7 @@ function toggleRecording()
    {
     stopRecording();
 
-    recordButton.textContent = 'Начать интервью';
+    recordButton.textContent = 'Запись';
    }
  }
 

@@ -11,6 +11,7 @@ use yii\bootstrap\Button;
 /* @var $questionTimes app\modules\main\controllers\DefaultController */
 /* @var $questionAudioFilePaths app\modules\main\controllers\DefaultController */
 /* @var $answerMaxTimes app\modules\main\controllers\DefaultController */
+/* @var $interviewPreparationAudio app\modules\main\controllers\DefaultController */
 
 $this->title = 'Запись интервью';
 $this->params['breadcrumbs'][] = $this->title;
@@ -52,6 +53,8 @@ $this->params['breadcrumbs'][] = $this->title;
     let finishTime = 0;
     // Порядковый номер вопроса
     let questionIndex = 0;
+    // Путь до файла с аудио озвучкой для не вопроса
+    let interviewPreparationAudio = '<?php echo $interviewPreparationAudio; ?>';
     // Массив текстов вопросов
     let questionTexts = [<?php echo '"' . implode('","', $questionTexts) . '"' ?>];
     // Массив с продолжительностями вопросов по времени
@@ -79,6 +82,10 @@ $this->params['breadcrumbs'][] = $this->title;
         answerTimeText.textContent = "Начните интервью!";
         // Слой текста вопроса
         let currentQuestionText = document.getElementById("current-question-text");
+        // Кнопка подготовки к интервью
+        let startInterviewButton = document.getElementById("start-interview");
+        // Кнопка начала интервью (записи видео)
+        let recordButton = document.getElementById("record");
         // Кнопка следующего вопроса
         let nextQuestionButton = document.getElementById("next-question");
         // Кнопка завершения интервью (загрузки)
@@ -87,6 +94,18 @@ $this->params['breadcrumbs'][] = $this->title;
         let audioPlayer = document.getElementById("audio-player");
         // Ресурс аудио-плеера
         let audioSource = document.getElementById("audio-source");
+
+        // Обработка нажатия кнопки подготовки к интервью
+        $("#start-interview").click(function(e) {
+            // Отображение кнопки начала записи интервью
+            recordButton.style.display = "inline-block";
+            // Скрытие кнопки подготовки к интервью
+            startInterviewButton.style.display = "none";
+            // Проигрывание аудио-файла с озвучкой не вопроса
+            audioSource.src = "/web/audio/" + interviewPreparationAudio;
+            audioPlayer.load();
+            audioPlayer.play();
+        });
 
         // Обработка нажатия кнопки начала записи интервью
         $("#record").click(function(e) {
@@ -187,12 +206,20 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="row">
         <div class="col-md-2">
                 <?= Button::widget([
+                    'label' => Yii::t('app', 'Начать интервью'),
+                    'options' => [
+                        'id' => 'start-interview',
+                        'class' => 'btn-success',
+                        'style' => 'margin:5px',
+                    ]
+                ]); ?>
+                <?= Button::widget([
                     'label' => Yii::t('app', 'Подготовка камеры...'),
                     'options' => [
                         'id' => 'record',
                         'class' => 'btn-success',
-                        'style' => 'margin:5px',
-                        'disabled' => 'disabled'
+                        'disabled' => 'disabled',
+                        'style' => 'margin:5px; display:none'
                     ]
                 ]); ?>
                 <?= Button::widget([
