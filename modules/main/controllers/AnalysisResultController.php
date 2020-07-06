@@ -91,12 +91,12 @@ class AnalysisResultController extends Controller
 
         return $this->render('view', [
             'model' => $model,
-            'eyeFeatures' => (isset($faceData['eye'])) ? $faceData['eye']['VALUES_REL'] : null,
-            'mouthFeatures' => (isset($faceData['mouth'])) ? $faceData['mouth']['VALUES_REL'] : null,
-            'browFeatures' => (isset($faceData['brow'])) ? $faceData['brow']['VALUES_REL'] : null,
-            'eyebrowFeatures' => (isset($faceData['eyebrow'])) ? $faceData['eyebrow']['VALUES_REL'] : null,
-            'noseFeatures' => (isset($faceData['nose'])) ? $faceData['nose']['VALUES_REL'] : null,
-            'chinFeatures' => (isset($faceData['chin'])) ? $faceData['chin']['VALUES_REL'] : null,
+            'eyeFeatures' => (isset($faceData['eye'])) ? $faceData['eye'] : null,
+            'mouthFeatures' => (isset($faceData['mouth'])) ? $faceData['mouth'] : null,
+            'browFeatures' => (isset($faceData['brow'])) ? $faceData['brow'] : null,
+            'eyebrowFeatures' => (isset($faceData['eyebrow'])) ? $faceData['eyebrow'] : null,
+            'noseFeatures' => (isset($faceData['nose'])) ? $faceData['nose'] : null,
+            'chinFeatures' => (isset($faceData['chin'])) ? $faceData['chin'] : null,
             'facts' => $facts,
             'knowledgeBase' => $knowledgeBase,
             'interpretationResult' => $interpretationResult
@@ -167,7 +167,7 @@ class AnalysisResultController extends Controller
         $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
             $model->id, $model->detection_result_file_name, $facialFeatures);
         // Преобразование массива с результатами функции определения признаков в массив фактов
-        $facts = $facialFeatureDetector->convertFeaturesToFacts($facialFeatures);
+        $facts = $facialFeatureDetector->convertFeaturesToFacts($faceData, $facialFeatures, $landmark->question->time);
         // Если в json-файле цифровой маски есть данные по Action Units
         if (strpos($faceData,'AUs') !== false) {
             // Формирование json-строки

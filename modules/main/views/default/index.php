@@ -26,7 +26,7 @@ use yii\widgets\ActiveForm;
         <p>
             <?= Html::a('Пройти собеседование',
                 'https://84.201.129.65:8080/HRRMaskEditor/GenerateR1Test.php',
-                ['class' => 'btn btn-success', 'style' => 'width: 200px;']) ?>
+                ['class' => 'btn btn-success', 'style' => 'width: 180px;']) ?>
         </p>
 
         <?php $form = ActiveForm::begin(['action' => 'interview', 'method' => 'POST']); ?>
@@ -48,17 +48,17 @@ use yii\widgets\ActiveForm;
                 ->label(false); ?>
             <div class="form-group">
                 <?= Html::submitButton('Пройти видеоинтервью',
-                    ['class' => 'btn btn-primary', 'style' => 'width: 200px;']) ?>
+                    ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
             </div>
         <?php ActiveForm::end(); ?>
 
         <p>
-            <?= Html::a('Записать видеоинтервью', ['record'],
-                ['class' => 'btn btn-primary', 'style' => 'width: 200px;']) ?>
+            <?= Html::a('Анализ видеоинтервью', ['analysis'],
+                ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
         </p>
         <p>
-            <?= Html::a('Анализ видеоинтервью', ['analysis'],
-                ['class' => 'btn btn-primary', 'style' => 'width: 200px;']) ?>
+            <?= Html::a('Записать видео', ['record'],
+                ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
         </p>
     </div>
 </div>
