@@ -46,7 +46,7 @@ AppAsset::register($this);
                         ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
                         ['label' => 'Цифровые маски', 'url' => ['/landmark/list']],
                         ['label' => 'Вопросы', 'url' => ['/question/list']],
-                        ['label' => 'База знаний', 'url' => ['/default/knowledge-base']],
+                        ['label' => 'Базы знаний', 'url' => ['/knowledge-base/list']],
                     ],
                 ],
                 ['label' => 'Результаты анализа', 'url' => '#',

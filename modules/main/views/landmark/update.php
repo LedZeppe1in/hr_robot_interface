@@ -12,6 +12,7 @@ $this->params['breadcrumbs'][] = ['label' => ($model->landmark_file_name != '') 
     'не загружено', 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Обновить';
 ?>
+
 <div class="landmark-update">
 
     <h1><?= Html::encode($this->title) ?></h1>

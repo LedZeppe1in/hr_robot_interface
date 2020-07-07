@@ -12,6 +12,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Цифровые маски', 'url
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
+
 <div class="landmark-view">
 
     <h1>Цифровая маска: <?= Html::encode($this->title) ?></h1>

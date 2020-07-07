@@ -46,6 +46,10 @@ $config = [
                 '/default/knowledge-base' => 'main/default/knowledge-base',
                 '/default/knowledge-base-upload' => 'main/default/knowledge-base-upload',
                 '/default/knowledge-base-download' => 'main/default/knowledge-base-download',
+
+                '/knowledge-base/<_kb:(list|upload)>' => 'main/knowledge-base/<_kb>',
+                '/knowledge-base/<_kb:(view|update|delete|knowledge-base-download)>/<id:\d+>' => 'main/knowledge-base/<_kb>',
+
                 '/respondent/<_res:(list|create)>' => 'main/respondent/<_res>',
                 '/respondent/<_res:(view|update|delete)>/<id:\d+>' => 'main/respondent/<_res>',
                 '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',

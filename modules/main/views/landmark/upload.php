@@ -9,6 +9,7 @@ $this->title = 'Загрузка файла';
 $this->params['breadcrumbs'][] = ['label' => 'Цифровые маски', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
+
 <div class="landmark-upload">
 
     <h1><?= Html::encode($this->title) ?></h1>
