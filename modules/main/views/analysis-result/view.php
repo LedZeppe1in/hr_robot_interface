@@ -12,6 +12,7 @@ use yii\widgets\DetailView;
 /* @var $eyebrowFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $noseFeatures app\modules\main\controllers\AnalysisResultController */
 /* @var $chinFeatures app\modules\main\controllers\AnalysisResultController */
+/* @var $knowledgeBaseModel app\modules\main\models\KnowledgeBase */
 /* @var $knowledgeBase app\modules\main\controllers\AnalysisResultController */
 /* @var $facts app\modules\main\controllers\AnalysisResultController */
 /* @var $interpretationResult app\modules\main\controllers\AnalysisResultController */
@@ -40,6 +41,8 @@ $this->params['breadcrumbs'][] = $this->title;
     var facts = '<?php echo $model->id; ?>';
     // Номер результата анализа
     var IDOfRecord = '<?php echo $model->id; ?>';
+    // Номер базы знаний
+    var knowledgeBase = '<?php echo $knowledgeBaseModel->id; ?>';
 </script>
 
 <div class="analysis-result-view">
@@ -155,6 +158,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'label' => 'База знаний',
                 'content' => $this->render('_knowledge_base', [
+                    'knowledgeBaseModel' => $knowledgeBaseModel,
                     'knowledgeBase' => $knowledgeBase
                 ]),
             ],

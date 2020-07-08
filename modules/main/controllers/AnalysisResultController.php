@@ -11,6 +11,7 @@ use yii\filters\VerbFilter;
 use app\components\OSConnector;
 use app\components\FacialFeatureDetector;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\KnowledgeBase;
 use app\modules\main\models\AnalysisResult;
 
 /**
@@ -75,11 +76,13 @@ class AnalysisResultController extends Controller
             $model->id,
             $model->facts_file_name
         );
+        // Поиск базы знаний по id
+        $knowledgeBaseModel = KnowledgeBase::findOne(1);
         // Получение кода базы знаний
         $knowledgeBase = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_KNOWLEDGE_BASE_BUCKET,
-            null,
-            'knowledge-base.txt'
+            $knowledgeBaseModel->id,
+            $knowledgeBaseModel->knowledge_base_file_name
         );
         // Получение json-файла с результатами интерпретации признаков
         $jsonFile = $osConnector->getFileContentFromObjectStorage(
@@ -98,6 +101,7 @@ class AnalysisResultController extends Controller
             'noseFeatures' => (isset($faceData['nose'])) ? $faceData['nose'] : null,
             'chinFeatures' => (isset($faceData['chin'])) ? $faceData['chin'] : null,
             'facts' => $facts,
+            'knowledgeBaseModel' => $knowledgeBaseModel,
             'knowledgeBase' => $knowledgeBase,
             'interpretationResult' => $interpretationResult
         ]);

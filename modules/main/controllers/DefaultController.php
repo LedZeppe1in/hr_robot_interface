@@ -414,7 +414,7 @@ class DefaultController extends Controller
                         // Формирование параметров запуска модуля интерпретации признаков
                         $parameters = array('DataSource' => 'ExecuteReasoningForSetOfInitialConditions',
                             'AddressForCodeOfKnowledgeBaseRetrieval' =>
-                                'https://84.201.129.65/default/knowledge-base-download',
+                                'https://84.201.129.65/knowledge-base/knowledge-base-download/1',
                             'AddressForInitialConditionsRetrieval' =>
                                 'https://84.201.129.65/analysis-result/facts-download/',
                             'IDsOfInitialConditions' => '[' . $analysisResultIds . ']',
@@ -810,21 +810,18 @@ class DefaultController extends Controller
                     $index++;
                 }
 
-//            //Ajax-запрос
-//            if (Yii::$app->request->isAjax) {
-//                // Определение массива возвращаемых данных
-//                $data = array();
-//                // Установка формата JSON для возвращаемых данных
-//                $response = Yii::$app->response;
-//                $response->format = Response::FORMAT_JSON;
-//                // Формирование данных о новом уровне
-//                $data["success"] = 'Yes Yes Yes';
-//                $data["video_id"] = $model->id;
-//                // Возвращение данных
-//                $response->data = $data;
+//            // Определение массива возвращаемых данных
+//            $data = array();
+//            // Установка формата JSON для возвращаемых данных
+//            $response = Yii::$app->response;
+//            $response->format = Response::FORMAT_JSON;
+//            // Формирование данных о новом уровне
+//            $data["success"] = 'Yes Yes Yes';
+//            $data["video_id"] = $model->id;
+//            // Возвращение данных
+//            $response->data = $data;
 //
-//                return $response;
-//            }
+//            return $response;
 
 //            // Выборка всех цифровых масок у данного видео-интервью
 //            $landmarks = Landmark::find()

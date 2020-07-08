@@ -9,6 +9,7 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\components\OSConnector;
+use app\modules\main\models\KnowledgeBase;
 use app\modules\main\models\AnalysisResult;
 
 /**
@@ -73,6 +74,8 @@ class DetectionResultController extends Controller
             $model->id,
             $model->facts_file_name
         );
+        // Поиск базы знаний по id
+        $knowledgeBase = KnowledgeBase::findOne(1);
 
         return $this->render('view', [
             'model' => $model,
@@ -83,6 +86,7 @@ class DetectionResultController extends Controller
             'noseFeatures' => (isset($faceData['nose'])) ? $faceData['nose'] : null,
             'chinFeatures' => (isset($faceData['chin'])) ? $faceData['chin'] : null,
             'facts' => $facts,
+            'knowledgeBase' => $knowledgeBase,
         ]);
     }
 

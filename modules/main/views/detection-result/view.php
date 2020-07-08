@@ -13,6 +13,7 @@ use yii\widgets\DetailView;
 /* @var $noseFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $chinFeatures app\modules\main\controllers\DetectionResultController */
 /* @var $facts app\modules\main\controllers\DetectionResultController */
+/* @var $knowledgeBase app\modules\main\models\KnowledgeBase */
 
 $this->title = $model->landmark->landmark_file_name;
 $this->params['breadcrumbs'][] = ['label' => 'Результаты определения признаков', 'url' => ['list']];
@@ -27,7 +28,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a('Интерпретировать признаки',
             'https://84.201.129.65:9999/Drools/Main.php?IDOfDataForReasoningProcess=' . $model->id .
-                '&IDOfFile=' . $model->id, ['class' => 'btn btn-success']) ?>
+                '&IDOfFile=' . $model->id . '&IDOfKnowledgeBase=' . $knowledgeBase->id,
+                    ['class' => 'btn btn-success']) ?>
         <?= Html::a('Посмотреть в редакторе маски',
             'https://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->landmark->id .
                 '&detection_result_id=' . $model->id, ['class' => 'btn btn-primary']) ?>
