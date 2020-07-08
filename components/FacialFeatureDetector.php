@@ -3833,7 +3833,7 @@ class FacialFeatureDetector
      * @param $sourceFaceData1 - входной массив с лицевыми точками (landmarks)
      * @return array - выходной массив с обработанным массивом
      */
-    public function detectAdditionalMouthFeatures($sourceFaceData1)
+    public function detectAdditionalMouthFeatures($sourceFaceData1, $coef_)
     {
         if ($sourceFaceData1 != null){
             foreach ($sourceFaceData1 as $k => $v) {
@@ -3990,11 +3990,11 @@ class FacialFeatureDetector
 
 //                                            echo 'mouth_width :: '.$mouthStartOpeningFrame.' / '.$mouthOpenedCnt.' / '. $mouthEndClosingFrame.'<br>';
 
-//                                            if (($mouthOpenedCnt < 4) && ($mouthOpenedCnt > 0)) {
+                                            if ($mouthOpenedCnt > $coef_['coefCntFramesForMouthOpenedWhenSpeaking']) {
                                                 $sourceFaceData1[$k]["speaking"] =
                                                     $this->updateValues($sourceFaceData1[$k]["speaking"], 'val',
                                                         'yes', $mouthStartOpeningFrame, $mouthEndClosingFrame);
- //                                           }
+                                            }
                                             $mouthStartClosingFrame = '-1';
                                             $mouthOpenedFrame = '-1';
                                             $mouthStartOpeningFrame = '-1';
@@ -4017,43 +4017,46 @@ class FacialFeatureDetector
             //$sourceFaceData1[$k]
             $k = 'mouth';
 //            print_r($sourceFaceData1[$k]["speaking"]);
-            for ($i = 0; $i < count($sourceFaceData1[$k]["audio_db_val"]); $i++) {
-                $sourceFaceData1[$k]["listerning"][$i]['val'] = 'no';
-//echo $i.'::'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].'<br>';
-//                echo $i.':: audio:'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].' speaking:'.$sourceFaceData1[$k]["speaking"][$i]['val'].
-//                    ' listerning:'.$sourceFaceData1[$k]["listerning"][$i]['val'].'-->'.$sourceFaceData1[$k]["speaking"][$i-1]['val'].'/';
+            if (isset($sourceFaceData1[$k]["audio_db_val"])) {
+                for ($i = 0; $i < count($sourceFaceData1[$k]["audio_db_val"]); $i++) {
+                    $sourceFaceData1[$k]["listerning"][$i]['val'] = 'no';
+                    //echo $i.'::'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].'<br>';
+                    //                echo $i.':: audio:'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].' speaking:'.$sourceFaceData1[$k]["speaking"][$i]['val'].
+                    //                    ' listerning:'.$sourceFaceData1[$k]["listerning"][$i]['val'].'-->'.$sourceFaceData1[$k]["speaking"][$i-1]['val'].'/';
 
-                if(($sourceFaceData1[$k]["audio_db_val"][$i]['val'] == 'yes') && ($sourceFaceData1[$k]["speaking"][$i]['val'] == 'no')){
-                    //проверить говорение дальше
-                    if((((isset($sourceFaceData1[$k]["speaking"][$i+1])) && ($sourceFaceData1[$k]["speaking"][$i+1]['val'] == 'yes'))
-                            || ((isset($sourceFaceData1[$k]["speaking"][$i+2])) && ($sourceFaceData1[$k]["speaking"][$i+2]['val'] == 'yes'))
-                            || ((isset($sourceFaceData1[$k]["speaking"][$i+3])) && ($sourceFaceData1[$k]["speaking"][$i+3]['val'] == 'yes')))
-//                            || (((isset($sourceFaceData1[$k]["speaking"][$i-1])) && ($sourceFaceData1[$k]["speaking"][$i-1]['val'] == 'yes') )
-                           /* ||
-                            ((isset($sourceFaceData1[$k]["speaking"][$i-2])) && ($sourceFaceData1[$k]["speaking"][$i-2]['val'] == 'yes'))
-                            || ((isset($sourceFaceData1[$k]["speaking"][$i-3])) && ($sourceFaceData1[$k]["speaking"][$i-3]['val'] == 'yes'))*/
-//                        )
-                    )
-                    {$sourceFaceData1[$k]["speaking"][$i]['val'] = 'yes';}
-                    else
-                    {$sourceFaceData1[$k]["listerning"][$i]['val'] = 'yes';}
+                    if (($sourceFaceData1[$k]["audio_db_val"][$i]['val'] == 'yes') && ($sourceFaceData1[$k]["speaking"][$i]['val'] == 'no')) {
+                        //проверить говорение дальше
+                        if ((((isset($sourceFaceData1[$k]["speaking"][$i + 1])) && ($sourceFaceData1[$k]["speaking"][$i + 1]['val'] == 'yes'))
+                                || ((isset($sourceFaceData1[$k]["speaking"][$i + 2])) && ($sourceFaceData1[$k]["speaking"][$i + 2]['val'] == 'yes'))
+                                || ((isset($sourceFaceData1[$k]["speaking"][$i + 3])) && ($sourceFaceData1[$k]["speaking"][$i + 3]['val'] == 'yes')))
+                            || (((isset($sourceFaceData1[$k]["speaking"][$i - 1])) && ($sourceFaceData1[$k]["speaking"][$i - 1]['val'] == 'yes'))
+                                || ((isset($sourceFaceData1[$k]["speaking"][$i - 2])) && ($sourceFaceData1[$k]["speaking"][$i - 2]['val'] == 'yes'))
+                                || ((isset($sourceFaceData1[$k]["speaking"][$i - 3])) && ($sourceFaceData1[$k]["speaking"][$i - 3]['val'] == 'yes'))
+                            )
+                        ) {
+                            $sourceFaceData1[$k]["speaking"][$i]['val'] = 'yes';
+                        } else {
+                            $sourceFaceData1[$k]["listerning"][$i]['val'] = 'yes';
+                        }
+                    }
+                    //                echo $i.':: audio:'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].' speaking:'.$sourceFaceData1[$k]["speaking"][$i]['val'].' listerning:'.$sourceFaceData1[$k]["listerning"][$i]['val'].'<br>';
                 }
-//                echo $i.':: audio:'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].' speaking:'.$sourceFaceData1[$k]["speaking"][$i]['val'].' listerning:'.$sourceFaceData1[$k]["listerning"][$i]['val'].'<br>';
-            }
-       //чистим ложные срабатывания говорения
-            for ($i = 0; $i < count($sourceFaceData1[$k]["speaking"]); $i++) {
-                if(($sourceFaceData1[$k]["speaking"][$i]['val'] == 'yes') && ($sourceFaceData1[$k]["audio_db_val"][$i]['val'] == 'no')){
-                    //проверить звук дальше
-                    if((((isset($sourceFaceData1[$k]["audio_db_val"][$i+1])) && ($sourceFaceData1[$k]["audio_db_val"][$i+1]['val'] == 'no')) //&&
- //                       ((isset($sourceFaceData1[$k]["audio_db_val"][$i+2])) && ($sourceFaceData1[$k]["audio_db_val"][$i+2]['val'] == 'no'))
-                        ) &&
-                        (((isset($sourceFaceData1[$k]["audio_db_val"][$i-1])) && ($sourceFaceData1[$k]["audio_db_val"][$i-1]['val'] == 'no')) //&&
-//                            ((isset($sourceFaceData1[$k]["audio_db_val"][$i-2])) && ($sourceFaceData1[$k]["audio_db_val"][$i-2]['val'] == 'no'))
-                        )
-                    )
-                    {$sourceFaceData1[$k]["speaking"][$i]['val'] = 'no';}
+                //чистим ложные срабатывания говорения
+                for ($i = 0; $i < count($sourceFaceData1[$k]["speaking"]); $i++) {
+                    if (($sourceFaceData1[$k]["speaking"][$i]['val'] == 'yes') && ($sourceFaceData1[$k]["audio_db_val"][$i]['val'] == 'no')) {
+                        //проверить звук дальше
+                        if ((((isset($sourceFaceData1[$k]["audio_db_val"][$i + 1])) && ($sourceFaceData1[$k]["audio_db_val"][$i + 1]['val'] == 'no')) &&
+                                ((isset($sourceFaceData1[$k]["audio_db_val"][$i + 2])) && ($sourceFaceData1[$k]["audio_db_val"][$i + 2]['val'] == 'no'))
+                            ) &&
+                            (((isset($sourceFaceData1[$k]["audio_db_val"][$i - 1])) && ($sourceFaceData1[$k]["audio_db_val"][$i - 1]['val'] == 'no')) &&
+                                ((isset($sourceFaceData1[$k]["audio_db_val"][$i - 2])) && ($sourceFaceData1[$k]["audio_db_val"][$i - 2]['val'] == 'no'))
+                            )
+                        ) {
+                            $sourceFaceData1[$k]["speaking"][$i]['val'] = 'no';
+                        }
+                    }
+                    //               echo $i.':: audio:'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].' speaking:'.$sourceFaceData1[$k]["speaking"][$i]['val'].' listerning:'.$sourceFaceData1[$k]["listerning"][$i]['val'].'<br>';
                 }
-//                echo $i.':: audio:'.$sourceFaceData1[$k]["audio_db_val"][$i]['val'].' speaking:'.$sourceFaceData1[$k]["speaking"][$i]['val'].' listerning:'.$sourceFaceData1[$k]["listerning"][$i]['val'].'<br>';
             }
     }
         return $sourceFaceData1;
@@ -4474,7 +4477,8 @@ class FacialFeatureDetector
             'coefNoseWingYMax' => 0.5,
             'coefEyeForceLevelX' => 80,
             'coefEyeForceLevelY' => 55,
-            'coefLineDetection' => 3
+            'coefLineDetection' => 3,
+            'coefCntFramesForMouthOpenedWhenSpeaking' => 3
         );
         //----------------------------------------------------------------------------
         //----------------- norm points processing -----------------------------------
@@ -4581,7 +4585,7 @@ class FacialFeatureDetector
 
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
         $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeatures($detectedFeaturesWithTrends,$coefs);
-        $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends);
+        $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends,$coefs);
 
         return $detectedFeaturesWithTrends;
     }
@@ -4675,6 +4679,7 @@ class FacialFeatureDetector
             'coefEyeForceLevelY' => 55,
             'coefLineDetection' => 3,
             'coefVoiceDetection' => -31,
+            'coefCntFramesForMouthOpenedWhenSpeaking' => 3
         );
         //----------------------------------------------------------------------------
         //----------------- norm points processing -----------------------------------
@@ -4791,7 +4796,7 @@ class FacialFeatureDetector
 
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
         $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeatures($detectedFeaturesWithTrends,$coefs);
-        $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends);
+        $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends, $coefs);
 
         return $detectedFeaturesWithTrends;
     }
@@ -4850,6 +4855,7 @@ class FacialFeatureDetector
             'coefEyeForceLevelY' => 55,
             'coefLineDetection' => 3,
             'coefVoiceDetection' => -31,
+            'coefCntFramesForMouthOpenedWhenSpeaking' => 3
         );
         //----------------------------------------------------------------------------
         //----------------- norm points processing -----------------------------------
@@ -4940,9 +4946,13 @@ class FacialFeatureDetector
             $detectedFeatures = $this->detectAdditionalNoseFeatures($detectedFeatures,
                 $FaceData["contours"], 'nose','');
 */
+        if (isset($FaceData['audiodata']))
+            $detectedFeatures = $this->processAudio($detectedFeatures,
+                $FaceData["audiodata"], 'mouth',$coefs);
+
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
         $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeatures($detectedFeaturesWithTrends,$coefs);
-        $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends);
+        $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends,$coefs);
 
         $arr = array(61,62, 63, 65, 66, 67, 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35,
             19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
@@ -5668,7 +5678,7 @@ class FacialFeatureDetector
 
         /* Соответствия для глаз */
         // Глаза
-        if ($sourceFeatureName == 'left_eye_blink' || $sourceFeatureName == 'right_eye_blink')
+        if ($sourceFeatureName == 'left_eye_blink')
             $targetValues['targetFacePart'] = 'Левый глаз';
         if ($sourceFeatureName == 'right_eye_blink')
             $targetValues['targetFacePart'] = 'Правый глаз';
@@ -5695,21 +5705,6 @@ class FacialFeatureDetector
         $facts = array();
         // Время на вопрос в кадрах
         $questionTimeInFrames = 0;
-
-        // Декодирование цифровой маски из json-формата
-        $faceData = json_decode($faceData, true);
-        // Если существует ключ (индекс) - FPS
-        if (isset($faceData['fps'])) {
-            // Определение времени на вопрос в кадрах
-            $questionTimeInFrames = round(((float)$faceData['fps'] * ($questionTime / 1000)), 0);
-            // Формирование факта одного признака для текущего кадра
-            $videoParametersFact['NameOfTemplate'] = 'T2110';
-            $videoParametersFact['s922'] = $faceData['fps'];
-            $videoParametersFact['s924'] = $questionTimeInFrames;
-            // Добавление факта параметра видео в общий массив фактов
-            array_push($facts, $videoParametersFact);
-        }
-
         // Кол-во кадров
         $frameNumber = 0;
         if (isset($detectedFeatures['eye']['left_eye_upper_eyelid_movement']) &&
@@ -5720,48 +5715,33 @@ class FacialFeatureDetector
             // Массив фактов для текущего кадра
             $frameFacts = array();
             // Обход всех определенных лицевых признаков
-            foreach ($detectedFeatures as $facePart => $features)
+            foreach ($detectedFeatures as $facePart => $features) {
                 if ($features != null)
                     foreach ($features as $featureName => $frames)
                         if (is_array($frames))
-                            for ($j = 1; $j < count($frames); $j++)
-                                if (isset($frames[$j]["val"]) && isset($frames[$j]["force"]))
-                                    if ($i == $j) {
-                                        // Поиск соответствий лицевых признаков
-                                        $targetValues = self::findCorrespondences($facePart, $featureName,
-                                            $frames[$j]["val"]);
-                                        // Если соответсвия лицевых признаков найдены
-                                        if ($targetValues['targetFacePart'] != null &&
-                                            $targetValues['featureChangeType'] != null &&
-                                            $targetValues['changeDirection'] != null) {
-                                            // Формирование факта одного лицевого признака для текущего кадра
-                                            $faceFeatureFact['NameOfTemplate'] = 'T1986';
-                                            $faceFeatureFact['s861'] = $targetValues['targetFacePart'];
-                                            $faceFeatureFact['s862'] = $targetValues['featureChangeType'];
-                                            $faceFeatureFact['s863'] = $targetValues['changeDirection'];
-                                            $faceFeatureFact['s864'] = $frames[$j]["force"];
-                                            $faceFeatureFact['s869'] = $j;
-                                            $faceFeatureFact['s870'] = $j;
-                                            $faceFeatureFact['s871'] = $j; //count($frames);
-                                            $faceFeatureFact['s874'] = $j;
-                                            // Добавление факта одного лицевого признака для текущего кадра в набор фактов
-                                            array_push($frameFacts, $faceFeatureFact);
-                                        }
+                            for ($j = 1; $j < count($frames); $j++) {
+                                if (isset($frames[$j]["val"]) && isset($frames[$j]["force"]) && ($i == $j)) {
+                                    // Поиск соответствий лицевых признаков
+                                    $targetValues = self::findCorrespondences($facePart, $featureName,
+                                        $frames[$j]["val"]);
+                                    // Если соответсвия лицевых признаков найдены
+                                    if ($targetValues['targetFacePart'] != null &&
+                                        $targetValues['featureChangeType'] != null &&
+                                        $targetValues['changeDirection'] != null) {
+                                        // Формирование факта одного лицевого признака для текущего кадра
+                                        $faceFeatureFact['NameOfTemplate'] = 'T1986';
+                                        $faceFeatureFact['s861'] = $targetValues['targetFacePart'];
+                                        $faceFeatureFact['s862'] = $targetValues['featureChangeType'];
+                                        $faceFeatureFact['s863'] = $targetValues['changeDirection'];
+                                        $faceFeatureFact['s864'] = $frames[$j]["force"];
+                                        $faceFeatureFact['s869'] = $j;
+                                        $faceFeatureFact['s870'] = $j;
+                                        $faceFeatureFact['s871'] = $j; //count($frames);
+                                        $faceFeatureFact['s874'] = $j;
+                                        // Добавление факта одного лицевого признака для текущего кадра в набор фактов
+                                        array_push($frameFacts, $faceFeatureFact);
                                     }
-            // Добавление набора фактов для текущего кадра в общий массив фактов
-            array_push($facts, $frameFacts);
-        }
-
-        // Цикл от 1 до общего-кол-ва кадров
-        for ($i = 1; $i < $frameNumber; $i++) {
-            // Массив фактов для текущего кадра
-            $frameFacts = array();
-            // Обход всех определенных лицевых признаков
-            foreach ($detectedFeatures as $facePart => $features)
-                if ($features != null)
-                    foreach ($features as $featureName => $frames)
-                        if (is_array($frames))
-                            for ($j = 1; $j < count($frames); $j++)
+                                }
                                 if (isset($frames[$j]["val"]) && $i == $j) {
                                     // Поиск соответствий признаков общего поведения
                                     $targetValues = self::findCorrespondencesForBehaviorFeatures(
@@ -5785,6 +5765,23 @@ class FacialFeatureDetector
                                         array_push($frameFacts, $generalBehaviorFeatureFact);
                                     }
                                 }
+                            }
+            }
+            if ($i == 1) {
+                // Декодирование цифровой маски из json-формата
+                $faceData = json_decode($faceData, true);
+                // Если существует ключ (индекс) - FPS
+                if (isset($faceData['fps'])) {
+                    // Определение времени на вопрос в кадрах
+                    $questionTimeInFrames = round(((float)$faceData['fps'] * ($questionTime / 1000)), 0);
+                    // Формирование факта одного признака для текущего кадра
+                    $videoParametersFact['NameOfTemplate'] = 'T2110';
+                    $videoParametersFact['s922'] = $faceData['fps'];
+                    $videoParametersFact['s924'] = $questionTimeInFrames;
+                    // Добавление факта параметра видео для первого кадра в набор фактов
+                    array_push($frameFacts, $videoParametersFact);
+                }
+            }
             if ($i <= $questionTimeInFrames) {
                 // Формирование факта признака общего поведения (слушание) для текущего кадра
                 $generalBehaviorFeatureFact = array();
@@ -5798,8 +5795,7 @@ class FacialFeatureDetector
                 array_push($frameFacts, $generalBehaviorFeatureFact);
             }
             // Добавление набора фактов для текущего кадра в общий массив фактов
-            if (!empty($frameFacts))
-                array_push($facts, $frameFacts);
+            array_push($facts, $frameFacts);
         }
 
         return $facts;
