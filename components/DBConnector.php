@@ -184,7 +184,7 @@ class DBConnector
      * @param $id - идентификатор результата анализа (PK)
      * @param $interpretationResultFileName - название json-файла с результатами интерпретации,
      * сохраняемого на Object Storage (с указанием расширения файла)
-     * @return resource - результата запроса
+     * @return resource - результат запроса
      */
     public function updateAnalysisResult($connection, $id, $interpretationResultFileName)
     {
@@ -197,6 +197,27 @@ class DBConnector
         // Выполнение SQL-запроса
         $result = pg_query_params($connection, $sql, array($id, $currentTime, $interpretationResultFileName)) or
             die("Ошибка в запросе: " . iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
+
+        return $result;
+    }
+
+    /**
+     * Обновление таблицы "hrrobot_final_conclusion" - обновление поля с итоговым заключением по видео-интервью.
+     *
+     * @param $connection - соединение с БД
+     * @param $id - идентификатор итогового заключения по видео-интервью (PK)
+     * @param $conclusionText - текст с итоговым заключением по видео-интервью,
+     * @return resource - результат запроса
+     */
+    public function updateFinalConclusion($connection, $id, $conclusionText)
+    {
+        // SQL-запрос
+        $sql = 'UPDATE hrrobot_final_conclusion
+            SET conclusion = $2
+            WHERE id = $1';
+        // Выполнение SQL-запроса
+        $result = pg_query_params($connection, $sql, array($id, $conclusionText)) or
+        die("Ошибка в запросе: " . iconv('UTF-8', 'CP1251', $sql) . " " . pg_last_error($connection));
 
         return $result;
     }
