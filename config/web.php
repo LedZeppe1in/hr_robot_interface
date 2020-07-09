@@ -58,7 +58,7 @@ $config = [
                 '/landmark/<_lm:(view|update|delete|landmark-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
                 '/analysis-result/<_ar:(detection)>/<id:\d+>/<processingType:\d+>' => 'main/analysis-result/<_ar>',
-                '/analysis-result/<_ar:(view|update|delete|detection-file-download|facts-download|interpretation-file-download)>/<id:\d+>' =>
+                '/analysis-result/<_ar:(view|update|delete|detection-file-download|facts-download|interpretation-file-download|interpretation-facts-download)>/<id:\d+>' =>
                     'main/analysis-result/<_ar>',
                 '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
                 '/detection-result/<_dr:(view|update|delete|file-download|facts-download)>/<id:\d+>' =>
@@ -68,6 +68,8 @@ $config = [
                     'main/interpretation-result/<_ir>',
                 '/gerchikov-test-conclusion/<_gtc:(list)>' => 'main/gerchikov-test-conclusion/<_gtc>',
                 '/gerchikov-test-conclusion/<_gtc:(view|delete)>/<id:\d+>' => 'main/gerchikov-test-conclusion/<_gtc>',
+                '/final-conclusion/<_fc:(list)>' => 'main/final-conclusion/<_fc>',
+                '/final-conclusion/<_fc:(view|delete)>/<id:\d+>' => 'main/final-conclusion/<_fc>',
             ],
         ],
         'cache' => [
