@@ -2,7 +2,6 @@
 
 use yii\helpers\Html;
 use yii\bootstrap\Button;
-use yii\widgets\ActiveForm;
 
 /* @var $this yii\web\View */
 

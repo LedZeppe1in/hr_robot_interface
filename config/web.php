@@ -37,6 +37,7 @@ $config = [
             //'class' => 'app\components\LangUrlManager',
             'rules' => [
                 '/' => 'main/default/index',
+                'test' => 'main/default/test',
                 'interview' => 'main/default/interview',
                 'gerchikov-test-conclusion-view/<id:\d+>' => 'main/default/gerchikov-test-conclusion-view',
                 'interview-analysis/<id:\d+>' => 'main/default/interview-analysis',

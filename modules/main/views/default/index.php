@@ -1,12 +1,10 @@
 <?php
 
 /* @var $this yii\web\View */
-/* @var $model app\modules\main\models\GerchikovTestConclusion */
 
 $this->title = 'HR Robot';
 
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
 ?>
 
 <div class="main-default-index">
@@ -23,42 +21,13 @@ use yii\widgets\ActiveForm;
             полученной с веб-камеры или камеры смартфона при проведении интервью (собеседования), а также результатов
             психологического тестирования.
         </h4><br />
+        <h4>На данный моменент, система находиться в тестовом режиме и поддерживает собеседование (тестирование)
+            по профилю "Кассир".
+        </h4><br />
         <p>
             <?= Html::a('Пройти собеседование',
                 'https://84.201.129.65:8080/HRRMaskEditor/GenerateR1Test.php',
-                ['class' => 'btn btn-success', 'style' => 'width: 180px;']) ?>
-        </p>
-
-        <?php $form = ActiveForm::begin(['action' => 'interview', 'method' => 'POST']); ?>
-            <?= $form->field($model, 'accept_test')->hiddenInput(['value' => 1])
-                ->label(false); ?>
-            <?= $form->field($model, 'accept_level')->hiddenInput(['value' => 100])
-                ->label(false); ?>
-            <?= $form->field($model, 'instrumental_motivation')->hiddenInput(['value' => '1'])
-                ->label(false); ?>
-            <?= $form->field($model, 'professional_motivation')->hiddenInput(['value' => '2'])
-                ->label(false); ?>
-            <?= $form->field($model, 'patriot_motivation')->hiddenInput(['value' => '3'])
-                ->label(false); ?>
-            <?= $form->field($model, 'master_motivation')->hiddenInput(['value' => '3'])
-                ->label(false); ?>
-            <?= $form->field($model, 'avoid_motivation')->hiddenInput(['value' => '3'])
-                ->label(false); ?>
-            <?= $form->field($model, 'description')->hiddenInput(['value' => 'Автоматически созданная запись'])
-                ->label(false); ?>
-            <div class="form-group">
-                <?= Html::submitButton('Пройти видеоинтервью',
-                    ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
-            </div>
-        <?php ActiveForm::end(); ?>
-
-        <p>
-            <?= Html::a('Анализ видеоинтервью', ['analysis'],
-                ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
-        </p>
-        <p>
-            <?= Html::a('Записать видео', ['record'],
-                ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
+                ['class' => 'btn btn-lg btn-success']) ?>
         </p>
     </div>
 </div>
