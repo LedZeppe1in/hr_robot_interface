@@ -19,6 +19,14 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             'conclusion:ntext',
+            [
+                'attribute'=>'finalResult',
+                'label' => 'ID видеоинтервью',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return $data->finalResult->video_interview_id;
+                },
+            ],
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

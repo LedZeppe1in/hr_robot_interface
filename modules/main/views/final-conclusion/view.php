@@ -32,16 +32,6 @@ $this->params['breadcrumbs'][] = $this->title;
             'id',
             [
                 'attribute' => 'id',
-                'label' => 'ID видеоинтервью',
-                'value' => $model->finalResult->video_interview_id,
-            ],
-            [
-                'attribute' => 'id',
-                'label' => 'Название файла видеоинтервью',
-                'value' => $model->finalResult->videoInterview->video_file_name,
-            ],
-            [
-                'attribute' => 'id',
                 'label' => 'Создано',
                 'value' => $model->finalResult->created_at,
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
@@ -51,6 +41,16 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Обновлено',
                 'value' => $model->finalResult->updated_at,
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
+            ],
+            [
+                'attribute' => 'id',
+                'label' => 'ID видеоинтервью',
+                'value' => $model->finalResult->video_interview_id,
+            ],
+            [
+                'attribute' => 'id',
+                'label' => 'Название файла видеоинтервью',
+                'value' => $model->finalResult->videoInterview->video_file_name,
             ],
             'conclusion:ntext',
         ],

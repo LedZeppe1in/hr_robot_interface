@@ -56,6 +56,10 @@ navigator.mediaDevices.getUserMedia(constraints).then(successCallback, errorCall
 function successCallback(stream)
  {
   console.log('getUserMedia() got stream: ', stream);
+
+  console.log(stream.getVideoTracks()[0].getSettings());
+  console.log(stream.getVideoTracks());
+
   window.stream = stream;
   gumVideo.srcObject = stream;
   recordButton.disabled = false;
@@ -116,6 +120,7 @@ function startRecording()
     try
      {
       options = {mimeType: 'video/webm;codecs=vp8', bitsPerSecond: 100000};
+      //options = {mimeType: 'video/mp4;codecs="avc1.640028', bitsPerSecond: 100000};
       mediaRecorder = new MediaRecorder(window.stream, options);
      }
     catch (e1)
@@ -159,21 +164,24 @@ function play()
   recordedVideo.src = window.URL.createObjectURL(superBuffer);
  }
 
-function upload()
- {
-  uploadButton.disabled = true;
-  uploadButton.innerText = "Ожидание результатов...";
+function upload() {
+ uploadButton.disabled = true;
+ uploadButton.style.display = "none";
+ uploadButton.innerText = "Ожидание результатов...";
 
-  stopRecording();
+ stopRecording();
 
-  var videoInterviewform = document.getElementById('video-interview-form');
+ var videoInterviewform = document.getElementById('video-interview-form');
 
-  var blob = new Blob(recordedBlobs, {type: 'video/mp4'});
+ var blob = new Blob(recordedBlobs, {type: 'video/mp4'});
 
-  var xhr = new XMLHttpRequest();
-  var formData = new FormData(videoInterviewform);
-  formData.append("FileToUpload", blob, Date.now() + ".mp4");
-  formData.append("_csrf", _csrf);
+ var xhr = new XMLHttpRequest();
+
+ var formData = new FormData(videoInterviewform);
+
+ formData.append("FileToUpload", blob, Date.now() + ".mp4");
+
+ formData.append("_csrf", _csrf);
 
   // отслеживаем процесс отправки
   xhr.upload.onprogress = function(event)
@@ -187,6 +195,32 @@ function upload()
     if (xhr.status == 200)
      {
       console.log("Успех");
+
+      let finalText = document.getElementById("final-text");
+      finalText.textContent = "Результат получен:";
+      uploadButton.style.display = "none";
+
+      let finalGerchikovTestConclusion = document.getElementById("final-gerchikov-test-conclusion");
+      let finalVideoInterviewConclusion = document.getElementById("final-video-interview-conclusion");
+
+      let response = xhr.responseText;
+      response = JSON.parse(response);
+
+      if (response.acceptTest != undefined) {
+       finalGerchikovTestConclusion.style.display = "inline-block";
+       finalGerchikovTestConclusion.textContent = "Решение о принятии: " + response.acceptTest + "; " +
+           "Рейтинг: " + response.acceptLevel + "; " +
+           "Инструментальная мотивация: " + response.instrumentalMotivation + "; " +
+           "Профессиональная мотивация: " + response.professionalMotivation + "; " +
+           "Патриотическая мотивация: " + response.patriotMotivation + "; " +
+           "Хозяйская мотивация: " + response.masterMotivation + "; " +
+           "Избегательная мотивация: " + response.avoidMotivation;
+      }
+
+      if (response.finalConclusion != undefined) {
+       finalVideoInterviewConclusion.style.display = "inline-block";
+       jQuery("#final-video-interview-conclusion").html(response.finalConclusion);
+      }
      }
     else 
      {

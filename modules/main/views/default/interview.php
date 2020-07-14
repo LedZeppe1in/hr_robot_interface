@@ -80,6 +80,8 @@ $this->params['breadcrumbs'][] = $this->title;
         let answerTimeText = document.getElementById("answer-time");
         // Установка таймера по первому времени ответа
         answerTimeText.textContent = "Начните интервью!";
+        // Слой финальной фразы об ожидании результатов обработки
+        let finalText = document.getElementById("final-text");
         // Слой текста вопроса
         let currentQuestionText = document.getElementById("current-question-text");
         // Кнопка подготовки к интервью
@@ -94,6 +96,10 @@ $this->params['breadcrumbs'][] = $this->title;
         let audioPlayer = document.getElementById("audio-player");
         // Ресурс аудио-плеера
         let audioSource = document.getElementById("audio-source");
+        // Слой с отображением записываемого видео
+        let gumVideo = document.getElementById("gum");
+        // Слой с записанным видео
+        let recordedVideo = document.getElementById("recorded");
 
         // Обработка нажатия кнопки подготовки к интервью
         $("#start-interview").click(function(e) {
@@ -191,7 +197,12 @@ $this->params['breadcrumbs'][] = $this->title;
         $("#upload").click(function(e) {
             // Остановка таймера
             clearInterval(timer);
-            answerTimeText.textContent = "Ваши ответы приняты, не закрывайте страницу и ожидайте результат...";
+            // Скрытие слоя текста с временем вопроса и слоев с видео
+            answerTimeText.style.display = "none";
+            gumVideo.style.display = "none";
+            recordedVideo.style.display = "none";
+            // Отображение cлоя с текстом финальной фразы об ожидании результатов обработки
+            finalText.style.display = "inline-block";
         });
     });
 </script>
@@ -204,6 +215,10 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <div class="row">
+        <div id="answer-time" class="col-md-4 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px;"></div>
+        <div id="final-text" class="col-md-11 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px; display: none">
+            Ваши ответы приняты, не закрывайте страницу и ожидайте результат! Обработка может занять продолжительное время (от нескольких минут, до нескольких часов).
+        </div>
         <div class="col-md-2">
                 <?= Button::widget([
                     'label' => Yii::t('app', 'Начать интервью'),
@@ -240,11 +255,12 @@ $this->params['breadcrumbs'][] = $this->title;
                     ]
                 ]); ?>
         </div>
-        <div id="answer-time" class="col-md-4 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px;"></div>
     </div>
 
     <div id="milliseconds" style="display: none">0</div>
     <div id="current-question-text" class="well" style="display: none"></div>
+    <div id="final-gerchikov-test-conclusion" class="well" style="display: none"></div>
+    <div id="final-video-interview-conclusion" class="well" style="display: none"></div>
 
     <audio id="audio-player" style="display: none" controls>
         <source id="audio-source" src="" type="audio/mpeg">

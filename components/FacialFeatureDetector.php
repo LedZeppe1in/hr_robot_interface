@@ -5774,7 +5774,7 @@ class FacialFeatureDetector
                 if (isset($faceData['fps'])) {
                     // Определение времени на вопрос в кадрах
                     $questionTimeInFrames = round(((float)$faceData['fps'] * ($questionTime / 1000)), 0);
-                    // Формирование факта одного признака для текущего кадра
+                    // Формирование факта одного признака для первого кадра
                     $videoParametersFact['NameOfTemplate'] = 'T2110';
                     $videoParametersFact['s922'] = $faceData['fps'];
                     $videoParametersFact['s924'] = $questionTimeInFrames;

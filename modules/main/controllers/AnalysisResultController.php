@@ -2,6 +2,10 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\FinalResult;
+use app\modules\main\models\Question;
+use app\modules\main\models\VideoInterview;
+use stdClass;
 use Yii;
 use Exception;
 use yii\data\ActiveDataProvider;
@@ -140,6 +144,8 @@ class AnalysisResultController extends Controller
      */
     public function actionDetection($id, $processingType)
     {
+        // Установка времени выполнения скрипта в 10 мин.
+        set_time_limit(60*10);
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);
         // Если цифровая маска получена программой Андрея, то меняем тип обработки на сырые точки
@@ -290,7 +296,7 @@ class AnalysisResultController extends Controller
     }
 
     /**
-     * Скачать json-файл с результатами определения признаков.
+     * Скачать json-файл с результатами интерпретации признаков.
      *
      * @param $id - идентификатор модели результатов анализа
      * @return mixed
@@ -311,6 +317,84 @@ class AnalysisResultController extends Controller
 
             return $result;
         }
+        throw new Exception('Файл не найден!');
+    }
+
+    /**
+     * Скачать факты результатов интерпретации признаков.
+     *
+     * @param $id - идентификатор итогового результата
+     * @return array
+     * @throws Exception
+     */
+    public function actionInterpretationFactsDownload($id)
+    {
+        //
+        $finalResult = FinalResult::findOne($id);
+        //
+        $landmarks = Landmark::find()->where(['video_interview_id' => $finalResult->video_interview_id])->all();
+        // Формирование массива c id цифровых масок
+        $landmarkIds = array();
+        foreach ($landmarks as $landmark)
+            array_push($landmarkIds, $landmark->id);
+        //
+        $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmarkIds])->all();
+        // Создаем структуру для данных всего интервью
+        $InitialDataForReasoningProcess = array();
+        //
+        foreach ($analysisResults as $analysisResult) {
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Если есть результат интерпретации признаков
+            if ($analysisResult->interpretation_result_file_name != '') {
+                // Получение json-файла с результатами интерпретации признаков
+                $jsonFile = $osConnector->getFileContentFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->interpretation_result_file_name
+                );
+                $interpretationResult = json_decode($jsonFile, true);
+                // Формирование только необходимых фактов с результатами интерпретации признаков
+                $TargetTemplates = array('T1957', /* Психоэмоциональное состояние */
+                    'T1924', /* Эмоции */
+                    'T2046', /* Признаки общего поведения */
+                    'T2047' /* Признаки аномального поведения */);
+                $DescriptionOfTemplates = $interpretationResult['DescriptionsOfTemplates'];
+                $DataOfSteps = $interpretationResult['Steps'];
+                $CountOFSteps = count($DataOfSteps);
+                $DataOfLastStep = $DataOfSteps[$CountOFSteps - 1]['ContentOfWorkingMemory'];
+                // Создаем структуру для данных одного из вопросов интервью
+                $ItemOfInitialDataForReasoningProcess = array();
+                foreach ($DataOfLastStep as $NameOfTemplate => $FactsOfTemplate) {
+                    if (in_array($NameOfTemplate, $TargetTemplates) === True) {
+                        $CountOfFactsOfTemplate = count($FactsOfTemplate);
+                        $DescriptionOfTemplate = $DescriptionOfTemplates[$NameOfTemplate];
+                        for ($i = 0; $i < $CountOfFactsOfTemplate; $i++) {
+                            $Fact = new stdClass;
+                            $Fact->{'NameOfTemplate'} = $NameOfTemplate;
+                            $FactOfTemplate = $FactsOfTemplate[$i];
+                            foreach ($FactOfTemplate as $IndexOfSlot => $ValueOfSlot)
+                                $Fact->{$DescriptionOfTemplate['Slots'][$IndexOfSlot]['InternalName']} = $ValueOfSlot;
+                            $ItemOfInitialDataForReasoningProcess[] = $Fact;
+                        }
+                    } else
+                        continue;
+                }
+                //
+                $landmark = Landmark::findOne($analysisResult->landmark_id);
+                //
+                $questionFact = new stdClass;
+                $questionFact->{'NameOfTemplate'} = 'T2048';
+                $questionFact->{'s921'} = $landmark->question->text;
+                $ItemOfInitialDataForReasoningProcess[] = $questionFact;
+                // И добавляем ее в данные интервью
+                $InitialDataForReasoningProcess[] = $ItemOfInitialDataForReasoningProcess;
+            }
+        }
+        //
+        if (!empty($InitialDataForReasoningProcess))
+            return json_encode($InitialDataForReasoningProcess);
+
         throw new Exception('Файл не найден!');
     }
 

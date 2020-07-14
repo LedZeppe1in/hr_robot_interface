@@ -60,6 +60,10 @@ navigator.mediaDevices.getUserMedia(constraints).then(successCallback, errorCall
 function successCallback(stream)
  {
   console.log('getUserMedia() got stream: ', stream);
+
+  console.log(stream.getVideoTracks()[0].getSettings());
+  console.log(stream.getVideoTracks());
+
   window.stream = stream;
   gumVideo.srcObject = stream;
  }
