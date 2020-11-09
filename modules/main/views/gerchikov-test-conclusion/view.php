@@ -6,8 +6,8 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\GerchikovTestConclusion */
 
-$this->title = 'Итоговое заключение по тесту Герчикова №' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Итоговые заключения по тесту Герчикова', 'url' => ['list']];
+$this->title = 'Итоговое заключение по тесту мотивации к труду №' . $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'Итоговые заключения по тесту мотивации к труду', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>

@@ -4407,11 +4407,9 @@ class FacialFeatureDetector
                  }
 
                  //add to the end of the array new values
-                 for ($i1 = (count($sourceFaceData1[$k])  - $shiftCnt);
-                      $i1 < (count($sourceFaceData1[$k])); $i1++) {
-                     if (is_array($resFaceData[$k]))
+                 for ($i1 = (count($sourceFaceData1[$k])  - $shiftCnt); $i1 < (count($sourceFaceData1[$k])); $i1++)
+                     if (is_array($resFaceData[$k]) && isset($resFaceData[$k]) && isset($sourceFaceData1[$k][$i1]))
                          array_push($resFaceData[$k], $sourceFaceData1[$k][$i1]);
-                 }
              } else{ //for gazeangle
                  $resFaceData[$k] = $v;
              }

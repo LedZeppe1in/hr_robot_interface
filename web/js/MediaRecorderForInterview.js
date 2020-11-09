@@ -165,9 +165,10 @@ function play()
  }
 
 function upload() {
- uploadButton.disabled = true;
+ // Остановка таймера вопросов
+ clearInterval(questionTimer);
+ // Скрытие кнопки записи
  uploadButton.style.display = "none";
- uploadButton.innerText = "Ожидание результатов...";
 
  stopRecording();
 
@@ -196,17 +197,19 @@ function upload() {
      {
       console.log("Успех");
 
+      // Отображение финальной фразы
       let finalText = document.getElementById("final-text");
       finalText.textContent = "Результат получен:";
-      uploadButton.style.display = "none";
-
+      // Слой для отображения итоговых результатов по тесту Герчикова
       let finalGerchikovTestConclusion = document.getElementById("final-gerchikov-test-conclusion");
+      // Слой для отображения итоговых результатов по видеоинтеврью
       let finalVideoInterviewConclusion = document.getElementById("final-video-interview-conclusion");
-
+      // Получение ответа от сервера
       let response = xhr.responseText;
       response = JSON.parse(response);
-
+      // Если есть свойство "acceptTest"
       if (response.acceptTest != undefined) {
+       // Вывод итоговых результатов по тесту Герчикова
        finalGerchikovTestConclusion.style.display = "inline-block";
        finalGerchikovTestConclusion.textContent = "Решение о принятии: " + response.acceptTest + "; " +
            "Рейтинг: " + response.acceptLevel + "; " +
@@ -216,8 +219,9 @@ function upload() {
            "Хозяйская мотивация: " + response.masterMotivation + "; " +
            "Избегательная мотивация: " + response.avoidMotivation;
       }
-
+      // Если есть свойство "finalConclusion"
       if (response.finalConclusion != undefined) {
+       // Вывод итоговых результатов по видеоинтеврью
        finalVideoInterviewConclusion.style.display = "inline-block";
        jQuery("#final-video-interview-conclusion").html(response.finalConclusion);
       }

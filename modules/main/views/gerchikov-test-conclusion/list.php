@@ -6,7 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Итоговые заключения по тесту Герчикова';
+$this->title = 'Итоговые заключения по тесту мотивации к труду';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 

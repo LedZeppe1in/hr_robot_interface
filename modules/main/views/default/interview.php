@@ -43,6 +43,8 @@ $this->params['breadcrumbs'][] = $this->title;
             return pad(hrs) + ":" + pad(mins) + ":" + pad(secs);
     }
 
+    // Таймер времени для вопросов
+    let questionTimer;
     // Продолжительность ответа по времени
     let answerDuration = 5000;
     // Текущее время
@@ -72,7 +74,7 @@ $this->params['breadcrumbs'][] = $this->title;
     // Выполнение скрипта при загрузке страницы
     $(document).ready(function() {
         let num = 1;
-        // Таймер времени ответа
+        // Таймер времени для ответа
         let timer;
         // Запоминание времени ответа для первого вопроса
         let answerTime = parseInt(answerTimes[questionIndex]);
@@ -133,7 +135,7 @@ $this->params['breadcrumbs'][] = $this->title;
             audioPlayer.play();
             // Запуск миллисекундомера
             const time = new Date();
-            setInterval(function() {
+            questionTimer = setInterval(function() {
                 const milliseconds = new Date().getTime() - time.getTime();
                 document.querySelector("#milliseconds").innerHTML = milliseconds;
                 // Запоминание текущего времени в миллисекундах

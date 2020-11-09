@@ -60,7 +60,7 @@ AppAsset::register($this);
                 ],
                 ['label' => 'Итоговые результаты', 'url' => '#',
                     'items' => [
-                        ['label' => 'Итоговые заключения по тесту Герчикова',
+                        ['label' => 'Итоговые заключения по тесту мотивации к труду',
                             'url' => ['/gerchikov-test-conclusion/list']],
                         ['label' => 'Итоговые заключения по видеоинтервью',
                             'url' => ['/final-conclusion/list']],
@@ -90,7 +90,7 @@ AppAsset::register($this);
                             'url' => 'https://84.201.129.65:8080/HRRTester/Polls/'],
                         ['label' => 'Отображение опроса',
                             'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php?pollmodel=someTest.json'],
-                        ['label' => 'Генератор теста Герчикова',
+                        ['label' => 'Генератор теста мотивации к труду',
                             'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
                     ],
                 ],

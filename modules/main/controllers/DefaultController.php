@@ -2,13 +2,10 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\FinalConclusion;
-use app\modules\main\models\FinalResult;
-use app\modules\main\models\GerchikovTestConclusion;
-use SoapClient;
-use stdClass;
 use Yii;
+use stdClass;
 use Exception;
+use SoapClient;
 use yii\web\Response;
 use yii\web\Controller;
 use yii\web\UploadedFile;
@@ -22,7 +19,9 @@ use app\modules\main\models\TestQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\SurveyQuestion;
-use app\modules\main\models\KnowledgeBaseFileForm;
+use app\modules\main\models\FinalConclusion;
+use app\modules\main\models\FinalResult;
+use app\modules\main\models\GerchikovTestConclusion;
 
 class DefaultController extends Controller
 {
@@ -102,8 +101,8 @@ class DefaultController extends Controller
      */
     public static function getAnalysisResult($landmark, $index, $processingType)
     {
-        // Установка времени выполнения скрипта в 10 мин.
-        set_time_limit(60*10);
+        // Установка времени выполнения скрипта в 1 час.
+        set_time_limit(60 * 60);
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
         // Если обрабатывается первая цифровая маска
@@ -192,8 +191,8 @@ class DefaultController extends Controller
      */
     public function actionAnalysis()
     {
-        // Установка времени выполнения скрипта в 10 мин.
-        set_time_limit(60*10);
+        // Установка времени выполнения скрипта в 1 час.
+        set_time_limit(60 * 60);
         // Создание модели видеоинтервью со сценарием анализа
         $videoInterviewModel = new VideoInterview(['scenario' => VideoInterview::VIDEO_INTERVIEW_ANALYSIS_SCENARIO]);
         // Создание массива с моделями цифровой маски
@@ -426,25 +425,26 @@ class DefaultController extends Controller
 
                     // Если есть результаты определения признаков
                     if ($analysisResultIds != '') {
-                        //
-                        ini_set('default_socket_timeout', 180);
-                        $AddressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-                        $Client = new SoapClient($AddressOfRBRWebServiceDefinition);
-                        $AddressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
-                        $AddressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
-                        $IDsOfInitialConditions = '[' . $analysisResultIds . ']';
-                        $AddressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
-                        $AdditionalDataToSend = new stdClass;
-                        $AdditionalDataToSend -> {'IDOfFile'} = Null;
-                        $Client->LaunchReasoningProcessForSetOfInitialConditions(array(
-                            'arg0' => $AddressForCodeOfKnowledgeBaseRetrieval,
-                            'arg1' => $AddressForInitialConditionsRetrieval,
-                            'arg2' => $IDsOfInitialConditions,
-                            'arg3' => $AddressToSendResults,
+                        // Интерпретация определенных лицевых признаков путем вызова МИП
+                        ini_set('default_socket_timeout', 60 * 30);
+                        $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                        $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                        $addressForCodeOfKnowledgeBaseRetrieval =
+                            'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
+                        $addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
+                        $idsOfInitialConditions = '[' . $analysisResultIds . ']';
+                        $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+                        $additionalDataToSend = new stdClass;
+                        $additionalDataToSend -> {'IDOfFile'} = Null;
+                        $client->LaunchReasoningProcessForSetOfInitialConditions(array(
+                            'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                            'arg1' => $addressForInitialConditionsRetrieval,
+                            'arg2' => $idsOfInitialConditions,
+                            'arg3' => $addressToSendResults,
                             'arg4' => 'ResultsOfReasoningProcess',
                             'arg5' => 'IDOfFile',
-                            'arg6' => json_encode($AdditionalDataToSend)))->return;
-                        $Client = Null;
+                            'arg6' => json_encode($additionalDataToSend)))->return;
+                        $client = Null;
 //                        // Формирование параметров запуска модуля интерпретации признаков
 //                        $parameters = array('DataSource' => 'ExecuteReasoningForSetOfInitialConditions',
 //                            'AddressForCodeOfKnowledgeBaseRetrieval' =>
@@ -464,35 +464,36 @@ class DefaultController extends Controller
                     }
 
                     // Создание модели итогового результата
-                    $FinalResultModel = new FinalResult();
-                    $FinalResultModel->description = 'Итоговый результат для анализа интервью.';
-                    $FinalResultModel->video_interview_id = $videoInterviewModel->id;
-                    $FinalResultModel->save();
+                    $finalResultModel = new FinalResult();
+                    $finalResultModel->description = 'Итоговый результат для анализа интервью.';
+                    $finalResultModel->video_interview_id = $videoInterviewModel->id;
+                    $finalResultModel->save();
                     // Создание модели заключения по видеоинтервью
                     $finalConclusionModel = new FinalConclusion();
                     // Установка первичного ключа с итогового результата
-                    $finalConclusionModel->id = $FinalResultModel->id;
+                    $finalConclusionModel->id = $finalResultModel->id;
                     // Сохранение модели заключения по видеоинтервью
                     $finalConclusionModel->save();
-                    //
-                    ini_set('default_socket_timeout', 180);
-                    $AddressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-                    $Client = new SoapClient($AddressOfRBRWebServiceDefinition);
-                    $AddressForCodeOfKnowledgeBaseRetrieval =
+                    // Формирование итогового заключения по видеоинтервью
+                    ini_set('default_socket_timeout', 60 * 30);
+                    $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                    $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                    $addressForCodeOfKnowledgeBaseRetrieval =
                         'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
-                    $AddressForInitialConditionsRetrieval =
-                        'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
-                    $AddressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
-                    $AdditionalDataToSend = new stdClass;
-                    $AdditionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
-                    $AdditionalDataToSend -> {'Type'} = 'Interpretation Level II';
-                    $Client -> LaunchReasoningProcessAndSendResultsToURL(array(
-                        'arg0' => $AddressForCodeOfKnowledgeBaseRetrieval,
-                        'arg1' => $AddressForInitialConditionsRetrieval,
-                        'arg2' => $AddressToSendResults,
+                    $addressForInitialConditionsRetrieval =
+                        'https://84.201.129.65/analysis-result/interpretation-facts-download/' .
+                        $finalConclusionModel->id;
+                    $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+                    $additionalDataToSend = new stdClass;
+                    $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
+                    $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
+                    $client -> LaunchReasoningProcessAndSendResultsToURL(array(
+                        'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                        'arg1' => $addressForInitialConditionsRetrieval,
+                        'arg2' => $addressToSendResults,
                         'arg3' => 'ResultsOfReasoningProcess',
-                        'arg4' => json_encode($AdditionalDataToSend)))->return;
-                    $Client = Null;
+                        'arg4' => json_encode($additionalDataToSend)))->return;
+                    $client = Null;
 //                    // Формирование параметров запуска модуля интерпретации признаков
 //                    $parameters = array('DataSource' => 'ExecuteReasoningAndSendResultsToURL',
 //                        'AddressForCodeOfKnowledgeBaseRetrieval' =>
@@ -691,7 +692,7 @@ class DefaultController extends Controller
                     array_push($testQuestionIds, $surveyQuestion->test_question_id);
 //                $num = 0;
 //                foreach ($surveyQuestions as $surveyQuestion) {
-//                    if ($num > 19)
+//                    if ($num > 5)
 //                        array_push($testQuestionIds, $surveyQuestion->test_question_id);
 //                    $num++;
 //                }
@@ -783,12 +784,12 @@ class DefaultController extends Controller
 
             // Вывод сообщения о не успешном прохождении теста Герчикова по профилю кассира
             if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
-                Yii::$app->getSession()->setFlash('error',
-                    'К сожалению, Вы не прошли тест по мотивации к труду по профилю «Кассир»!');
-            // Вывод сообщения о не успешном прохождении теста Герчикова
+                Yii::$app->getSession()->setFlash('warning',
+                    'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
+            // Вывод сообщения о не успешном прохождении теста Герчикова (мало или нет ответов)
             if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
-                Yii::$app->getSession()->setFlash('error',
-                    'К сожалению, Вы не прошли тест по мотивации к труду по профилю «Кассир», так как не ответили на достаточное количество вопросов!');
+                Yii::$app->getSession()->setFlash('warning',
+                    'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
 
             return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusionModel->id]);
         }
@@ -821,8 +822,8 @@ class DefaultController extends Controller
      */
     public function actionInterviewAnalysis($id)
     {
-        // Установка времени выполнения скрипта в 10 мин.
-        set_time_limit(60*200);
+        // Установка времени выполнения скрипта в 3 часа
+        set_time_limit(60 * 200);
         // Если пришел POST-запрос
         if (Yii::$app->request->isPost) {
             // Поиск вопросов связанных с определенным опросом
@@ -936,9 +937,17 @@ class DefaultController extends Controller
             fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
             // Закрытие файла
             fclose($jsonFile);
-            // Запуск программы обработки видео Ивана
-            chdir($mainPath);
-            exec('./venv/bin/python ./main.py ./test.json');
+
+            try {
+                // Запуск программы обработки видео Ивана
+                chdir($mainPath);
+                exec('./venv/bin/python ./main.py ./test.json');
+            } catch (Exception $e) {
+                $video = VideoInterview::findOne(1);
+                $video->description = 'Ошибка модуля обработки видео! ' . $e->getMessage();
+                $video->updateAttributes(['description']);
+            }
+
             $index = 0;
             $analysisResultIds = '';
             $lastAnalysisResultId = null;
@@ -964,12 +973,18 @@ class DefaultController extends Controller
                         $landmark->landmark_file_name,
                         $landmarkFile
                     );
-                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                    $analysisResultId = self::getAnalysisResult(
-                        $landmark,
-                        $index,
-                        VideoInterview::TYPE_NORMALIZED_POINTS
-                    );
+                    try {
+                        // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+                        $analysisResultId = self::getAnalysisResult(
+                            $landmark,
+                            $index,
+                            VideoInterview::TYPE_NORMALIZED_POINTS
+                        );
+                    } catch (Exception $e) {
+                        $video = VideoInterview::findOne(1);
+                        $video->description = 'Ошибка МОП! ' . $e->getMessage();
+                        $video->updateAttributes(['description']);
+                    }
                     // Формирование строки из всех id результатов анализа
                     if ($analysisResultIds == '')
                         $analysisResultIds = $analysisResultId;
@@ -1063,7 +1078,7 @@ class DefaultController extends Controller
             if ($analysisResultIds != '') {
                 try {
                     // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
-                    ini_set('default_socket_timeout', 180);
+                    ini_set('default_socket_timeout', 60 * 30);
                     $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                     $client = new SoapClient($addressOfRBRWebServiceDefinition);
                     $addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
@@ -1087,16 +1102,16 @@ class DefaultController extends Controller
             }
 
             // Поиск итоговых результатов по id видеоинтервью
-            $FinalResult = FinalResult::find()->where(['video_interview_id' => $model->id])->one();
+            $finalResult = FinalResult::find()->where(['video_interview_id' => $model->id])->one();
             // Создание модели заключения по видеоинтервью
             $finalConclusionModel = new FinalConclusion();
             // Установка первичного ключа с итогового результата
-            $finalConclusionModel->id = $FinalResult->id;
+            $finalConclusionModel->id = $finalResult->id;
             // Сохранение модели заключения по видеоинтервью
             $finalConclusionModel->save();
             try {
                 // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
-                ini_set('default_socket_timeout', 180);
+                ini_set('default_socket_timeout', 60 * 30);
                 $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                 $client = new SoapClient($addressOfRBRWebServiceDefinition);
                 $addressForCodeOfKnowledgeBaseRetrieval =
@@ -1187,7 +1202,7 @@ class DefaultController extends Controller
             $response = Yii::$app->response;
             $response->format = Response::FORMAT_JSON;
             // Формирование данных об итоговых заключениях по тесту Герчикова
-            $gerchikovTestConclusion = GerchikovTestConclusion::findOne($FinalResult->id);
+            $gerchikovTestConclusion = GerchikovTestConclusion::findOne($finalResult->id);
             if (!empty($gerchikovTestConclusion)) {
                 $data['acceptTest'] = 'Тест пройден успешно';
                 $data['acceptLevel'] = $gerchikovTestConclusion->accept_level . '%';
@@ -1198,7 +1213,7 @@ class DefaultController extends Controller
                 $data['avoidMotivation'] = $gerchikovTestConclusion->avoid_motivation;
             }
             // Формирование данных об итоговых заключениях по видеоинтервью
-            $finalConclusion = FinalConclusion::findOne($FinalResult->id);
+            $finalConclusion = FinalConclusion::findOne($finalResult->id);
             $data['finalConclusion'] = $finalConclusion->conclusion;
             // Возвращение данных
             $response->data = $data;
