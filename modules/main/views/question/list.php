@@ -6,40 +6,42 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Вопросы';
+$this->title = 'Вопросы видеоинтервью';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div class="question-list">
+<div class="video-interview-question-list">
 
     <h1><?= Html::encode($this->title) ?></h1>
-
-    <p>
-        <?= Html::a('Создать', ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'text',
+            'test_question_id',
             [
-                'attribute'=>'type',
-                'label' => 'Тип',
-                'format' => 'raw',
+                'attribute' => 'test_question_id',
+                'label' => 'Текст вопроса опроса',
                 'value' => function($data) {
-                    return ($data->type !== null) ? $data->getType() : null;
+                    return ($data->test_question_id !== null) ? $data->testQuestion->text : null;
                 },
             ],
+            'video_file_name',
             [
-                'attribute'=>'time',
-                'label' => 'Время',
-                'format' => 'raw',
-                'value' => function($data) {
-                    return ($data->time !== null) ? $data->getTime() : null;
-                },
+                'class' => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'action-column'],
+                'template' => '{view} {video-file-download} {delete}',
+                'buttons' => [
+                    'video-file-download' => function ($url, $model, $key) {
+                        $icon = ($model->video_file_name != '') ? Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-save-file',
+                                'title' => 'Сформировать цифровую маску']) : false;
+                        $url = ($model->video_file_name != '') ? ['/question/video-file-download/' . $model->id] :
+                            false;
+                        return Html::a($icon, $url);
+                    },
+                ],
             ],
-            ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
 

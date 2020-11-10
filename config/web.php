@@ -50,8 +50,10 @@ $config = [
                 '/respondent/<_res:(view|update|delete)>/<id:\d+>' => 'main/respondent/<_res>',
                 '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',
                 '/customer/<_cus:(view|update|delete)>/<id:\d+>' => 'main/customer/<_cus>',
-                '/question/<_ques:(list|create)>' => 'main/question/<_ques>',
-                '/question/<_ques:(view|update|delete|audio-file-download)>/<id:\d+>' => 'main/question/<_ques>',
+                '/test-question/<_tq:(list|create)>' => 'main/test-question/<_tq>',
+                '/test-question/<_tq:(view|update|delete|audio-file-download)>/<id:\d+>' => 'main/test-question/<_tq>',
+                '/question/<_ques:(list)>' => 'main/question/<_ques>',
+                '/question/<_ques:(view|delete|video-file-download)>/<id:\d+>' => 'main/question/<_ques>',
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
                 '/video-interview/<_vi:(view|update|delete|video-download|get-landmarks)>/<id:\d+>' =>
                     'main/video-interview/<_vi>',
