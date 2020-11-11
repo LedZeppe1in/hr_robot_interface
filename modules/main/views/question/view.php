@@ -44,6 +44,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Текст вопроса опроса',
                 'value' => $model->test_question_id ? $model->testQuestion->text : null,
             ],
+            'video_interview_id',
+            [
+                'attribute' => 'video_interview_id',
+                'label' => 'Название файла с полным видеоинтервью',
+                'value' => $model->video_interview_id ? $model->videoInterview->video_file_name : null,
+            ],
             [
                 'label' => 'Описание',
                 'value' => ($model->description != '') ? $model->description : null,

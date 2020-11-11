@@ -2,7 +2,6 @@
 
 namespace app\modules\main\models;
 
-use yii\helpers\ArrayHelper;
 use yii\behaviors\TimestampBehavior;
 
 /**
@@ -14,9 +13,11 @@ use yii\behaviors\TimestampBehavior;
  * @property string $video_file_name
  * @property string $description
  * @property int $test_question_id
+ * @property int $video_interview_id
  *
  * @property Landmark[] $landmarks
  * @property TestQuestion $testQuestion
+ * @property VideoInterview $videoInterview
  */
 class Question extends \yii\db\ActiveRecord
 {
@@ -38,8 +39,12 @@ class Question extends \yii\db\ActiveRecord
         return [
             [['videoFile'], 'required'],
             [['video_file_name', 'description'], 'string'],
-            [['test_question_id'], 'integer'],
+            [['test_question_id', 'video_interview_id'], 'integer'],
             [['videoFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
+            [['test_question_id'], 'exist', 'skipOnError' => true, 'targetClass' => TestQuestion::className(),
+                'targetAttribute' => ['test_question_id' => 'id']],
+            [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
+                'targetAttribute' => ['video_interview_id' => 'id']],
         ];
     }
 
@@ -52,10 +57,11 @@ class Question extends \yii\db\ActiveRecord
             'id' => 'ID',
             'created_at' => 'Создан',
             'updated_at' => 'Обновлен',
-            'video_file_name' => 'Название файла видео ответа на вопрос',
+            'video_file_name' => 'Название файла видео с ответом на вопрос',
             'description' => 'Описание',
             'videoFile' => 'Файл c видео ответом на вопрос',
             'test_question_id' => 'ID вопроса опроса',
+            'video_interview_id' => 'ID полного видеоинтервью',
         ];
     }
 
@@ -86,89 +92,13 @@ class Question extends \yii\db\ActiveRecord
         return $this->hasOne(TestQuestion::className(), ['id' => 'test_question_id']);
     }
 
-//    /**
-//     * Формирование миллисекунд для времени вопроса.
-//     *
-//     * @param bool $insert
-//     * @return bool
-//     */
-//    public function beforeSave($insert)
-//    {
-//        if (parent::beforeSave($insert)) {
-//            // Получение миллисекунд для времени вопроса
-//            $time = explode(":", $this->time);
-//            $hour = $time[0] * 60 * 60 * 1000;
-//            $minute = $time[1] * 60 * 1000;
-//            $second = $time[2] * 1000;
-//            $millisecond = $time[3];
-//            $this->time = $hour + $minute + $second + $millisecond;
-//
-//            return parent::beforeSave($insert);
-//        }
-//
-//        return false;
-//    }
-//
-//    /**
-//     * Перевод миллисекунд в формат времени (H:m:s:l).
-//     *
-//     * @param $milliseconds
-//     * @return string
-//     */
-//    public static function formatMilliseconds($milliseconds) {
-//        $seconds = floor($milliseconds / 1000);
-//        $minutes = floor($seconds / 60);
-//        $hours = floor($minutes / 60);
-//        $milliseconds = $milliseconds % 1000;
-//        $seconds = $seconds % 60;
-//        $minutes = $minutes % 60;
-//        $format = '%02u:%02u:%02u:%03u';
-//        $time = sprintf($format, $hours, $minutes, $seconds, $milliseconds);
-//
-//        return $time;
-//    }
-//
-//    /**
-//     * Получение времени вопроса.
-//     *
-//     * @return string
-//     */
-//    public function getTime()
-//    {
-//        return self::formatMilliseconds($this->time);
-//    }
-//
-//    /**
-//     * Получение списка всех типов вопросов.
-//     *
-//     * @return array - массив всех возможных типов вопросов
-//     */
-//    public static function getTypes()
-//    {
-//        return [
-//            self::TYPE_CALIBRATION_QUESTION => 'Калибровочный вопрос',
-//            self::TYPE_MAIN_QUESTION => 'Основной вопрос',
-//            self::TYPE_NOT_QUESTION => 'Не вопрос',
-//        ];
-//    }
-//
-//    /**
-//     * Получение типа вопроса.
-//     *
-//     * @return mixed
-//     */
-//    public function getType()
-//    {
-//        return ArrayHelper::getValue(self::getTypes(), $this->type);
-//    }
-//
-//    /**
-//     * Получение списка вопросов.
-//     *
-//     * @return array - массив всех вопросов
-//     */
-//    public static function getQuestions()
-//    {
-//        return ArrayHelper::map(self::find()->all(), 'id', 'text');
-//    }
+    /**
+     * Gets query for [[VideoInterview]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getVideoInterview()
+    {
+        return $this->hasOne(VideoInterview::className(), ['id' => 'video_interview_id']);
+    }
 }

@@ -26,6 +26,14 @@ $this->params['breadcrumbs'][] = $this->title;
                     return ($data->test_question_id !== null) ? $data->testQuestion->text : null;
                 },
             ],
+            'video_interview_id',
+            [
+                'attribute' => 'video_interview_id',
+                'label' => 'Название файла с полным видеоинтервью',
+                'value' => function($data) {
+                    return ($data->video_interview_id !== null) ? $data->videoInterview->video_file_name : null;
+                },
+            ],
             'video_file_name',
             [
                 'class' => 'yii\grid\ActionColumn',
