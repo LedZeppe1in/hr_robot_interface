@@ -172,10 +172,10 @@ class VideoInterviewController extends Controller
     {
         // Поиск видеоинтервью по id
         $model = $this->findModel($id);
-        // Поиск цифровых масок для данного видеоинтервью
-        $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
+        // Поиск цифровых масок для данного видеоинтервью
+        $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
         // Обход всех найденных цифровых масок
         foreach ($landmarks as $landmark) {
             // Поиск результатов анализа, проведенных для данной цифровой маски
@@ -208,6 +208,18 @@ class VideoInterviewController extends Controller
             if ($landmark->landmark_file_name != '')
                 $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                     $landmark->id, $landmark->landmark_file_name);
+        }
+        // Поиск вопросов для данного видеоинтервью
+        $questions = Question::find()->where(['video_interview_id' => $model->id])->all();
+        // Обход всех найденных вопросов
+        foreach ($questions as $question) {
+            // Удаление файла видео с ответом на вопрос на Object Storage
+            if ($question->video_file_name != '')
+                $osConnector->removeFileFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+                    $question->id,
+                    $question->video_file_name
+                );
         }
         // Удаление файла видеоинтервью на Object Storage
         if ($model->video_file_name != '')

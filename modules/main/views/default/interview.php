@@ -6,24 +6,18 @@ use yii\bootstrap\Button;
 /* @var $this yii\web\View */
 /* @var $videoInterviewModel app\modules\main\models\VideoInterview */
 /* @var $gerchikovTestConclusionModel app\modules\main\models\GerchikovTestConclusion */
-/* @var $landmarkModels app\modules\main\models\Landmark */
+/* @var $landmarkModel app\modules\main\models\Landmark */
+/* @var $questionIds app\modules\main\controllers\DefaultController */
 /* @var $questionTexts app\modules\main\controllers\DefaultController */
+/* @var $questionMaximumTimes app\modules\main\controllers\DefaultController */
 /* @var $questionTimes app\modules\main\controllers\DefaultController */
 /* @var $questionAudioFilePaths app\modules\main\controllers\DefaultController */
-/* @var $answerMaxTimes app\modules\main\controllers\DefaultController */
-/* @var $interviewPreparationAudio app\modules\main\controllers\DefaultController */
 
 $this->title = 'Запись интервью';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <script type="text/javascript">
-    // CSRF-токен
-    let _csrf = '<?= Yii::$app->request->csrfToken ?>';
-
-    // id видеоинтервью
-    let videoInterviewId = '<?= $videoInterviewModel->id ?>';
-
     // Перевод миллисекунд в формат времени
     function msToTime(s, flag) {
         function pad(n, z) {
@@ -43,33 +37,40 @@ $this->params['breadcrumbs'][] = $this->title;
             return pad(hrs) + ":" + pad(mins) + ":" + pad(secs);
     }
 
+    // CSRF-токен
+    let _csrf = '<?= Yii::$app->request->csrfToken ?>';
+
+    // id видеоинтервью
+    let videoInterviewId = '<?= $videoInterviewModel->id ?>';
+
     // Таймер времени для вопросов
     let questionTimer;
     // Продолжительность ответа по времени
     let answerDuration = 5000;
     // Текущее время
     let currentTime = 0;
-    // Время начала вопроса
-    let startTime = 0;
     // Время завершения вопроса
     let finishTime = 0;
+    // Время активации кнопки следующего вопроса
+    let buttonActivationTime = 0;
     // Порядковый номер вопроса
     let questionIndex = 0;
-    // Путь до файла с аудио озвучкой для не вопроса
-    let interviewPreparationAudio = '<?php echo $interviewPreparationAudio; ?>';
+    // Массив id вопросов
+    let questionIds = [<?php echo '"' . implode('","', $questionIds) . '"' ?>];
     // Массив текстов вопросов
     let questionTexts = [<?php echo '"' . implode('","', $questionTexts) . '"' ?>];
+    // Массив с продолжительностями ответов на вопросы по времени
+    let questionMaximumTimes = [<?php echo '"' . implode('","', $questionMaximumTimes) . '"' ?>];
     // Массив с продолжительностями вопросов по времени
     let questionTimes = [<?php echo '"' . implode('","', $questionTimes) . '"' ?>];
     // Массив с путями до аудио-файлов с озвучкой вопросов
     let questionAudioFilePaths = [<?php echo '"' . implode('","', $questionAudioFilePaths) . '"' ?>];
-    // Массив с продолжительностями ответов на вопросы по времени
-    let answerTimes = [<?php echo '"' . implode('","', $answerMaxTimes) . '"' ?>];
 
+    console.log(questionIds);
     console.log(questionTexts);
+    console.log(questionMaximumTimes);
     console.log(questionTimes);
     console.log(questionAudioFilePaths);
-    console.log(answerTimes);
 
     // Выполнение скрипта при загрузке страницы
     $(document).ready(function() {
@@ -77,15 +78,13 @@ $this->params['breadcrumbs'][] = $this->title;
         // Таймер времени для ответа
         let timer;
         // Запоминание времени ответа для первого вопроса
-        let answerTime = parseInt(answerTimes[questionIndex]);
+        let answerTime = parseInt(questionMaximumTimes[questionIndex]);
         // Слой таймера ответа
         let answerTimeText = document.getElementById("answer-time");
         // Установка таймера по первому времени ответа
         answerTimeText.textContent = "Начните интервью!";
         // Слой финальной фразы об ожидании результатов обработки
         let finalText = document.getElementById("final-text");
-        // Слой текста вопроса
-        let currentQuestionText = document.getElementById("current-question-text");
         // Кнопка подготовки к интервью
         let startInterviewButton = document.getElementById("start-interview");
         // Кнопка начала интервью (записи видео)
@@ -102,6 +101,10 @@ $this->params['breadcrumbs'][] = $this->title;
         let gumVideo = document.getElementById("gum");
         // Слой с записанным видео
         let recordedVideo = document.getElementById("recorded");
+        // Поле времени начала вопроса
+        let landmarkStartTimeInput = document.getElementById("landmark-start_time");
+        // Поле времени окончания вопроса
+        let landmarkFinishTimeInput = document.getElementById("landmark-finish_time");
 
         // Обработка нажатия кнопки подготовки к интервью
         $("#start-interview").click(function(e) {
@@ -110,7 +113,7 @@ $this->params['breadcrumbs'][] = $this->title;
             // Скрытие кнопки подготовки к интервью
             startInterviewButton.style.display = "none";
             // Проигрывание аудио-файла с озвучкой не вопроса
-            audioSource.src = "/web/audio/" + interviewPreparationAudio;
+            audioSource.src = "/web/audio/interview-preparation-audio.mp3";
             audioPlayer.load();
             audioPlayer.play();
         });
@@ -118,17 +121,11 @@ $this->params['breadcrumbs'][] = $this->title;
         // Обработка нажатия кнопки начала записи интервью
         $("#record").click(function(e) {
             // Установка таймера по первому времени ответа
-            answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(answerTime * 1000, false);
+            answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(answerTime, false);
             // Отображение кнопки следующего вопроса
             nextQuestionButton.style.display = "inline-block";
-            // Отображение текста вопроса
-            currentQuestionText.textContent = "Вопрос №" + (questionIndex + 1) + ": " + questionTexts[questionIndex];
-            // Задание значения поля времени начала вопроса
-            $("#landmark-" + questionIndex + "-start_time").val(msToTime(startTime, true));
-            // Определение времени завершения вопроса
-            finishTime = parseInt(questionTimes[questionIndex]) + answerDuration;
-            // Задание значения поля времени завершения вопроса
-            $("#landmark-" + questionIndex + "-finish_time").val(msToTime(finishTime, true));
+            // Определение нового времени активации кнопки следующего вопроса
+            buttonActivationTime = parseInt(questionTimes[questionIndex]) + answerDuration;
             // Проигрывание аудио-файла с озвучкой вопроса
             audioSource.src = "/web/audio/" + questionAudioFilePaths[questionIndex];
             audioPlayer.load();
@@ -140,8 +137,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 document.querySelector("#milliseconds").innerHTML = milliseconds;
                 // Запоминание текущего времени в миллисекундах
                 currentTime = milliseconds;
-                // Если время завершения вопроса пеньше текущего времени
-                if (finishTime <= parseInt(currentTime)) {
+                // Если время завершения вопроса меньше текущего времени
+                if (buttonActivationTime <= parseInt(currentTime)) {
                     // Активация кнопки следующего вопроса
                     nextQuestionButton.disabled = false;
                     nextQuestionButton.innerText = "Следующий вопрос";
@@ -160,12 +157,11 @@ $this->params['breadcrumbs'][] = $this->title;
             }, 1);
             // Запуск таймера для ответа
             timer = setInterval(function () {
-                let sec = --answerTime;
-                let msec = sec * 1000;
-                answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(msec, false);
-                if (sec === 0 && num < 10)
+                answerTime = answerTime - 1000;
+                answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(answerTime, false);
+                if (answerTime === 0 && num < 3)
                     $("#next-question").trigger("click");
-                if (sec === 0 && num === 10)
+                if (answerTime === 0 && num === 3)
                     $("#upload").trigger("click");
             }, 1000);
             questionIndex++;
@@ -173,23 +169,34 @@ $this->params['breadcrumbs'][] = $this->title;
 
         // Обработка нажатия кнопки следующего вопроса
         $("#next-question").click(function(e) {
+            // Определение времени окончания вопроса
+            finishTime = currentTime;
+            // Задание значений полей времени начала и окончания вопроса
+            if (landmarkStartTimeInput.value !== "") {
+                landmarkStartTimeInput.value = landmarkFinishTimeInput.value;
+                landmarkFinishTimeInput.value = msToTime(finishTime, true);
+            } else {
+                console.log("TIME: " + msToTime(0, true));
+                landmarkStartTimeInput.value = msToTime(0, true);
+                landmarkFinishTimeInput.value = msToTime(finishTime, true);
+            }
+            // Остановка записи видео и отправка его на сервер
+            uploadVideo();
+        });
+
+        // Обработка нажатия кнопки записи видео ответа на вопрос
+        $("#start-record").click(function(e) {
             if (questionTexts.indexOf(questionTexts[questionIndex]) !== -1) {
-                // Задание текста вопроса
-                currentQuestionText.textContent = "Вопрос №" + (questionIndex + 1) + ": " + questionTexts[questionIndex];
-                // Определение времени начала вопроса
-                startTime = currentTime;
-                // Задание значения поля времени начала вопроса
-                $("#landmark-" + questionIndex + "-start_time").val(msToTime(startTime, true));
-                // Определение времени завершения вопроса
-                finishTime = startTime + parseInt(questionTimes[questionIndex]) + answerDuration;
-                // Задание значения поля времени завершения вопроса
-                $("#landmark-" + questionIndex + "-finish_time").val(msToTime(finishTime, true));
+                // Старт записи нового видео
+                startRecording();
+                // Определение нового времени активации кнопки следующего вопроса
+                buttonActivationTime = finishTime + parseInt(questionTimes[questionIndex]) + answerDuration;
                 // Проигрывание аудио-файла с озвучкой вопроса
                 audioSource.src = "/web/audio/" + questionAudioFilePaths[questionIndex];
                 audioPlayer.load();
                 audioPlayer.play();
                 // Запоминание времени для текущего ответа
-                answerTime = parseInt(answerTimes[questionIndex]);
+                answerTime = parseInt(questionMaximumTimes[questionIndex]);
                 num++;
             }
             questionIndex++;
@@ -197,13 +204,20 @@ $this->params['breadcrumbs'][] = $this->title;
 
         // Обработка нажатия кнопки завершения интервью (загрузки)
         $("#upload").click(function(e) {
+            // Определение времени окончания вопроса
+            finishTime = currentTime;
+            // Задание значений полей времени начала и окончания вопроса
+            landmarkStartTimeInput.value = landmarkFinishTimeInput.value;
+            landmarkFinishTimeInput.value = msToTime(finishTime, true);
+            // Вызов метода отправки последнего видео ответа на вопрос на сервер
+            upload();
             // Остановка таймера
             clearInterval(timer);
             // Скрытие слоя текста с временем вопроса и слоев с видео
             answerTimeText.style.display = "none";
             gumVideo.style.display = "none";
             recordedVideo.style.display = "none";
-            // Отображение cлоя с текстом финальной фразы об ожидании результатов обработки
+            // Отображение слоя с текстом финальной фразы об ожидании результатов обработки
             finalText.style.display = "inline-block";
         });
     });
@@ -219,50 +233,55 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="row">
         <div id="answer-time" class="col-md-4 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px;"></div>
         <div id="final-text" class="col-md-11 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px; display: none">
-            Ваши ответы приняты, не закрывайте страницу и ожидайте результат! Обработка может занять продолжительное время (от нескольких минут, до нескольких часов).
+            Пожалуйста подождите. Отправка Ваших ответов может занять некоторое время.
         </div>
         <div class="col-md-2">
-                <?= Button::widget([
-                    'label' => Yii::t('app', 'Начать интервью'),
-                    'options' => [
-                        'id' => 'start-interview',
-                        'class' => 'btn-success',
-                        'style' => 'margin:5px',
-                    ]
-                ]); ?>
-                <?= Button::widget([
-                    'label' => Yii::t('app', 'Подготовка камеры...'),
-                    'options' => [
-                        'id' => 'record',
-                        'class' => 'btn-success',
-                        'disabled' => 'disabled',
-                        'style' => 'margin:5px; display:none'
-                    ]
-                ]); ?>
-                <?= Button::widget([
-                    'label' => Yii::t('app', 'Следующий вопрос'),
-                    'options' => [
-                        'id' => 'next-question',
-                        'class' => 'btn-primary',
-                        'disabled' => 'disabled',
-                        'style' => 'margin:5px; display:none'
-                    ]
-                ]); ?>
-                <?= Button::widget([
-                    'label' => Yii::t('app', 'Завершить интервью'),
-                    'options' => [
-                        'id' => 'upload',
-                        'class' => 'btn-success',
-                        'style' => 'margin:5px; display:none'
-                    ]
-                ]); ?>
+            <?= Button::widget([
+                'label' => Yii::t('app', 'Начать интервью'),
+                'options' => [
+                    'id' => 'start-interview',
+                    'class' => 'btn-success',
+                    'style' => 'margin:5px',
+                ]
+            ]); ?>
+            <?= Button::widget([
+                'label' => Yii::t('app', 'Подготовка камеры...'),
+                'options' => [
+                    'id' => 'record',
+                    'class' => 'btn-success',
+                    'disabled' => 'disabled',
+                    'style' => 'margin:5px; display:none'
+                ]
+            ]); ?>
+            <?= Button::widget([
+                'label' => Yii::t('app', 'Следующий вопрос'),
+                'options' => [
+                    'id' => 'next-question',
+                    'class' => 'btn-primary',
+                    'disabled' => 'disabled',
+                    'style' => 'margin:5px; display:none'
+                ]
+            ]); ?>
+            <?= Button::widget([
+                'label' => Yii::t('app', 'Старт записи'),
+                'options' => [
+                    'id' => 'start-record',
+                    'class' => 'btn-success',
+                    'style' => 'margin:5px; display:none'
+                ]
+            ]); ?>
+            <?= Button::widget([
+                'label' => Yii::t('app', 'Завершить интервью'),
+                'options' => [
+                    'id' => 'upload',
+                    'class' => 'btn-success',
+                    'style' => 'margin:5px; display:none'
+                ]
+            ]); ?>
         </div>
     </div>
 
     <div id="milliseconds" style="display: none">0</div>
-    <div id="current-question-text" class="well" style="display: none"></div>
-    <div id="final-gerchikov-test-conclusion" class="well" style="display: none"></div>
-    <div id="final-video-interview-conclusion" class="well" style="display: none"></div>
 
     <audio id="audio-player" style="display: none" controls>
         <source id="audio-source" src="" type="audio/mpeg">
@@ -270,8 +289,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= $this->render('_interview_form', [
         'videoInterviewModel' => $videoInterviewModel,
-        'landmarkModels' => $landmarkModels,
-        'questionTexts' => $questionTexts
+        'landmarkModel' => $landmarkModel
     ]) ?>
 
     <div class="row">

@@ -69,11 +69,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => ($model->type !== null) ? $model->getType() : null,
             ],
             'question_id',
-            [
-                'attribute' => 'question_id',
-                'label' => 'Текст вопроса',
-                'value' => $model->question_id ? $model->question->text : null,
-            ],
             'rotation',
             [
                 'attribute' => 'mirroring',

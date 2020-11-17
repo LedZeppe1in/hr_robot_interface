@@ -23,7 +23,8 @@
         "ext-soap": "^7.2",
         "wbraganca/yii2-dynamicform": "*",
         "janisto/yii2-timepicker": "*",
-        "mootensai/yii2-relation-trait": "dev-master"
+        "mootensai/yii2-relation-trait": "dev-master",
+        "vova07/yii2-console-runner-extension": "^0.1.2"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

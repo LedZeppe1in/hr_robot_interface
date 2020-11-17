@@ -44,14 +44,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     return ($data->type !== null) ? $data->getType() : null;
                 },
             ],
-            [
-                'attribute'=>'question_id',
-                'label' => 'Вопрос',
-                'format' => 'raw',
-                'value' => function($data) {
-                    return ($data->question_id != '') ? $data->question->text : null;
-                },
-            ],
+            'question_id',
             'video_interview_id',
             [
                 'class' => 'yii\grid\ActionColumn',

@@ -21,26 +21,28 @@ limitations under the License.
 
 var mediaSource = new MediaSource();
 mediaSource.addEventListener('sourceopen', handleSourceOpen, false);
+var RecoderedVideo = [];
 
-var mediaRecorder;
-var recordedBlobs;
 var sourceBuffer;
 
 var gumVideo = document.querySelector('video#gum');
 var recordedVideo = document.querySelector('video#recorded');
 
 var recordButton = document.querySelector('button#record');
+var playButton = document.querySelector('button#play');
 var uploadButton = document.querySelector('button#upload');
+var downloadButton = document.querySelector('button#download');
 
 recordButton.onclick = toggleRecording;
-uploadButton.onclick = upload;
+//playButton.onclick = play;
+//uploadButton.onclick = upload;
+//downloadButton.onclick = download;
 
 console.log(location.host);
 // window.isSecureContext could be used for Chrome
 var isSecureOrigin = location.protocol === 'https:' || location.host.includes('localhost');
 
-if (!isSecureOrigin)
- {
+if (!isSecureOrigin) {
   alert('getUserMedia() must be run from a secure origin: HTTPS or localhost.' + '\n\nChanging protocol to HTTPS');
   location.protocol = 'HTTPS';
  }
@@ -48,17 +50,17 @@ if (!isSecureOrigin)
 var constraints = {audio: true,
                    video: {width: 1280,
                            height: 720,
-                           frameRate: {min: 24, 
+                           frameRate: {min: 24,
                                        max: 50}}};
+
+console.log(navigator.mediaDevices.getSupportedConstraints());
 
 navigator.mediaDevices.getUserMedia(constraints).then(successCallback, errorCallback);
 
-function successCallback(stream)
- {
+function successCallback(stream) {
   console.log('getUserMedia() got stream: ', stream);
 
   console.log(stream.getVideoTracks()[0].getSettings());
-  console.log(stream.getVideoTracks());
 
   window.stream = stream;
   gumVideo.srcObject = stream;
@@ -66,33 +68,31 @@ function successCallback(stream)
   recordButton.innerHTML = 'Запись';
  }
 
-function errorCallback(error)
- {
+function errorCallback(error) {
   console.log('navigator.getUserMedia error: ', error);
  }
 
-function handleSourceOpen(event)
- {
+function handleSourceOpen(event) {
   console.log('MediaSource opened');
   sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
   console.log('Source buffer: ', sourceBuffer);
  }
 
-function handleDataAvailable(event)
- {
-  if (event.data && event.data.size > 0)
+function handleDataAvailable(event) {
+  if ((event.data && event.data.size > 0) &&
+      (RecoderedVideo.length > 0))
    {
-    recordedBlobs.push(event.data);
+    var ControllerOfMediaRecorder = RecoderedVideo[RecoderedVideo.length - 1];
+    ControllerOfMediaRecorder.recordedBlobs.push(event.data);
    }
  }
 
-function handleStop(event)
- {
+function handleStop(event) {
   console.log('Recorder stopped: ', event);
+  $("#start-record").trigger("click");
  }
 
-function toggleRecording()
- {
+function toggleRecording() {
   if (recordButton.textContent === 'Запись')
    {
     startRecording();
@@ -106,22 +106,24 @@ function toggleRecording()
  }
 
 // The nested try blocks will be simplified when Chrome 47 moves to Stable
-function startRecording() 
- {
+function startRecording() {
+  var ControllerOfMediaRecorder = {mediaRecorder: null,
+                                   recordedBlobs: null};
+  RecoderedVideo[RecoderedVideo.length] = ControllerOfMediaRecorder;
+
   var options = {mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 3800000};
-  recordedBlobs = [];
+  ControllerOfMediaRecorder.recordedBlobs = [];
   try
    {
-    mediaRecorder = new MediaRecorder(window.stream, options);
-   } 
+    ControllerOfMediaRecorder.mediaRecorder = new MediaRecorder(window.stream, options);
+   }
   catch (e0)
    {
     console.log('Unable to create MediaRecorder with options Object: ', options, e0);
     try
      {
       options = {mimeType: 'video/webm;codecs=vp8', bitsPerSecond: 100000};
-      //options = {mimeType: 'video/mp4;codecs="avc1.640028', bitsPerSecond: 100000};
-      mediaRecorder = new MediaRecorder(window.stream, options);
+      ControllerOfMediaRecorder.mediaRecorder = new MediaRecorder(window.stream, options);
      }
     catch (e1)
      {
@@ -129,7 +131,7 @@ function startRecording()
       try
        {
         options = {mimeType: 'video/mp4; codecs="avc1.640028"', bitsPerSecond: 100000};
-        mediaRecorder = new MediaRecorder(window.stream, options);
+        ControllerOfMediaRecorder.mediaRecorder = new MediaRecorder(window.stream, options);
        }
       catch (e2)
        {
@@ -140,49 +142,55 @@ function startRecording()
      }
    }
 
-  console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+  console.log('Created MediaRecorder', ControllerOfMediaRecorder.mediaRecorder, 'with options', options);
 
   recordButton.textContent = 'Остановить интервью';
   recordButton.style.display = "none";
 
-  mediaRecorder.onstop = handleStop;
-  mediaRecorder.ondataavailable = handleDataAvailable;
-  mediaRecorder.start(10000); // collect 10ms of data
-  console.log('MediaRecorder started', mediaRecorder);
+  ControllerOfMediaRecorder.mediaRecorder.onstop = handleStop;
+  ControllerOfMediaRecorder.mediaRecorder.ondataavailable = handleDataAvailable;
+  ControllerOfMediaRecorder.mediaRecorder.start(1000); // collect 10ms of data
+  console.log('MediaRecorder started', ControllerOfMediaRecorder.mediaRecorder);
  }
 
-function stopRecording()
- {
-  mediaRecorder.stop();
-  console.log('Recorded Blobs: ', recordedBlobs);
+function stopRecording() {
+  var ControllerOfMediaRecorder = RecoderedVideo[RecoderedVideo.length - 1];
+  ControllerOfMediaRecorder.mediaRecorder.stop();
+  console.log('Recorded Blobs: ', ControllerOfMediaRecorder.recordedBlobs);
   recordedVideo.controls = true;
+
+  play.Index = 0;
  }
 
-function play()
- {
-  var superBuffer = new Blob(recordedBlobs, {type: 'video/mp4'});
+function play() {
+  if (play.Index >= RecoderedVideo.length)
+   {
+    play.Index = 0;
+    return;
+   }
+  else
+
+  var ControllerOfMediaRecorder = RecoderedVideo[play.Index];
+  var superBuffer = new Blob(ControllerOfMediaRecorder.recordedBlobs, {type: 'video/mp4'});
   recordedVideo.src = window.URL.createObjectURL(superBuffer);
+  play.Index = play.Index + 1;
  }
 
 function upload() {
- // Остановка таймера вопросов
- clearInterval(questionTimer);
- // Скрытие кнопки записи
- uploadButton.style.display = "none";
+  // Остановка таймера вопросов
+  clearInterval(questionTimer);
+  // Скрытие кнопки записи
+  uploadButton.style.display = "none";
 
- stopRecording();
+  stopRecording();
 
- var videoInterviewform = document.getElementById('video-interview-form');
+  var landmarkForm = document.getElementById('landmark-form');
+  var blob = new Blob(RecoderedVideo[RecoderedVideo.length - 1].recordedBlobs, {type: 'video/mp4'});
+  var xhr = new XMLHttpRequest();
+  var formData = new FormData(landmarkForm);
 
- var blob = new Blob(recordedBlobs, {type: 'video/mp4'});
-
- var xhr = new XMLHttpRequest();
-
- var formData = new FormData(videoInterviewform);
-
- formData.append("FileToUpload", blob, Date.now() + ".mp4");
-
- formData.append("_csrf", _csrf);
+  formData.append("FileToUpload", blob, Date.now() + ".mp4");
+  formData.append("_csrf", _csrf);
 
   // отслеживаем процесс отправки
   xhr.upload.onprogress = function(event)
@@ -196,61 +204,89 @@ function upload() {
     if (xhr.status == 200)
      {
       console.log("Успех");
-
       // Отображение финальной фразы
       let finalText = document.getElementById("final-text");
-      finalText.textContent = "Результат получен:";
-      // Слой для отображения итоговых результатов по тесту Герчикова
-      let finalGerchikovTestConclusion = document.getElementById("final-gerchikov-test-conclusion");
-      // Слой для отображения итоговых результатов по видеоинтеврью
-      let finalVideoInterviewConclusion = document.getElementById("final-video-interview-conclusion");
-      // Получение ответа от сервера
-      let response = xhr.responseText;
-      response = JSON.parse(response);
-      // Если есть свойство "acceptTest"
-      if (response.acceptTest != undefined) {
-       // Вывод итоговых результатов по тесту Герчикова
-       finalGerchikovTestConclusion.style.display = "inline-block";
-       finalGerchikovTestConclusion.textContent = "Решение о принятии: " + response.acceptTest + "; " +
-           "Рейтинг: " + response.acceptLevel + "; " +
-           "Инструментальная мотивация: " + response.instrumentalMotivation + "; " +
-           "Профессиональная мотивация: " + response.professionalMotivation + "; " +
-           "Патриотическая мотивация: " + response.patriotMotivation + "; " +
-           "Хозяйская мотивация: " + response.masterMotivation + "; " +
-           "Избегательная мотивация: " + response.avoidMotivation;
-      }
-      // Если есть свойство "finalConclusion"
-      if (response.finalConclusion != undefined) {
-       // Вывод итоговых результатов по видеоинтеврью
-       finalVideoInterviewConclusion.style.display = "inline-block";
-       jQuery("#final-video-interview-conclusion").html(response.finalConclusion);
-      }
+      finalText.textContent = "Спасибо, Ваши ответы приняты!";
      }
-    else 
+    else
      {
       console.log("Ошибка " + this.status);
      }
    }
 
-  xhr.open("POST", '/interview-analysis/' + videoInterviewId);
+  xhr.open("POST", '/interview-analysis/' + questionIds[questionIndex - 1]);
   xhr.send(formData);
  }
 
-function download()
- {
-  var blob = new Blob(recordedBlobs, {type: 'video/mp4'});
-  var url = window.URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.style.display = 'none';
-  a.href = url;
-  a.download = 'test.mp4';
-  document.body.appendChild(a);
-  a.click();
+function uploadVideo() {
+    stopRecording();
 
-  setTimeout(function()
-              {
-               document.body.removeChild(a);
-               window.URL.revokeObjectURL(url);
-              },
-             1000);
+    var landmarkForm = document.getElementById('landmark-form');
+    var blob = new Blob(RecoderedVideo[RecoderedVideo.length - 1].recordedBlobs, {type: 'video/mp4'});
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData(landmarkForm);
+
+    formData.append("FileToUpload", blob, Date.now() + ".mp4");
+    formData.append("_csrf", _csrf);
+
+    // отслеживаем процесс отправки
+    xhr.upload.onprogress = function(event)
+    {
+        console.log(`Отправлено ${event.loaded} из ${event.total}`);
+    };
+
+    // Ждём завершения: неважно, успешного или нет
+    xhr.onloadend = function()
+    {
+        if (xhr.status == 200)
+        {
+            console.log("Успех");
+        }
+        else
+        {
+            console.log("Ошибка " + this.status);
+        }
+    }
+
+    xhr.open("POST", '/interview-analysis/' + questionIds[questionIndex - 1]);
+    xhr.send(formData);
+}
+
+function download() {
+  var ArrayOfLinks = [];
+  var Link;
+  var url;
+  var a;
+  for (var i = 0; i < RecoderedVideo.length; i++)
+   {
+    url = window.URL.createObjectURL(new Blob(RecoderedVideo[i].recordedBlobs, {type: 'video/mp4'}));
+    a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'test.mp4';
+    document.body.appendChild(a);
+
+    ArrayOfLinks[ArrayOfLinks.length] = {UIControl: a,
+                                         URL: url};
+   }
+
+  var DelayedExecution = function(IndexOfItemToProcess)
+   {
+    if (IndexOfItemToProcess == ArrayOfLinks.length)
+     {
+      return;
+     }
+
+    ArrayOfLinks[IndexOfItemToProcess].UIControl.click();
+    setTimeout(function()
+                {
+                 document.body.removeChild(ArrayOfLinks[IndexOfItemToProcess].UIControl);
+                 window.URL.revokeObjectURL(ArrayOfLinks[IndexOfItemToProcess].URL);
+                 ArrayOfLinks.splice(0, 1);
+                 DelayedExecution(IndexOfItemToProcess);
+                },
+               5000);
+   }
+
+  DelayedExecution(0);
  }
