@@ -183,12 +183,13 @@ class VideoInterviewAnalysisController extends Controller
             chdir($mainPath);
             exec('./venv/bin/python ./main.py ./test' . $question->id . '.json');
         } catch (Exception $e) {
-            $videoInterview->description = 'Ошибка модуля обработки видео! ' . $e->getMessage();
+            $videoInterview->description = 'Ошибка модуля обработки видео Ивана! ' . $e->getMessage();
             $videoInterview->updateAttributes(['description']);
         }
 
         $success = false;
         $analysisResultId = '';
+        $analysisResultIds = '';
         // Сообщение предупреждения от программы обработки видео
         $warningMassage = '';
         // Формирование названия json-файла с результатами обработки видео
@@ -218,9 +219,15 @@ class VideoInterviewAnalysisController extends Controller
                     VideoInterview::TYPE_NORMALIZED_POINTS
                 );
             } catch (Exception $e) {
-                $videoInterview->description = 'Ошибка МОП! ' . $e->getMessage();
-                $videoInterview->updateAttributes(['description']);
+                $analysisResult = AnalysisResult::findOne($analysisResultId);
+                $analysisResult->description .= ' Ошибка МОП! ' . $e->getMessage();
+                $analysisResult->updateAttributes(['description']);
             }
+            // Формирование строки из всех id результатов анализа
+            if ($analysisResultIds == '')
+                $analysisResultIds = $analysisResultId;
+            else
+                $analysisResultIds .= ', ' . $analysisResultId;
             // Декодирование json-файла с результатами обработки видео в виде цифровой маски
             $jsonLandmarkFile = json_decode($landmarkFile, true);
             // Если в json-файле с цифровой маской есть текст с предупреждением
@@ -232,100 +239,98 @@ class VideoInterviewAnalysisController extends Controller
         // Удаление записи о цифровой маски для которой не сформирован json-файл
         if ($success == false)
             Landmark::findOne($landmark->id)->delete();
-        // Текст сообщения об ошибке
-        $errorMessage = 'Не удалось проанализировать видеоинтервью!';
-        // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
-        if (file_exists($mainPath . 'error.json')) {
-            // Получение json-файл с ошибками обработки видеоинтервью
-            $jsonErrorFile = file_get_contents($mainPath . 'error.json', true);
-            // Декодирование json
-            $jsonErrorFile = json_decode($jsonErrorFile, true);
-            // Дополнение текста сообщения об ошибке
-            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
-            // Удаление json-файла с сообщением ошибке
-            unlink($mainPath . 'error.json');
-        }
-        // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
-        if (file_exists($jsonResultPath . 'out_error.json')) {
-            // Получение json-файл с ошибками обработки видеоинтервью
-            $jsonErrorFile = file_get_contents($jsonResultPath . 'out_error.json', true);
-            // Декодирование json
-            $jsonErrorFile = json_decode($jsonErrorFile, true);
-            // Дополнение текста сообщения об ошибке
-            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
-            // Удаление json-файла с сообщением ошибке
-            unlink($jsonResultPath . 'out_error.json');
+//        // Текст сообщения об ошибке
+//        $errorMessage = 'Не удалось проанализировать видеоинтервью!';
+//        // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
+//        if (file_exists($mainPath . 'error.json')) {
+//            // Получение json-файл с ошибками обработки видеоинтервью
+//            $jsonErrorFile = file_get_contents($mainPath . 'error.json', true);
+//            // Декодирование json
+//            $jsonErrorFile = json_decode($jsonErrorFile, true);
+//            // Дополнение текста сообщения об ошибке
+//            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
+//            // Удаление json-файла с сообщением ошибке
+//            unlink($mainPath . 'error.json');
+//        }
+//        // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
+//        if (file_exists($jsonResultPath . 'out_error.json')) {
+//            // Получение json-файл с ошибками обработки видеоинтервью
+//            $jsonErrorFile = file_get_contents($jsonResultPath . 'out_error.json', true);
+//            // Декодирование json
+//            $jsonErrorFile = json_decode($jsonErrorFile, true);
+//            // Дополнение текста сообщения об ошибке
+//            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
+//            // Удаление json-файла с сообщением ошибке
+//            unlink($jsonResultPath . 'out_error.json');
+//        }
+
+        // Путь к программе обработки видео от Андрея
+        $mainAndrewModulePath = '/home/-Common/-andrey/';
+        // Путь к json-файлу результатов обработки видеоинтервью от Андрея
+        $jsonAndrewResultPath = $mainAndrewModulePath . 'Records/';
+        // Отлов ошибки выполнения программы обработки видео Андрея
+        try {
+            // Запуск программы обработки видео Андрея
+            chdir($mainAndrewModulePath);
+            exec('./EmotionDetection -f ' . $videoPath . $question->video_file_name);
+            // Получение имени файла без расширения
+            $jsonFileName = preg_replace('/\.\w+$/', '', $question->video_file_name);
+            // Проверка существования json-файл с результатами обработки видео
+            if (file_exists($jsonAndrewResultPath . $jsonFileName . '.json')) {
+                // Создание цифровой маски в БД
+                $landmarkModel = new Landmark();
+                $landmarkModel->landmark_file_name = $videoResultFile;
+                $landmarkModel->start_time = Landmark::formatMilliseconds($landmark->start_time);
+                $landmarkModel->finish_time = Landmark::formatMilliseconds($landmark->finish_time);
+                $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
+                $landmarkModel->rotation = Landmark::TYPE_ZERO;
+                $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+                $landmarkModel->description = $videoInterview->description . ' (время нарезки: ' .
+                    $landmarkModel->start_time . ' - ' . $landmarkModel->finish_time . ')';
+                $landmarkModel->question_id = $question->id;
+                $landmarkModel->video_interview_id = $videoInterview->id;
+                $landmarkModel->save();
+                // Формирование названия json-файла с результатами обработки видео
+                $landmarkModel->landmark_file_name = 'out_' . $landmarkModel->id . '.json';
+                // Обновление атрибута цифровой маски в БД
+                $landmarkModel->updateAttributes(['landmark_file_name']);
+                // Получение json-файла с результатами обработки видео в виде цифровой маски
+                $landmarkFile = file_get_contents($jsonAndrewResultPath .
+                    $jsonFileName . '.json', true);
+                // Сохранение файла с лицевыми точками на Object Storage
+                $osConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                    $landmarkModel->id,
+                    $landmarkModel->landmark_file_name,
+                    $landmarkFile
+                );
+                try {
+                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+                    $analysisResultId = self::getAnalysisResult(
+                        $landmarkModel,
+                        (int)$questionIndex,
+                        VideoInterview::TYPE_RAW_POINTS
+                    );
+                } catch (Exception $e) {
+                    $analysisResult = AnalysisResult::findOne($analysisResultId);
+                    $analysisResult->description .= ' Ошибка МОП! ' . $e->getMessage();
+                    $analysisResult->updateAttributes(['description']);
+                }
+                // Формирование строки из всех id результатов анализа
+                if ($analysisResultIds == '')
+                    $analysisResultIds = $analysisResultId;
+                else
+                    $analysisResultIds .= ', ' . $analysisResultId;
+                // Удаление json-файла с результатами обработки видеоинтервью программой Андрея
+                unlink($jsonAndrewResultPath . $jsonFileName . '.json');
+            }
+        } catch (Exception $e) {
+            $videoInterview->description = 'Ошибка модуля обработки видео Андрея! ' . $e->getMessage();
+            $videoInterview->updateAttributes(['description']);
         }
 
-//            // Обход видео-файлов нарезки исходного загруженного видео
-//            foreach ($videoResultFiles as $key => $videoResultFile)
-//                if (file_exists($jsonResultPath . $videoResultFile)) {
-//                    // Путь к программе обработки видео от Андрея
-//                    $mainAndrewModulePath = '/home/-Common/-andrey/';
-//                    // Путь к json-файлу результатов обработки видеоинтервью от Андрея
-//                    $jsonAndrewResultPath = $mainAndrewModulePath . 'Records/';
-//                    // Отлов ошибки выполнения программы обработки видео Андрея
-//                    try {
-//                        // Запуск программы обработки видео Андрея
-//                        chdir($mainAndrewModulePath);
-//                        exec('./EmotionDetection -f ' . $jsonResultPath . $videoResultFile);
-//                        // Получение имени файла без расширения
-//                        $jsonFileName = preg_replace('/\.\w+$/', '', $videoResultFile);
-//                        // Проверка существования json-файл с результатами обработки видео
-//                        if (file_exists($jsonAndrewResultPath . $jsonFileName . '.json')) {
-//                            // Создание цифровой маски в БД
-//                            $landmarkModel = new Landmark();
-//                            $landmarkModel->landmark_file_name = $videoResultFile;
-//                            $landmarkModel->start_time = Yii::$app->request
-//                                ->post('Landmark')[$key]['start_time'];
-//                            $landmarkModel->finish_time = Yii::$app->request
-//                                ->post('Landmark')[$key]['finish_time'];
-//                            $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
-//                            $landmarkModel->rotation = Landmark::TYPE_ZERO;
-//                            $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
-//                            $landmarkModel->description = $model->description . ' (время нарезки: ' .
-//                                $landmarkModel->start_time . ' - ' . $landmarkModel->finish_time . ')';
-//                            $landmarkModel->question_id = Yii::$app->request
-//                                ->post('Landmark')[$key]['question_id'];
-//                            $landmarkModel->video_interview_id = $model->id;
-//                            $landmarkModel->save();
-//                            // Формирование названия json-файла с результатами обработки видео
-//                            $landmarkModel->landmark_file_name = 'out_' . $landmarkModel->id . '.json';
-//                            // Обновление атрибута цифровой маски в БД
-//                            $landmarkModel->updateAttributes(['landmark_file_name']);
-//                            // Получение json-файла с результатами обработки видео в виде цифровой маски
-//                            $landmarkFile = file_get_contents($jsonAndrewResultPath .
-//                                $jsonFileName . '.json', true);
-//                            // Сохранение файла с лицевыми точками на Object Storage
-//                            $osConnector->saveFileToObjectStorage(
-//                                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-//                                $landmarkModel->id,
-//                                $landmarkModel->landmark_file_name,
-//                                $landmarkFile
-//                            );
-//                            // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-//                            $analysisResultId = self::getAnalysisResult(
-//                                $landmarkModel,
-//                                $key,
-//                                VideoInterview::TYPE_RAW_POINTS
-//                            );
-//                            // Формирование строки из всех id результатов анализа
-//                            if ($analysisResultIds == '')
-//                                $analysisResultIds = $analysisResultId;
-//                            else
-//                                $analysisResultIds .= ', ' . $analysisResultId;
-//                            // Запоминание последнего id анализа результата
-//                            $lastAnalysisResultId = $analysisResultId;
-//                            // Удаление json-файлов с результатами обработки видеоинтервью программой Андрея
-//                            unlink($jsonAndrewResultPath . $jsonFileName . '.json');
-//                        }
-//                    } catch (Exception $e) {
-//                        echo 'При обработке видеоинтервью программой Андрея возникли ошибки!';
-//                    }
-//                }
-
-        // Если есть результат определения признаков
-        if ($analysisResultId != '')
+        // Если есть результаты определения признаков
+        if ($analysisResultIds != '')
             try {
                 // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
                 ini_set('default_socket_timeout', 60 * 30);
@@ -333,7 +338,7 @@ class VideoInterviewAnalysisController extends Controller
                 $client = new SoapClient($addressOfRBRWebServiceDefinition);
                 $addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
                 $addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
-                $idsOfInitialConditions = '[' . $analysisResultId . ']';
+                $idsOfInitialConditions = '[' . $analysisResultIds . ']';
                 $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
                 $additionalDataToSend = new stdClass;
                 $additionalDataToSend->{'IDOfFile'} = Null;
@@ -350,39 +355,6 @@ class VideoInterviewAnalysisController extends Controller
                 $videoInterview->description = 'Ошибка МИП (первый уровень)! ' . $e->getMessage();
                 $videoInterview->updateAttributes(['description']);
             }
-
-        // Поиск итоговых результатов по id видеоинтервью
-        $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
-        // Создание модели заключения по видеоинтервью
-        $finalConclusionModel = new FinalConclusion();
-        // Установка первичного ключа с итогового результата
-        $finalConclusionModel->id = $finalResult->id;
-        // Сохранение модели заключения по видеоинтервью
-        $finalConclusionModel->save();
-        try {
-            // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
-            ini_set('default_socket_timeout', 60 * 30);
-            $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-            $client = new SoapClient($addressOfRBRWebServiceDefinition);
-            $addressForCodeOfKnowledgeBaseRetrieval =
-                'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
-            $addressForInitialConditionsRetrieval =
-                'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
-            $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
-            $additionalDataToSend = new stdClass;
-            $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
-            $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
-            $client->LaunchReasoningProcessAndSendResultsToURL(array(
-                'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-                'arg1' => $addressForInitialConditionsRetrieval,
-                'arg2' => $addressToSendResults,
-                'arg3' => 'ResultsOfReasoningProcess',
-                'arg4' => json_encode($additionalDataToSend)))->return;
-            $client = Null;
-        } catch (Exception $e) {
-            $videoInterview->description = 'Ошибка МИП (второй уровень)! ' . $e->getMessage();
-            $videoInterview->updateAttributes(['description']);
-        }
 
         // Удаление файла с видеоинтервью
         if (file_exists($videoPath . $question->video_file_name))
@@ -402,6 +374,39 @@ class VideoInterviewAnalysisController extends Controller
         // Удаление аудио-файла с результатами обработки видео программой Ивана
         if (file_exists($jsonResultPath . $audioResultFile))
             unlink($jsonResultPath . $audioResultFile);
+
+//        // Поиск итоговых результатов по id видеоинтервью
+//        $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
+//        // Создание модели заключения по видеоинтервью
+//        $finalConclusionModel = new FinalConclusion();
+//        // Установка первичного ключа с итогового результата
+//        $finalConclusionModel->id = $finalResult->id;
+//        // Сохранение модели заключения по видеоинтервью
+//        $finalConclusionModel->save();
+//        try {
+//            // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
+//            ini_set('default_socket_timeout', 60 * 30);
+//            $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+//            $client = new SoapClient($addressOfRBRWebServiceDefinition);
+//            $addressForCodeOfKnowledgeBaseRetrieval =
+//                'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
+//            $addressForInitialConditionsRetrieval =
+//                'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
+//            $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+//            $additionalDataToSend = new stdClass;
+//            $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
+//            $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
+//            $client->LaunchReasoningProcessAndSendResultsToURL(array(
+//                'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+//                'arg1' => $addressForInitialConditionsRetrieval,
+//                'arg2' => $addressToSendResults,
+//                'arg3' => 'ResultsOfReasoningProcess',
+//                'arg4' => json_encode($additionalDataToSend)))->return;
+//            $client = Null;
+//        } catch (Exception $e) {
+//            $videoInterview->description = 'Ошибка МИП (второй уровень)! ' . $e->getMessage();
+//            $videoInterview->updateAttributes(['description']);
+//        }
     }
 
     /**
