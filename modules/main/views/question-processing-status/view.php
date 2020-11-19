@@ -5,6 +5,7 @@ use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\QuestionProcessingStatus */
+/* @var $moduleMessages app\modules\main\models\ModuleMessage */
 
 $this->title = 'Состояние обработки видео ответа на вопрос: ' . $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Состояния обработки видео ответов по вопросам', 'url' => ['list']];
@@ -17,7 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Delete', ['delete', 'id' => $model->id], [
+        <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
                 'confirm' => 'Вы уверены, что хотите удалить этот элемент?',
@@ -51,21 +52,37 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'ivan_video_analysis_runtime',
-                'value' => $model->getIvanVideoAnalysisRuntime(),
+                'value' => $model->ivan_video_analysis_runtime ? $model->getIvanVideoAnalysisRuntime() : null,
             ],
             [
                 'attribute' => 'andrey_video_analysis_runtime',
-                'value' => $model->getAndreyVideoAnalysisRuntime(),
+                'value' => $model->andrey_video_analysis_runtime ? $model->getAndreyVideoAnalysisRuntime() : null,
             ],
             [
                 'attribute' => 'feature_detection_runtime',
-                'value' => $model->getFeatureDetectionRuntime(),
+                'value' => $model->feature_detection_runtime ? $model->getFeatureDetectionRuntime() : null,
             ],
             [
                 'attribute' => 'feature_interpretation_runtime',
-                'value' => $model->getFeatureInterpretationRuntime(),
+                'value' => $model->feature_interpretation_runtime ? $model->getFeatureInterpretationRuntime() : null,
             ],
         ],
     ]) ?>
 
+    <?php if(!empty($moduleMessages)): ?>
+        <h3>Сообщения:</h3>
+    <?php endif; ?>
+
+    <?php foreach ($moduleMessages as $moduleMessage): ?>
+        <?= DetailView::widget([
+            'model' => $moduleMessage,
+            'attributes' => [
+                'message',
+                [
+                    'attribute' => 'module_name',
+                    'value' => $moduleMessage->getModuleName(),
+                ],
+            ],
+        ]) ?>
+    <?php endforeach; ?>
 </div>

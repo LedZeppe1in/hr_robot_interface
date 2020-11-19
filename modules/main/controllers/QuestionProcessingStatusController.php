@@ -2,6 +2,8 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\ModuleMessage;
+use yii\data\SqlDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -53,8 +55,14 @@ class QuestionProcessingStatusController extends Controller
      */
     public function actionView($id)
     {
+        // Поиск статуса обработки вопроса по id
+        $model = $this->findModel($id);
+        // Поиск всех сообщений для данного статуса обработки вопроса
+        $moduleMessages = ModuleMessage::find()->where(['question_processing_status_id' => $model->id])->all();
+
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $model,
+            'moduleMessages' => $moduleMessages,
         ]);
     }
 

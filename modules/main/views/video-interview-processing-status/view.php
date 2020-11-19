@@ -17,7 +17,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Delete', ['delete', 'id' => $model->id], [
+        <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
                 'confirm' => 'Вы уверены, что хотите удалить этот элемент?',
@@ -50,11 +50,11 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'all_runtime',
-                'value' => $model->getAllRuntime(),
+                'value' => $model->all_runtime ? $model->getAllRuntime() : null,
             ],
             [
                 'attribute' => 'emotion_interpretation_runtime',
-                'value' => $model->getEmotionInterpretationRuntime(),
+                'value' => $model->emotion_interpretation_runtime ? $model->getEmotionInterpretationRuntime() : null,
             ],
         ],
     ]) ?>

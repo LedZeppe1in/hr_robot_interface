@@ -48,6 +48,7 @@ AppAsset::register($this);
                         ['label' => 'Вопросы видеоинтервью', 'url' => ['/question/list']],
                         ['label' => 'Цифровые маски', 'url' => ['/landmark/list']],
                         ['label' => 'Базы знаний', 'url' => ['/knowledge-base/list']],
+                        '<li class="divider"></li>',
                         ['label' => 'Тестовый запуск', 'url' => '/test'],
                     ],
                 ],

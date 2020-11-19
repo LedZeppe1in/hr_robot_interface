@@ -145,20 +145,18 @@ class QuestionProcessingStatus extends \yii\db\ActiveRecord
     }
 
     /**
-     * Перевод миллисекунд в формат времени (H:m:s:l).
+     * Перевод секунд в формат времени (H:m:s).
      *
-     * @param $milliseconds - миллисекунды
-     * @return string - строка c временем в формате H:m:s:l
+     * @param $seconds - секунды
+     * @return string - строка c временем в формате H:m:s
      */
-    public static function formatMilliseconds($milliseconds) {
-        $seconds = floor($milliseconds / 1000);
+    public static function formatSeconds($seconds) {
         $minutes = floor($seconds / 60);
         $hours = floor($minutes / 60);
-        $milliseconds = $milliseconds % 1000;
         $seconds = $seconds % 60;
         $minutes = $minutes % 60;
-        $format = '%02u:%02u:%02u:%03u';
-        $time = sprintf($format, $hours, $minutes, $seconds, $milliseconds);
+        $format = '%02u:%02u:%02u';
+        $time = sprintf($format, $hours, $minutes, $seconds);
 
         return $time;
     }
@@ -170,7 +168,7 @@ class QuestionProcessingStatus extends \yii\db\ActiveRecord
      */
     public function getIvanVideoAnalysisRuntime()
     {
-        return self::formatMilliseconds($this->ivan_video_analysis_runtime);
+        return self::formatSeconds($this->ivan_video_analysis_runtime);
     }
 
     /**
@@ -180,7 +178,7 @@ class QuestionProcessingStatus extends \yii\db\ActiveRecord
      */
     public function getAndreyVideoAnalysisRuntime()
     {
-        return self::formatMilliseconds($this->andrey_video_analysis_runtime);
+        return self::formatSeconds($this->andrey_video_analysis_runtime);
     }
 
     /**
@@ -190,7 +188,7 @@ class QuestionProcessingStatus extends \yii\db\ActiveRecord
      */
     public function getFeatureDetectionRuntime()
     {
-        return self::formatMilliseconds($this->feature_detection_runtime);
+        return self::formatSeconds($this->feature_detection_runtime);
     }
 
     /**
@@ -200,6 +198,6 @@ class QuestionProcessingStatus extends \yii\db\ActiveRecord
      */
     public function getFeatureInterpretationRuntime()
     {
-        return self::formatMilliseconds($this->feature_interpretation_runtime);
+        return self::formatSeconds($this->feature_interpretation_runtime);
     }
 }

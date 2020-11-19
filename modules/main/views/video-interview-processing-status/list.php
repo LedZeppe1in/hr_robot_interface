@@ -40,7 +40,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Время формирования итогового заключения',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return ($data->all_runtime !== null) ? $data->getEmotionInterpretationRuntime() : null;
+                    return ($data->emotion_interpretation_runtime !== null) ? $data->getEmotionInterpretationRuntime() :
+                        null;
                 },
             ],
             [
