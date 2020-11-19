@@ -150,8 +150,8 @@ class Landmark extends \yii\db\ActiveRecord
     /**
      * Перевод миллисекунд в формат времени (H:m:s:l).
      *
-     * @param $milliseconds
-     * @return string
+     * @param $milliseconds - миллисекунды
+     * @return string - строка c временем в формате H:m:s:l
      */
     public static function formatMilliseconds($milliseconds) {
         $seconds = floor($milliseconds / 1000);
