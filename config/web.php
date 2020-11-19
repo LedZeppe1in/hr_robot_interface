@@ -73,6 +73,10 @@ $config = [
                 '/gerchikov-test-conclusion/<_gtc:(view|delete)>/<id:\d+>' => 'main/gerchikov-test-conclusion/<_gtc>',
                 '/final-conclusion/<_fc:(list)>' => 'main/final-conclusion/<_fc>',
                 '/final-conclusion/<_fc:(view|delete)>/<id:\d+>' => 'main/final-conclusion/<_fc>',
+                '/video-interview-processing-status/<_vips:(list)>' => 'main/video-interview-processing-status/<_vips>',
+                '/video-interview-processing-status/<_vips:(view|delete)>/<id:\d+>' => 'main/video-interview-processing-status/<vips>',
+                '/question-processing-status/<_qps:(list)>' => 'main/question-processing-status/<_qps>',
+                '/question-processing-status/<_qps:(view|delete)>/<id:\d+>' => 'main/question-processing-status/<qps>',
             ],
         ],
         'cache' => [
