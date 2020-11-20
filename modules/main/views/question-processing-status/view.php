@@ -7,7 +7,7 @@ use yii\widgets\DetailView;
 /* @var $model app\modules\main\models\QuestionProcessingStatus */
 /* @var $moduleMessages app\modules\main\models\ModuleMessage */
 
-$this->title = 'Состояние обработки видео ответа на вопрос: ' . $model->id;
+$this->title = 'Состояние обработки видео ответа №' . $model->id . ' на вопрос №' . $model->question_id;
 $this->params['breadcrumbs'][] = ['label' => 'Состояния обработки видео ответов по вопросам', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
@@ -39,8 +39,17 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'updated_at',
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
-            'video_interview_processing_status_id',
-            'question_id',
+            [
+                'attribute' => 'video_interview_processing_status_id',
+                'format' => 'raw',
+                'value' => Html::a($model->video_interview_processing_status_id,
+                    ['video-interview-processing-status/view', 'id' => $model->video_interview_processing_status_id]),
+            ],
+            [
+                'attribute' => 'question_id',
+                'format' => 'raw',
+                'value' => Html::a($model->question_id, ['question/view', 'id' => $model->question_id]),
+            ],
             [
                 'attribute' => 'question_id',
                 'label' => 'Название файла с видео ответом на вопрос',
@@ -49,6 +58,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'status',
                 'value' => $model->getStatus(),
+                'contentOptions' => $model->status !== null ? ['style' => 'color: #32a852'] : null,
             ],
             [
                 'attribute' => 'ivan_video_analysis_runtime',

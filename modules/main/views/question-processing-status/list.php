@@ -18,14 +18,29 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'video_interview_processing_status_id',
-            'question_id',
+            [
+                'attribute'=>'video_interview_processing_status_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return Html::a($data->video_interview_processing_status_id,
+                        ['video-interview-processing-status/view', 'id' => $data->video_interview_processing_status_id]);
+                },
+            ],
+            [
+                'attribute'=>'question_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return Html::a($data->question_id, ['question/view', 'id' => $data->question_id]);
+                },
+            ],
             [
                 'attribute'=>'status',
-                'label' => 'Статус',
                 'format' => 'raw',
                 'value' => function($data) {
                     return ($data->status !== null) ? $data->getStatus() : null;
+                },
+                'contentOptions' => function($data) {
+                    return ($data->status !== null) ? ['style' => 'color: #32a852'] : null;
                 },
             ],
             [

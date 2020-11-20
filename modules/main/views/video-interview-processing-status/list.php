@@ -18,18 +18,26 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'video_interview_id',
+            [
+                'attribute'=>'video_interview_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return Html::a($data->video_interview_id,
+                        ['video-interview/view', 'id' => $data->video_interview_id]);
+                },
+            ],
             [
                 'attribute'=>'status',
-                'label' => 'Статус',
                 'format' => 'raw',
                 'value' => function($data) {
                     return ($data->status !== null) ? $data->getStatus() : null;
                 },
+                'contentOptions' => function($data) {
+                    return ($data->status !== null) ? ['style' => 'color: #32a852'] : null;
+                },
             ],
             [
                 'attribute'=>'all_runtime',
-                'label' => 'Время выполнения анализа видео-интервью',
                 'format' => 'raw',
                 'value' => function($data) {
                     return ($data->all_runtime !== null) ? $data->getAllRuntime() : null;
@@ -37,7 +45,6 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute'=>'emotion_interpretation_runtime',
-                'label' => 'Время формирования итогового заключения',
                 'format' => 'raw',
                 'value' => function($data) {
                     return ($data->emotion_interpretation_runtime !== null) ? $data->getEmotionInterpretationRuntime() :

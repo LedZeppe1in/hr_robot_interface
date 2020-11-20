@@ -6,7 +6,7 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\VideoInterviewProcessingStatus */
 
-$this->title = 'Состояние обработки видеоинтервью: ' . $model->id;
+$this->title = 'Состояние обработки видеоинтервью №' . $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Состояния обработки видеоинтервью', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
@@ -38,7 +38,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'updated_at',
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
-            'video_interview_id',
+            [
+                'attribute' => 'video_interview_id',
+                'format' => 'raw',
+                'value' => Html::a($model->video_interview_id,
+                    ['video-interview/view', 'id' => $model->video_interview_id]),
+            ],
             [
                 'attribute' => 'video_interview_id',
                 'label' => 'Название файла с полным видеоинтервью',
@@ -47,6 +52,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'status',
                 'value' => $model->getStatus(),
+                'contentOptions' => $model->status !== null ? ['style' => 'color: #32a852'] : null,
             ],
             [
                 'attribute' => 'all_runtime',

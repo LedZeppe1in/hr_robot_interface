@@ -229,8 +229,6 @@ class VideoInterviewAnalysisController extends Controller
         $success = false;
         $analysisResultId = '';
         $analysisResultIds = '';
-        // Сообщение предупреждения от программы обработки видео
-        $warningMassage = '';
         // Формирование названия json-файла с результатами обработки видео
         $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
         // Формирование описания цифровой маски
@@ -285,9 +283,14 @@ class VideoInterviewAnalysisController extends Controller
             // Декодирование json-файла с результатами обработки видео в виде цифровой маски
             $jsonLandmarkFile = json_decode($landmarkFile, true);
             // Если в json-файле с цифровой маской есть текст с предупреждением
-            if (isset($jsonLandmarkFile['err_msg']))
-                // Запоминание текста сообщения о предупреждении
-                $warningMassage = $jsonLandmarkFile['err_msg'];
+            if (isset($jsonLandmarkFile['err_msg'])) {
+                // Создание сообщения о предупреждении МОВ Ивана в БД
+                $moduleMessageModel = new ModuleMessage();
+                $moduleMessageModel->message = $jsonLandmarkFile['err_msg'];
+                $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+                $moduleMessageModel->save();
+            }
             $success = true;
         }
         // Удаление записи о цифровой маски для которой не сформирован json-файл

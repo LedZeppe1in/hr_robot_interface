@@ -74,9 +74,9 @@ $config = [
                 '/final-conclusion/<_fc:(list)>' => 'main/final-conclusion/<_fc>',
                 '/final-conclusion/<_fc:(view|delete)>/<id:\d+>' => 'main/final-conclusion/<_fc>',
                 '/video-interview-processing-status/<_vips:(list)>' => 'main/video-interview-processing-status/<_vips>',
-                '/video-interview-processing-status/<_vips:(view|delete)>/<id:\d+>' => 'main/video-interview-processing-status/<vips>',
+                '/video-interview-processing-status/<_vips:(view|delete)>/<id:\d+>' => 'main/video-interview-processing-status/<_vips>',
                 '/question-processing-status/<_qps:(list)>' => 'main/question-processing-status/<_qps>',
-                '/question-processing-status/<_qps:(view|delete)>/<id:\d+>' => 'main/question-processing-status/<qps>',
+                '/question-processing-status/<_qps:(view|delete)>/<id:\d+>' => 'main/question-processing-status/<_qps>',
             ],
         ],
         'cache' => [
