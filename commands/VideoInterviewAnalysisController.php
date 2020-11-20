@@ -2,11 +2,6 @@
 
 namespace app\commands;
 
-use app\modules\main\models\FinalConclusion;
-use app\modules\main\models\FinalResult;
-use app\modules\main\models\ModuleMessage;
-use app\modules\main\models\QuestionProcessingStatus;
-use app\modules\main\models\VideoInterviewProcessingStatus;
 use Exception;
 use SoapClient;
 use stdClass;
@@ -18,6 +13,11 @@ use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\FinalResult;
+use app\modules\main\models\ModuleMessage;
+use app\modules\main\models\FinalConclusion;
+use app\modules\main\models\QuestionProcessingStatus;
+use app\modules\main\models\VideoInterviewProcessingStatus;
 
 /**
  * Class VideoInterviewAnalysisController - содержит команду для последовательного анализа видеоинтервью.
@@ -39,29 +39,11 @@ class VideoInterviewAnalysisController extends Controller
      * @param $landmark - модель цифровой маски
      * @param $index - порядковый номер цифровой маски
      * @param $processingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
+     * @param $moduleType - тип модуля обработки видео
      * @return int - id результатов анализа
      */
-    public static function getAnalysisResult($landmark, $index, $processingType)
+    public static function getAnalysisResult($landmark, $index, $processingType, $moduleType)
     {
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $osConnector = new OSConnector();
-        // Если обрабатывается первая цифровая маска
-        $basicFrame = '';
-        if ($index == 1) {
-            // Получение содержимого json-файла с лицевыми точками из Object Storage
-            $faceData = $osConnector->getFileContentFromObjectStorage(
-                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                $landmark->id,
-                $landmark->landmark_file_name
-            );
-            // Создание объекта обнаружения лицевых признаков
-            $facialFeatureDetector = new FacialFeatureDetector();
-            // Определение нулевого кадра (нейтрального состояния лица)
-            $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
-                $faceData,
-                $processingType
-            );
-        }
         // Создание модели для результатов определения признаков
         $analysisResultModel = new AnalysisResult();
         $analysisResultModel->landmark_id = $landmark->id;
@@ -70,25 +52,45 @@ class VideoInterviewAnalysisController extends Controller
         $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
                 ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
         $analysisResultModel->save();
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
         // Получение содержимого json-файла с лицевыми точками из Object Storage
         $faceData = $osConnector->getFileContentFromObjectStorage(
             OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
             $landmark->id,
             $landmark->landmark_file_name
         );
+        //
+        $facts = array();
         // Создание объекта обнаружения лицевых признаков
         $facialFeatureDetector = new FacialFeatureDetector();
-        // Выявление признаков для лица
-        $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, $processingType, $basicFrame);
-        // Сохранение json-файла с результатами определения признаков на Object Storage
-        $osConnector->saveFileToObjectStorage(
-            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-            $analysisResultModel->id,
-            $analysisResultModel->detection_result_file_name,
-            $facialFeatures
-        );
-        // Преобразование массива с результатами определения признаков в массив фактов
-        $facts = $facialFeatureDetector->convertFeaturesToFacts($faceData, $facialFeatures, $landmark->question->time);
+        // Если вызывается модуль обработки видео Ивана
+        if ($moduleType == ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE) {
+            // Базовый (нулевой) кадр
+            $basicFrame = '';
+            // Если обрабатывается первая цифровая маска
+            if ($index == 1)
+                // Определение нулевого кадра (нейтрального состояния лица)
+                $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
+                    $faceData,
+                    $processingType
+                );
+            // Выявление признаков для лица
+            $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, $processingType, $basicFrame);
+            // Сохранение json-файла с результатами определения признаков на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $analysisResultModel->id,
+                $analysisResultModel->detection_result_file_name,
+                $facialFeatures
+            );
+            // Преобразование массива с результатами определения признаков в массив фактов
+            $facts = $facialFeatureDetector->convertFeaturesToFacts(
+                $faceData,
+                $facialFeatures,
+                $landmark->question->time
+            );
+        }
         // Если в json-файле цифровой маски есть данные по Action Units
         if (strpos($faceData, 'AUs') !== false) {
             // Формирование json-строки
@@ -97,7 +99,7 @@ class VideoInterviewAnalysisController extends Controller
             $faceData = '[' . $faceData . ']';
             // Конвертация данных по Action Units в набор фактов
             $initialData = json_decode($faceData);
-            if ((count($facts) > 0) && (count($initialData) > 0)) {
+            if (count($initialData) > 0) {
                 $frameData = $initialData[0];
                 $targetPropertyName = 'AUs';
                 if (property_exists($frameData, $targetPropertyName) === True)
@@ -105,10 +107,22 @@ class VideoInterviewAnalysisController extends Controller
                         $actionUnits = $frameData->{$targetPropertyName};
                         $actionUnitsAsFacts = $facialFeatureDetector->convertActionUnitsToFacts($actionUnits,
                             $frameIndex);
-                        if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
-                            $facts[$frameIndex] = array_merge($facts[$frameIndex], $actionUnitsAsFacts);
+                        if (count($actionUnitsAsFacts) > 0)
+                            $facts[$frameIndex] = $actionUnitsAsFacts;
                     }
             }
+//            if ((count($facts) > 0) && (count($initialData) > 0)) {
+//                $frameData = $initialData[0];
+//                $targetPropertyName = 'AUs';
+//                if (property_exists($frameData, $targetPropertyName) === True)
+//                    foreach ($initialData as $frameIndex => $frameData) {
+//                        $actionUnits = $frameData->{$targetPropertyName};
+//                        $actionUnitsAsFacts = $facialFeatureDetector->convertActionUnitsToFacts($actionUnits,
+//                            $frameIndex);
+//                        if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
+//                            $facts[$frameIndex] = array_merge($facts[$frameIndex], $actionUnitsAsFacts);
+//                    }
+//            }
         }
         // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
         $osConnector->saveFileToObjectStorage(
@@ -258,7 +272,8 @@ class VideoInterviewAnalysisController extends Controller
                 $analysisResultId = self::getAnalysisResult(
                     $landmark,
                     (int)$questionIndex,
-                    VideoInterview::TYPE_NORMALIZED_POINTS
+                    VideoInterview::TYPE_NORMALIZED_POINTS,
+                    ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE
                 );
             } catch (Exception $e) {
                 // Создание сообщения об ошибке МОП в БД
@@ -382,7 +397,8 @@ class VideoInterviewAnalysisController extends Controller
                     $analysisResultId = self::getAnalysisResult(
                         $landmarkModel,
                         (int)$questionIndex,
-                        VideoInterview::TYPE_RAW_POINTS
+                        VideoInterview::TYPE_RAW_POINTS,
+                        ModuleMessage::ANDREY_VIDEO_PROCESSING_MODULE
                     );
                 } catch (Exception $e) {
                     // Создание сообщения об ошибке МОП в БД

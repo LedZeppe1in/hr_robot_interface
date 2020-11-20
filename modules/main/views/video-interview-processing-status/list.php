@@ -32,9 +32,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function($data) {
                     return ($data->status !== null) ? $data->getStatus() : null;
                 },
-                'contentOptions' => function($data) {
-                    return ($data->status !== null) ? ['style' => 'color: #32a852'] : null;
-                },
             ],
             [
                 'attribute'=>'all_runtime',

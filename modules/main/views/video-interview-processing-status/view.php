@@ -52,7 +52,6 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'status',
                 'value' => $model->getStatus(),
-                'contentOptions' => $model->status !== null ? ['style' => 'color: #32a852'] : null,
             ],
             [
                 'attribute' => 'all_runtime',
