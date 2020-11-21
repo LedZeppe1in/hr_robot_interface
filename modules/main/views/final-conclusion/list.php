@@ -18,16 +18,24 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'conclusion:ntext',
             [
                 'attribute'=>'finalResult',
                 'label' => 'ID видеоинтервью',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return $data->finalResult->video_interview_id;
+                    return Html::a($data->finalResult->video_interview_id,
+                        ['video-interview/view', 'id' => $data->finalResult->video_interview_id]);
                 },
             ],
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'attribute'=>'conclusion',
+                'format' => 'raw',
+            ],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'action-column'],
+                'template' => '{view} {delete}',
+            ],
         ],
     ]); ?>
 

@@ -45,14 +45,19 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'id',
                 'label' => 'ID видеоинтервью',
-                'value' => $model->finalResult->video_interview_id,
+                'format' => 'raw',
+                'value' => Html::a($model->finalResult->video_interview_id,
+                    ['video-interview/view', 'id' => $model->finalResult->video_interview_id]),
             ],
             [
                 'attribute' => 'id',
                 'label' => 'Название файла видеоинтервью',
                 'value' => $model->finalResult->videoInterview->video_file_name,
             ],
-            'conclusion:ntext',
+            [
+                'attribute' => 'conclusion',
+                'format' => 'raw',
+            ],
         ],
     ]) ?>
 

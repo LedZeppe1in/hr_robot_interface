@@ -76,9 +76,24 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
             [
+                'attribute' => 'landmark',
+                'label' => 'ID видеоинтервью',
+                'format' => 'raw',
+                'value' => Html::a($model->landmark->video_interview_id,
+                    ['video-interview/view', 'id' => $model->landmark->video_interview_id]),
+            ],
+            [
+                'attribute' => 'landmark',
+                'label' => 'ID видео на вопрос',
+                'format' => 'raw',
+                'value' => ($model->landmark->question_id != '') ? Html::a($model->landmark->question_id,
+                    ['question/view', 'id' => $model->landmark->question_id]) : null,
+            ],
+            [
                 'attribute' => 'landmark_id',
                 'label' => 'ID цифровой маски',
-                'value' => $model->landmark->id,
+                'format' => 'raw',
+                'value' => Html::a($model->landmark_id, ['landmark/view', 'id' => $model->landmark_id]),
             ],
             [
                 'attribute' => 'landmark_id',
@@ -87,26 +102,26 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'label' => 'Описание',
+                'format' => 'raw',
                 'value' => ($model->description != '') ? $model->description : null,
-                'format' => 'raw'
             ],
             [
                 'label' => 'Файл с результатами определения признаков',
+                'format' => 'raw',
                 'value' => ($model->detection_result_file_name != '') ? Html::a('скачать',
                     ['detection-file-download', 'id' => $model->id], ['target' => '_blank']) : null,
-                'format' => 'raw'
             ],
             [
                 'label' => 'Файл с набором фактов',
+                'format' => 'raw',
                 'value' => ($model->facts_file_name != '') ? Html::a('скачать',
                     ['facts-download', 'id' => $model->id], ['target' => '_blank']) : null,
-                'format' => 'raw'
             ],
             [
                 'label' => 'Файл с результатами интерпретации признаков',
+                'format' => 'raw',
                 'value' => ($model->interpretation_result_file_name != '') ? Html::a('скачать',
                     ['interpretation-file-download', 'id' => $model->id], ['target' => '_blank']) : null,
-                'format' => 'raw'
             ],
         ],
     ]) ?>

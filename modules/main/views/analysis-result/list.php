@@ -19,8 +19,33 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
+                'attribute'=>'landmark',
+                'label' => 'ID видеоинтервью',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return Html::a($data->landmark->video_interview_id,
+                        ['video-interview/view', 'id' => $data->landmark->video_interview_id]);
+                },
+            ],
+            [
+                'attribute'=>'landmark',
+                'label' => 'ID видео на вопрос',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->landmark->question_id != '') ? Html::a($data->landmark->question_id,
+                        ['question/view', 'id' => $data->landmark->question_id]) : null;
+                },
+            ],
+            [
                 'attribute'=>'landmark_id',
-                'label' => 'Цифровая маска',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return Html::a($data->landmark_id, ['landmark/view', 'id' => $data->landmark_id]);
+                },
+            ],
+            [
+                'attribute'=>'landmark_id',
+                'label' => 'Название файла с лицевыми точками',
                 'format' => 'raw',
                 'value' => function($data) {
                     return $data->landmark->landmark_file_name;

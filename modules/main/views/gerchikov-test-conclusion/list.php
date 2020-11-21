@@ -19,11 +19,12 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
-                'attribute'=>'id',
+                'attribute'=>'finalResult',
                 'label' => 'ID видеоинтервью',
                 'format' => 'raw',
                 'value' => function($data) {
-                    return $data->finalResult->video_interview_id;
+                    return Html::a($data->finalResult->video_interview_id,
+                        ['video-interview/view', 'id' => $data->finalResult->video_interview_id]);
                 },
             ],
             [
