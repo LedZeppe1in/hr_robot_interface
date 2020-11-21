@@ -6,8 +6,8 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\Question */
 
-$this->title = 'Вопрос видеоинтервью №' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Вопросы видеоинтервью', 'url' => ['list']];
+$this->title = 'Видео на вопрос №' . $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'Видео на вопросы', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
@@ -38,13 +38,23 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'updated_at',
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
-            'test_question_id',
             [
                 'attribute' => 'test_question_id',
-                'label' => 'Текст вопроса опроса',
+                'format' => 'raw',
+                'value' => ($model->test_question_id !== null) ? Html::a($model->test_question_id,
+                    ['test-question/view', 'id' => $model->test_question_id]) : null,
+            ],
+            [
+                'attribute' => 'test_question_id',
+                'label' => 'Текст вопроса',
                 'value' => $model->test_question_id ? $model->testQuestion->text : null,
             ],
-            'video_interview_id',
+            [
+                'attribute' => 'video_interview_id',
+                'format' => 'raw',
+                'value' => $model->video_interview_id ? Html::a($model->video_interview_id,
+                    ['video-interview/view', 'id' => $model->video_interview_id]) : null,
+            ],
             [
                 'attribute' => 'video_interview_id',
                 'label' => 'Название файла с полным видеоинтервью',

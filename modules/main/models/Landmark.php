@@ -75,8 +75,8 @@ class Landmark extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'created_at' => 'Создан',
-            'updated_at' => 'Обновлен',
+            'created_at' => 'Создана',
+            'updated_at' => 'Обновлена',
             'landmark_file_name' => 'Название файла с лицевыми точками',
             'description' => 'Описание',
             'rotation' => 'Поворот (градусы)',
@@ -85,7 +85,7 @@ class Landmark extends \yii\db\ActiveRecord
             'finish_time' => 'Время окончания нарезки',
             'type' => 'Тип',
             'video_interview_id' => 'ID видеоинтервью',
-            'question_id' => 'ID вопроса',
+            'question_id' => 'ID видео на вопрос',
             'landmarkFile' => 'Файл с лицевыми точками',
         ];
     }

@@ -6,7 +6,7 @@ use yii\helpers\Html;
 /* @var $model app\modules\main\models\TestQuestion */
 
 $this->title = 'Создать';
-$this->params['breadcrumbs'][] = ['label' => 'Вопросы опроса', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Вопросы', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 

@@ -55,13 +55,13 @@ class Question extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'created_at' => 'Создан',
-            'updated_at' => 'Обновлен',
+            'created_at' => 'Создано',
+            'updated_at' => 'Обновлено',
             'video_file_name' => 'Название файла видео с ответом на вопрос',
             'description' => 'Описание',
             'videoFile' => 'Файл c видео ответом на вопрос',
-            'test_question_id' => 'ID вопроса опроса',
-            'video_interview_id' => 'ID полного видеоинтервью',
+            'test_question_id' => 'ID вопроса',
+            'video_interview_id' => 'ID видеоинтервью',
         ];
     }
 

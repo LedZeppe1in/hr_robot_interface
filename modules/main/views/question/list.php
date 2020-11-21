@@ -6,7 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Вопросы видеоинтервью';
+$this->title = 'Видео на вопросы';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -18,15 +18,29 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'id',
-            'test_question_id',
+            [
+                'attribute'=>'test_question_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->test_question_id != '') ? Html::a($data->test_question_id,
+                        ['test-question/view', 'id' => $data->test_question_id]) : null;
+                },
+            ],
             [
                 'attribute' => 'test_question_id',
-                'label' => 'Текст вопроса опроса',
+                'label' => 'Текст вопроса',
                 'value' => function($data) {
                     return ($data->test_question_id !== null) ? $data->testQuestion->text : null;
                 },
             ],
-            'video_interview_id',
+            [
+                'attribute'=>'video_interview_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->video_interview_id !== null) ? Html::a($data->video_interview_id,
+                        ['video-interview/view', 'id' => $data->video_interview_id]) : null;
+                },
+            ],
             [
                 'attribute' => 'video_interview_id',
                 'label' => 'Название файла с полным видеоинтервью',

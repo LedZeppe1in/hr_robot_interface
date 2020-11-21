@@ -6,8 +6,8 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\TestQuestion */
 
-$this->title = 'Вопрос опроса №' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Вопросы опроса', 'url' => ['list']];
+$this->title = 'Вопрос №' . $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'Вопросы', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>

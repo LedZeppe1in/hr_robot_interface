@@ -57,18 +57,34 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'updated_at',
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
-            'video_interview_id',
+            'landmark_file_name',
+            [
+                'attribute' => 'type',
+                'label' => 'Цифровая маска получена',
+                'value' => ($model->type !== null) ? $model->getType() : null,
+            ],
+            [
+                'attribute' => 'video_interview_id',
+                'format' => 'raw',
+                'value' => Html::a($model->video_interview_id,
+                    ['video-interview/view', 'id' => $model->video_interview_id]),
+            ],
             [
                 'attribute' => 'video_interview_id',
                 'label' => 'Название файла видеоинтервью',
                 'value' => $model->videoInterview->video_file_name,
             ],
             [
-                'attribute' => 'type',
-                'label' => 'Цифровая маска получена',
-                'value' => ($model->type !== null) ? $model->getType() : null,
+                'attribute' => 'question_id',
+                'format' => 'raw',
+                'value' => ($model->question_id !== null) ? Html::a($model->question_id,
+                    ['question/view', 'id' => $model->question_id]) : null,
             ],
-            'question_id',
+            [
+                'attribute' => 'question_id',
+                'label' => 'Название файла видео ответа на вопрос',
+                'value' => $model->question->video_file_name,
+            ],
             'rotation',
             [
                 'attribute' => 'mirroring',

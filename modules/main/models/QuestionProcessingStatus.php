@@ -73,7 +73,7 @@ class QuestionProcessingStatus extends \yii\db\ActiveRecord
             'andrey_video_analysis_runtime' => 'Время выполнения МОВ Андрея',
             'feature_detection_runtime' => 'Время выполнения МОП',
             'feature_interpretation_runtime' => 'Время выполнения МИП',
-            'question_id' => 'ID вопроса видеоинтервью',
+            'question_id' => 'ID видео на вопрос',
             'video_interview_processing_status_id' => 'ID статуса обработки видеоинтервью',
         ];
     }

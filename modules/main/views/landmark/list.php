@@ -22,6 +22,22 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
+                'attribute'=>'video_interview_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return Html::a($data->video_interview_id,
+                        ['video-interview/view', 'id' => $data->video_interview_id]);
+                },
+            ],
+            [
+                'attribute'=>'question_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->question_id != '') ? Html::a($data->question_id,
+                        ['question/view', 'id' => $data->question_id]) : null;
+                },
+            ],
+            [
                 'attribute'=>'landmark_file_name',
                 'format' => 'raw',
                 'value' => function($data) {
@@ -30,7 +46,6 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute'=>'description',
-                'label' => 'Описание',
                 'format' => 'raw',
                 'value' => function($data) {
                     return ($data->description != '') ? $data->description : null;
@@ -44,8 +59,6 @@ $this->params['breadcrumbs'][] = $this->title;
                     return ($data->type !== null) ? $data->getType() : null;
                 },
             ],
-            'question_id',
-            'video_interview_id',
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
