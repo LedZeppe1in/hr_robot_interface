@@ -171,7 +171,7 @@ class LandmarkController extends Controller
     /**
      * Deletes an existing Landmark model.
      * If deletion is successful, the browser will be redirected to the 'list' page.
-     * @param $id
+     * @param $id - идентификатор цифровой маски
      * @return \yii\web\Response
      * @throws NotFoundHttpException
      * @throws \Throwable
@@ -213,6 +213,10 @@ class LandmarkController extends Controller
         if ($model->landmark_file_name != '')
             $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id, $model->landmark_file_name);
+        // Удаление файла видео с нанесенной цифровой маской на Object Storage
+        if ($model->processed_video_file_name != '')
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $model->id, $model->processed_video_file_name);
         // Удалние записи из БД
         $model->delete();
         // Вывод сообщения об успешном удалении
@@ -225,7 +229,7 @@ class LandmarkController extends Controller
     /**
      * Скачивание файла с лицевыми точками.
      *
-     * @param $id
+     * @param $id - идентификатор цифровой маски
      * @return \yii\console\Response|\yii\web\Response
      * @throws NotFoundHttpException
      */
@@ -240,6 +244,30 @@ class LandmarkController extends Controller
                 OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $model->id,
                 $model->landmark_file_name
+            );
+            return $result;
+        }
+        throw new Exception('Файл не найден!');
+    }
+
+    /**
+     * Скачивание файла видео с нанесенными лицевыми точками.
+     *
+     * @param $id - идентификатор цифровой маски
+     * @return \yii\console\Response|\yii\web\Response
+     * @throws NotFoundHttpException
+     */
+    public function actionProcessedVideoFileDownload($id)
+    {
+        $model = $this->findModel($id);
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Скачивание файла видео с нанесенными лицевыми точками с Object Storage
+        if ($model->processed_video_file_name != '') {
+            $result = $osConnector->downloadFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $model->id,
+                $model->processed_video_file_name
             );
             return $result;
         }

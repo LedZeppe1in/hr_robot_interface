@@ -18,6 +18,7 @@ use yii\behaviors\TimestampBehavior;
  * @property int $start_time
  * @property int $finish_time
  * @property int $type
+ * @property string $processed_video_file_name
  * @property int $video_interview_id
  * @property int $question_id
  *
@@ -58,7 +59,7 @@ class Landmark extends \yii\db\ActiveRecord
             [['landmarkFile'], 'required', 'on' => self::UPLOAD_LANDMARK_SCENARIO],
             [['start_time', 'finish_time', 'video_interview_id'], 'required'],
             [['video_interview_id'], 'integer'],
-            [['landmark_file_name', 'description'], 'string',],
+            [['landmark_file_name', 'processed_video_file_name', 'description'], 'string'],
             [['rotation', 'mirroring', 'start_time', 'finish_time', 'type'], 'safe'],
             [['landmarkFile'], 'file', 'extensions' => 'json', 'checkExtensionByMimeType' => false],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
@@ -84,6 +85,7 @@ class Landmark extends \yii\db\ActiveRecord
             'start_time' => 'Время начала нарезки',
             'finish_time' => 'Время окончания нарезки',
             'type' => 'Тип',
+            'processed_video_file_name' => 'Название файла видео с лицевыми точками',
             'video_interview_id' => 'ID видеоинтервью',
             'question_id' => 'ID видео на вопрос',
             'landmarkFile' => 'Файл с лицевыми точками',

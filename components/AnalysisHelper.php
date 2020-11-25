@@ -3,7 +3,6 @@
 namespace app\components;
 
 use app\modules\main\models\Landmark;
-use app\modules\main\models\ModuleMessage;
 use app\modules\main\models\AnalysisResult;
 
 /**

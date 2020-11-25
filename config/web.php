@@ -58,7 +58,7 @@ $config = [
                 '/video-interview/<_vi:(view|update|delete|video-download|get-landmarks)>/<id:\d+>' =>
                     'main/video-interview/<_vi>',
                 '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
-                '/landmark/<_lm:(view|update|delete|landmark-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
+                '/landmark/<_lm:(view|update|delete|landmark-file-download|processed-video-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
                 '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
                 '/analysis-result/<_ar:(detection)>/<id:\d+>/<processingType:\d+>' => 'main/analysis-result/<_ar>',
                 '/analysis-result/<_ar:(view|update|delete|detection-file-download|facts-download|interpretation-file-download|interpretation-facts-download)>/<id:\d+>' =>

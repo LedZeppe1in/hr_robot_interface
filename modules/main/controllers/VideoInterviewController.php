@@ -208,6 +208,10 @@ class VideoInterviewController extends Controller
             if ($landmark->landmark_file_name != '')
                 $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                     $landmark->id, $landmark->landmark_file_name);
+            // Удаление файла видео с нанесенной цифровой маской на Object Storage
+            if ($landmark->processed_video_file_name != '')
+                $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                    $landmark->id, $landmark->processed_video_file_name);
         }
         // Поиск вопросов для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $model->id])->all();

@@ -106,14 +106,20 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'label' => 'Описание',
-                'value' => ($model->description != '') ? $model->description : null,
-                'format' => 'raw'
+                'format' => 'raw',
+                'value' => ($model->description != '') ? $model->description : null
             ],
             [
                 'label' => 'Файл с лицевыми точками',
+                'format' => 'raw',
                 'value' => ($model->landmark_file_name != '') ? Html::a('скачать',
-                    ['/landmark/landmark-file-download/' . $model->id], ['target' => '_blank']) : null,
-                'format' => 'raw'
+                    ['/landmark/landmark-file-download/' . $model->id], ['target' => '_blank']) : null
+            ],
+            [
+                'label' => 'Файл видео с нанесенными лицевыми точками',
+                'format' => 'raw',
+                'value' => ($model->processed_video_file_name != '') ? Html::a('скачать',
+                    ['/landmark/processed-video-file-download/' . $model->id], ['target' => '_blank']) : null
             ],
         ],
     ]) ?>

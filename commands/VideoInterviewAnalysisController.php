@@ -142,11 +142,13 @@ class VideoInterviewAnalysisController extends Controller
         $analysisResultIds = '';
         // Формирование названия json-файла с результатами обработки видео
         $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
+        // Формирование названия видео-файла с нанесенной цифровой маской
+        $landmark->processed_video_file_name = 'out_' . $landmark->id . '.avi';
         // Формирование описания цифровой маски
         $landmark->description = $videoInterview->description . ' (время нарезки: ' .
             $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
         // Обновление атрибутов цифровой маски в БД
-        $landmark->updateAttributes(['landmark_file_name', 'description']);
+        $landmark->updateAttributes(['landmark_file_name', 'processed_video_file_name', 'description']);
         // Проверка существования json-файл с результатами обработки видео
         if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
             // Получение json-файла с результатами обработки видео в виде цифровой маски
@@ -158,6 +160,13 @@ class VideoInterviewAnalysisController extends Controller
                 $landmark->id,
                 $landmark->landmark_file_name,
                 $landmarkFile
+            );
+            // Сохранение файла видео с нанесенной цифровой маской на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id,
+                $landmark->processed_video_file_name,
+                $jsonResultPath . $landmark->processed_video_file_name
             );
             // Обновление атрибута статуса обработки вопроса в БД
             $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
@@ -367,7 +376,7 @@ class VideoInterviewAnalysisController extends Controller
                 // Создание сообщения об ошибке МИП в БД
                 $moduleMessageModel = new ModuleMessage();
                 $moduleMessageModel->message = 'Ошибка МИП (первый уровень)! ' . $e->getMessage();
-                $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+                $moduleMessageModel->module_name = ModuleMessage::FEATURE_INTERPRETATION_MODULE;
                 $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
                 $moduleMessageModel->save();
             }
@@ -446,7 +455,7 @@ class VideoInterviewAnalysisController extends Controller
                 // Создание сообщения об ошибке МИП в БД
                 $moduleMessageModel = new ModuleMessage();
                 $moduleMessageModel->message = 'Ошибка МИП (второй уровень)! ' . $e->getMessage();
-                $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+                $moduleMessageModel->module_name = ModuleMessage::FEATURE_INTERPRETATION_MODULE;
                 $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
                 $moduleMessageModel->save();
             }
