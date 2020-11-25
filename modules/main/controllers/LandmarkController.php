@@ -187,14 +187,14 @@ class LandmarkController extends Controller
         $osConnector = new OSConnector();
         // Обход всех найденных результатов анализа
         foreach ($analysisResults as $analysisResult) {
-            // Удаление файлов с результатами определения признаков и фактами на Object Storage
+            // Удаление файла с результатами определения признаков и фактами на Object Storage
             if ($analysisResult->detection_result_file_name != '')
                 $osConnector->removeFileFromObjectStorage(
                     OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                     $analysisResult->id,
                     $analysisResult->detection_result_file_name
                 );
-            // Удаление файлов с набором фактов на Object Storage
+            // Удаление файла с набором фактов на Object Storage
             if ($analysisResult->facts_file_name != '')
                 $osConnector->removeFileFromObjectStorage(
                     OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
@@ -211,12 +211,18 @@ class LandmarkController extends Controller
         }
         // Удаление файла с лицевыми точками на Object Storage
         if ($model->landmark_file_name != '')
-            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                $model->id, $model->landmark_file_name);
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $model->id,
+                $model->landmark_file_name
+            );
         // Удаление файла видео с нанесенной цифровой маской на Object Storage
         if ($model->processed_video_file_name != '')
-            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                $model->id, $model->processed_video_file_name);
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $model->id,
+                $model->processed_video_file_name
+            );
         // Удалние записи из БД
         $model->delete();
         // Вывод сообщения об успешном удалении
