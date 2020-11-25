@@ -5765,7 +5765,7 @@ class FacialFeatureDetector
                                 }
                             }
             }
-            if ($i == 1) {
+            if ($i == 1 && $questionTime != null) {
                 // Декодирование цифровой маски из json-формата
                 $faceData = json_decode($faceData, true);
                 // Если существует ключ (индекс) - FPS

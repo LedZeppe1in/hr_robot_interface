@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+use app\modules\main\models\Landmark;
 
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
@@ -82,7 +83,8 @@ $this->params['breadcrumbs'][] = $this->title;
                         $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-save-file',
                             'title' => 'Определение признаков по нормализованным точкам']);
                         $url = ['/analysis-result/detection/' . $model->id . '/' . 1];
-                        return ($model->landmark_file_name != '') ? Html::a($icon, $url) : null;
+                        return ($model->landmark_file_name != '' &&
+                            $model->type != Landmark::TYPE_LANDMARK_ANDREW_MODULE) ? Html::a($icon, $url) : null;
                     },
                 ],
             ],

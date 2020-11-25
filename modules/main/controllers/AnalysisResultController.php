@@ -2,19 +2,17 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\FinalResult;
-use app\modules\main\models\Question;
-use app\modules\main\models\VideoInterview;
-use stdClass;
 use Yii;
+use stdClass;
 use Exception;
 use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\components\OSConnector;
-use app\components\FacialFeatureDetector;
+use app\components\AnalysisHelper;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\FinalResult;
 use app\modules\main\models\KnowledgeBase;
 use app\modules\main\models\AnalysisResult;
 
@@ -137,75 +135,26 @@ class AnalysisResultController extends Controller
     /**
      * Страница с результатами определения лицивых признаков.
      *
-     * @param $id
-     * @param $processingType
+     * @param $id - идентификатор цифровой маски
+     * @param $processingType - тип обработки точек (сырые или нормализованные)
      * @return string
      * @throws NotFoundHttpException
      */
     public function actionDetection($id, $processingType)
     {
-        // Установка времени выполнения скрипта в 10 мин.
-        set_time_limit(60*10);
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);
-        // Если цифровая маска получена программой Андрея, то меняем тип обработки на сырые точки
-        if ($landmark->type == Landmark::TYPE_LANDMARK_ANDREW_MODULE)
-            $processingType = 0;
-        // Создание модели для результатов определения признаков
-        $model = new AnalysisResult();
-        $model->detection_result_file_name = 'feature-detection-result.json';
-        $model->facts_file_name = 'facts.json';
-        $model->landmark_id = $id;
-        $model->description = $landmark->description . ($processingType == 0 ?
-            ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
-        $model->save();
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $osConnector = new OSConnector();
-        // Получение содержимого json-файла с лицевыми точками из Object Storage
-        $faceData = $osConnector->getFileContentFromObjectStorage(
-            OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-            $landmark->id,
-            $landmark->landmark_file_name
+        // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+        $analysisHelper = new AnalysisHelper();
+        $analysisResultId = $analysisHelper->getAnalysisResult(
+            $landmark,
+            1,
+            $processingType
         );
-        // Создание объекта обнаружения лицевых признаков
-        $facialFeatureDetector = new FacialFeatureDetector();
-        // Определение нулевого кадра (нейтрального состояния лица)
-        $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection($faceData, (int)$processingType);
-        // Выявление лицевых признаков + нулевой кадр (нейтральное состояние лица)
-        $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, (int)$processingType, $basicFrame);
-        // Сохранение json-файла с результатами определения признаков на Object Storage
-        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-            $model->id, $model->detection_result_file_name, $facialFeatures);
-        // Преобразование массива с результатами функции определения признаков в массив фактов
-        $facts = $facialFeatureDetector->convertFeaturesToFacts($faceData, $facialFeatures, $landmark->question->time);
-        // Если в json-файле цифровой маски есть данные по Action Units
-        if (strpos($faceData,'AUs') !== false) {
-            // Формирование json-строки
-            $faceData = str_replace('{"AUs"',',{"AUs"', $faceData);
-            $faceData = trim($faceData, ',');
-            $faceData = '[' . $faceData . ']';
-            // Конвертация данных по Action Units в набор фактов
-            $initialData = json_decode($faceData);
-            if ((count($facts) > 0) && (count($initialData) > 0)) {
-                $frameData = $initialData[0];
-                $targetPropertyName = 'AUs';
-                if (property_exists($frameData, $targetPropertyName) === True)
-                    foreach ($initialData as $frameIndex => $frameData) {
-                        $actionUnits = $frameData -> {$targetPropertyName};
-                        $actionUnitsAsFacts = $facialFeatureDetector->convertActionUnitsToFacts($actionUnits,
-                            $frameIndex);
-                        if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
-                            $facts[$frameIndex] = array_merge($facts[$frameIndex], $actionUnitsAsFacts);
-                    }
-            }
-        }
-        // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
-        $osConnector->saveFileToObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-            $model->id, $model->facts_file_name, $facts);
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
 
-        return $this->redirect(['/detection-result/view/' . $model->id]);
+        return $this->redirect(['/detection-result/view/' . $analysisResultId]);
     }
 
     /**

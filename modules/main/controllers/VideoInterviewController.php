@@ -257,7 +257,7 @@ class VideoInterviewController extends Controller
     /**
      * Формирование файла цифровой маски путем запуска модуля обработки видео.
      *
-     * @param $id
+     * @param $id - идентификатор видеоинтервью
      * @return string|\yii\web\Response
      * @throws NotFoundHttpException
      * @throws \Throwable
@@ -265,8 +265,6 @@ class VideoInterviewController extends Controller
      */
     public function actionGetLandmarks($id)
     {
-        // Установка времени выполнения скрипта в 10 мин.
-        set_time_limit(60*10);
         // Создание модели видеоинтервью со сценарием анализа
         $model = $this->findModel($id);
         // Создание массива с моделями цифровой маски

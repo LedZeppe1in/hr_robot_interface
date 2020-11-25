@@ -1,8 +1,9 @@
 <?php
 
-use yii\bootstrap\ButtonDropdown;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
+use yii\bootstrap\ButtonDropdown;
+use app\modules\main\models\Landmark;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\Landmark */
@@ -19,18 +20,23 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?php if ($model->landmark_file_name != '') {
-            echo ButtonDropdown::widget([
-                'label' => 'Определить признаки',
-                'dropdown' => [
-                    'items' => [
-                        ['label' => 'По сырым точкам', 'url' => '/analysis-result/detection/' .
-                            $model->id . '/' . 0],
-                        ['label' => 'По нормализованным точкам', 'url' => '/analysis-result/detection/' .
-                            $model->id . '/' . 1],
+            if ($model->type == Landmark::TYPE_LANDMARK_IVAN_MODULE)
+                echo ButtonDropdown::widget([
+                    'label' => 'Определить признаки',
+                    'dropdown' => [
+                        'items' => [
+                            ['label' => 'По сырым точкам', 'url' => '/analysis-result/detection/' .
+                                $model->id . '/' . 0],
+                            ['label' => 'По нормализованным точкам', 'url' => '/analysis-result/detection/' .
+                                $model->id . '/' . 1],
+                        ],
                     ],
-                ],
-                'options' => ['class' => 'btn btn-success']
-            ]);
+                    'options' => ['class' => 'btn btn-success']
+                ]);
+            else
+                echo Html::a('Определить признаки по сырым точкам',
+                    ['/analysis-result/detection/' . $model->id . '/' . 0],
+                    ['class' => 'btn btn-success']);
         } ?>
         <?= Html::a('Посмотреть в редакторе маски',
             'https://84.201.129.65:8080/HRRMaskEditor/MaskEditor.php?landmark_id='. $model->id .
@@ -83,7 +89,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'question_id',
                 'label' => 'Название файла видео ответа на вопрос',
-                'value' => $model->question->video_file_name,
+                'value' => ($model->question_id !== null) ? $model->question->video_file_name : null,
             ],
             'rotation',
             [
