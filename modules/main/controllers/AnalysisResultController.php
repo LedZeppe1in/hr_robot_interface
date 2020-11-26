@@ -232,7 +232,7 @@ class AnalysisResultController extends Controller
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
         // Скачивание файла с результатами определения признаков в виде фактов с Object Storage
-        if ($model->detection_result_file_name != '') {
+        if ($model->facts_file_name != '') {
             $result = $osConnector->downloadFileFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                 $model->id,

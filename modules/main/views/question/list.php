@@ -52,13 +52,21 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {video-file-download} {delete}',
+                'template' => '{view} {get-ivan-landmarks} {get-andrey-landmarks} {delete}',
                 'buttons' => [
-                    'video-file-download' => function ($url, $model, $key) {
+                    'get-ivan-landmarks' => function ($url, $model, $key) {
+                        $icon = ($model->video_file_name != '') ? Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-file',
+                                'title' => 'Сформировать цифровую маску модулем Ивана']) : false;
+                        $url = ($model->video_file_name != '') ? ['/question/get-ivan-landmarks/' . $model->id] :
+                            false;
+                        return Html::a($icon, $url);
+                    },
+                    'get-andrey-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-save-file',
-                                'title' => 'Сформировать цифровую маску']) : false;
-                        $url = ($model->video_file_name != '') ? ['/question/video-file-download/' . $model->id] :
+                                'title' => 'Сформировать цифровую маску модулем Андрея']) : false;
+                        $url = ($model->video_file_name != '') ? ['/question/get-andrey-landmarks/' . $model->id] :
                             false;
                         return Html::a($icon, $url);
                     },

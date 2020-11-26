@@ -53,7 +53,7 @@ $config = [
                 '/test-question/<_tq:(list|create)>' => 'main/test-question/<_tq>',
                 '/test-question/<_tq:(view|update|delete|audio-file-download)>/<id:\d+>' => 'main/test-question/<_tq>',
                 '/question/<_ques:(list)>' => 'main/question/<_ques>',
-                '/question/<_ques:(view|delete|video-file-download)>/<id:\d+>' => 'main/question/<_ques>',
+                '/question/<_ques:(view|delete|video-file-download|get-ivan-landmarks|get-andrey-landmarks)>/<id:\d+>' => 'main/question/<_ques>',
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
                 '/video-interview/<_vi:(view|update|delete|video-download|get-landmarks)>/<id:\d+>' =>
                     'main/video-interview/<_vi>',

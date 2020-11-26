@@ -60,7 +60,7 @@ class VideoInterviewAnalysisController extends Controller
         $jsonResultPath = $mainPath . 'json/';
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();
-        // Сохранение файла видео ответа на вопрос на сервере
+        // Сохранение файла видео ответа на вопрос на сервер
         $osConnector->saveFileToServer(
             OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
             $question->id,

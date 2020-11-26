@@ -1,5 +1,7 @@
 <?php
 
+use app\modules\main\models\Landmark;
+use yii\bootstrap\ButtonDropdown;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
@@ -17,6 +19,18 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
+        <?php if ($model->video_file_name != '') {
+            echo ButtonDropdown::widget([
+                'label' => 'Сформировать цифровую маску',
+                'dropdown' => [
+                    'items' => [
+                        ['label' => 'Модулем Ивана', 'url' => '/question/get-ivan-landmarks/' . $model->id],
+                        ['label' => 'Модулем Андрея', 'url' => '/question/get-andrey-landmarks/' . $model->id],
+                    ],
+                ],
+                'options' => ['class' => 'btn btn-success']
+            ]);
+        } ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [
