@@ -1,0 +1,56 @@
+<?php
+
+namespace app\commands;
+
+use yii\helpers\Console;
+use yii\console\Controller;
+use app\modules\main\models\User;
+
+/**
+ * UserController реализует консольные команды для работы с пользователями.
+ */
+class UserController extends Controller
+{
+    /**
+     * Инициализация команд.
+     */
+    public function actionIndex()
+    {
+        echo 'yii user/create-default-users' . PHP_EOL;
+    }
+
+    /**
+     * Команда создания пользователей (администратора и психолога) по умолчанию.
+     */
+    public function actionCreateDefaultUsers()
+    {
+        // Создание пользователя администратора в БД
+        $model = new User();
+        $model->username = 'admin';
+        $model->setPassword('admin');
+        $model->role = User::ROLE_ADMINISTRATOR;
+        $model->status = User::STATUS_ACTIVE;
+        $this->log($model->save());
+        // Создание пользователя психолога в БД
+        $model = new User();
+        $model->username = 'psy';
+        $model->setPassword('psy');
+        $model->role = User::ROLE_PSYCHOLOGIST;
+        $model->status = User::STATUS_ACTIVE;
+        $this->log($model->save());
+    }
+
+    /**
+     * Вывод сообщений на экран (консоль)
+     * @param bool $success
+     */
+    private function log($success)
+    {
+        if ($success) {
+            $this->stdout('Success!', Console::FG_GREEN, Console::BOLD);
+        } else {
+            $this->stderr('Error!', Console::FG_RED, Console::BOLD);
+        }
+        echo PHP_EOL;
+    }
+}

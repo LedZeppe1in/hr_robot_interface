@@ -5821,7 +5821,7 @@ class FacialFeatureDetector
                 // левая часть лица, правая или обе стороны"
                 // $fact -> {'s901'} = Null;
                 // [+ Преобразование в %] Имя слота: "Интенсивность" Описание слота: ""
-                $fact -> {'s902'} = $actionUnit -> intensity * 100;
+                $fact -> {'s902'} = $actionUnit -> intensity * 20;
                 // Имя слота: "Номер кадра" Описание слота: ""
                 $fact -> {'s903'} = $frameIndex;
                 $result[] = $fact;

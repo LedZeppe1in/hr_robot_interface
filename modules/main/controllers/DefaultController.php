@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use vova07\console\ConsoleRunner;
 use Yii;
 use stdClass;
 use Exception;
@@ -12,16 +11,15 @@ use yii\web\Controller;
 use yii\web\UploadedFile;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
+use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
-use app\components\FacialFeatureDetector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\TestQuestion;
-use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\SurveyQuestion;
-use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\FinalResult;
+use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\GerchikovTestConclusion;
 
 class DefaultController extends Controller
