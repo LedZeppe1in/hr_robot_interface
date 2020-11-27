@@ -3,8 +3,11 @@
 namespace app\modules\main\models;
 
 use Yii;
+use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
+use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
+use yii\web\IdentityInterface;
 
 /**
  * This is the model class for table "{{%user}}".
@@ -13,13 +16,16 @@ use yii\behaviors\TimestampBehavior;
  * @property int $created_at
  * @property int $updated_at
  * @property string $username
+ * @property string $auth_key
+ * @property string $email_confirm_token
  * @property string $password_hash
+ * @property string $password_reset_token
  * @property int $role
  * @property int $status
  * @property string $full_name
- * @property string|null $email
+ * @property string $email
  */
-class User extends \yii\db\ActiveRecord
+class User extends ActiveRecord implements IdentityInterface
 {
     // Роли пользователей
     const ROLE_ADMINISTRATOR = 0; // Администратор
@@ -28,6 +34,8 @@ class User extends \yii\db\ActiveRecord
     // Статус пользователей
     const STATUS_ACTIVE   = 0; // Активный
     const STATUS_INACTIVE = 1; // Неактивный
+
+    public $password;
 
     /**
      * @return string table name
@@ -43,9 +51,17 @@ class User extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['username', 'password_hash', 'role', 'status'], 'required'],
+            ['username', 'required'],
+            ['username', 'match', 'pattern' => '#^[\w_-]+$#i'],
+            ['username', 'string', 'min' => 5, 'max' => 100],
+            ['username', 'unique', 'targetClass' => self::className(),
+                'message' => 'Это имя пользователя уже занято.'],
+            ['password', 'required', 'on' => 'create_and_update_password_hash'],
+            ['password', 'string', 'min' => 5, 'on' => 'create_and_update_password_hash'],
+            ['full_name', 'match', 'pattern' => '/^[ А-Яа-яs,]+$/u',
+                'message' => 'ФИО может содержать только символы русского алфавита.'],
+            [['full_name', 'email'], 'string', 'max' => 255],
             [['role', 'status'], 'integer'],
-            [['username', 'password_hash', 'full_name', 'email'], 'string', 'max' => 255],
         ];
     }
 
@@ -59,7 +75,11 @@ class User extends \yii\db\ActiveRecord
             'created_at' => 'Создан',
             'updated_at' => 'Обновлен',
             'username' => 'Имя',
+            'password' => 'Пароль',
+            'auth_key' => 'Ключ авторизации',
+            'email_confirm_token' => 'Токен подтверждения электронной почты',
             'password_hash' => 'Хэш пароля',
+            'password_reset_token' => 'Токен сброса пароля',
             'role' => 'Роль',
             'status' => 'Статус',
             'full_name' => 'ФИО',
@@ -75,6 +95,89 @@ class User extends \yii\db\ActiveRecord
     }
 
     /**
+     * Поиск пользователя по идентификатору.
+     *
+     * @param int|string $id
+     * @return null|static
+     */
+    public static function findIdentity($id)
+    {
+        return static::findOne(['id' => $id]);
+    }
+
+    /**
+     * @param $token
+     * @param null $type
+     * @throws NotSupportedException
+     */
+    public static function findIdentityByAccessToken($token, $type = null)
+    {
+        throw new NotSupportedException('findIdentityByAccessToken не реализован.');
+    }
+
+    /**
+     * Поиск пользователя по имени.
+     *
+     * @param string $username
+     * @return static|null
+     */
+    public static function findByUsername($username)
+    {
+        return static::findOne(['username' => $username]);
+    }
+
+    /**
+     * Получить id пользователя.
+     *
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->getPrimaryKey();
+    }
+
+    /**
+     * Получить ключ аутентификации.
+     *
+     * @return string
+     */
+    public function getAuthKey()
+    {
+        return $this->auth_key;
+    }
+
+    /**
+     * Проверка ключа аутентификации.
+     *
+     * @param string $authKey
+     * @return bool
+     */
+    public function validateAuthKey($authKey)
+    {
+        return $this->auth_key === $authKey;
+    }
+
+    /**
+     * Генерирование ключа аутентификации при активации "запомнить меня".
+     *
+     */
+    public function generateAuthKey()
+    {
+        $this->auth_key = Yii::$app->security->generateRandomString();
+    }
+
+    /**
+     * Проверка пароля.
+     *
+     * @param string $password password to validate
+     * @return boolean if password provided is valid for current user
+     */
+    public function validatePassword($password)
+    {
+        return Yii::$app->security->validatePassword($password, $this->password_hash);
+    }
+
+    /**
      * Установка пароля.
      *
      * @param $password
@@ -83,6 +186,109 @@ class User extends \yii\db\ActiveRecord
     public function setPassword($password)
     {
         $this->password_hash = Yii::$app->security->generatePasswordHash($password);
+    }
+
+    /**
+     * Finds out if password reset token is valid.
+     *
+     * @param string $token password reset token
+     * @return boolean
+     */
+    public static function isPasswordResetTokenValid($token)
+    {
+        if(empty($token))
+            return false;
+
+        $expire = Yii::$app->params['user.passwordResetTokenExpire'];
+        $parts = explode('_', $token);
+        $timestamp = (int) end($parts);
+
+        return $timestamp + $expire >= time();
+    }
+
+    /**
+     * Finds user by password reset token.
+     *
+     * @param string $token password reset token
+     * @return static|null
+     */
+    public static function findByPasswordResetToken($token)
+    {
+        if (!static::isPasswordResetTokenValid($token)) {
+            return null;
+        }
+        return static::findOne([
+            'password_reset_token' => $token,
+        ]);
+    }
+
+    /**
+     * Generates new password reset token.
+     */
+    public function generatePasswordResetToken()
+    {
+        $this->password_reset_token = Yii::$app->security->generateRandomString() . '_' . time();
+    }
+
+    /**
+     * Removes password reset token.
+     */
+    public function removePasswordResetToken()
+    {
+        $this->password_reset_token = null;
+    }
+
+    /**
+     * @param string $email_confirm_token
+     * @return static|null
+     */
+    public static function findByEmailConfirmToken($email_confirm_token)
+    {
+        return static::findOne(['email_confirm_token' => $email_confirm_token]);
+    }
+
+    /**
+     * Generates email confirmation token.
+     */
+    public function generateEmailConfirmToken()
+    {
+        $this->email_confirm_token = Yii::$app->security->generateRandomString();
+    }
+
+    /**
+     * Removes email confirmation token.
+     */
+    public function removeEmailConfirmToken()
+    {
+        $this->email_confirm_token = null;
+    }
+
+    /**
+     * Генерация ключа автоматической аутентификации перед записью в БД.
+     *
+     * @param bool $insert
+     * @return bool
+     */
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) {
+            if ($insert)
+                $this->generateAuthKey();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Получение списка всех пользователей.
+     *
+     * @return array - массив всех записей из таблицы user
+     */
+    public static function getAllUsersArray()
+    {
+        return ArrayHelper::map(self::find()->all(), 'id', 'username');
     }
 
     /**

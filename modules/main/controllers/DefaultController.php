@@ -15,6 +15,7 @@ use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
+use app\modules\main\models\LoginForm;
 use app\modules\main\models\TestQuestion;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\SurveyQuestion;
@@ -74,6 +75,40 @@ class DefaultController extends Controller
     public function actionIndex()
     {
         return $this->render('index');
+    }
+
+    /**
+     * Страница входа.
+     *
+     * @return Response|string
+     */
+    public function actionSingIn()
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->goHome();
+        }
+
+        $model = new LoginForm();
+        if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            return $this->goBack();
+        }
+
+        $model->password = '';
+        return $this->render('sing-in', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Действие выхода.
+     *
+     * @return Response
+     */
+    public function actionSingOut()
+    {
+        Yii::$app->user->logout();
+
+        return $this->goHome();
     }
 
     /**

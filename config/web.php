@@ -37,6 +37,7 @@ $config = [
             //'class' => 'app\components\LangUrlManager',
             'rules' => [
                 '/' => 'main/default/index',
+                'sing-in' => 'main/default/sing-in',
                 'test' => 'main/default/test',
                 'interview' => 'main/default/interview',
                 'gerchikov-test-conclusion-view/<id:\d+>' => 'main/default/gerchikov-test-conclusion-view',
@@ -85,7 +86,7 @@ $config = [
         'user' => [
             'identityClass' => 'app\modules\main\models\User',
             'enableAutoLogin' => true,
-            //'loginUrl' => ['main/default/sing-in'],
+            'loginUrl' => ['main/default/sing-in'],
         ],
         'errorHandler' => [
             'errorAction' => 'main/default/error',

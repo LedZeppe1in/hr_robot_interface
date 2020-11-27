@@ -33,8 +33,8 @@ class UserController extends Controller
         $this->log($model->save());
         // Создание пользователя психолога в БД
         $model = new User();
-        $model->username = 'psy';
-        $model->setPassword('psy');
+        $model->username = 'psycho';
+        $model->setPassword('psycho');
         $model->role = User::ROLE_PSYCHOLOGIST;
         $model->status = User::STATUS_ACTIVE;
         $this->log($model->save());
