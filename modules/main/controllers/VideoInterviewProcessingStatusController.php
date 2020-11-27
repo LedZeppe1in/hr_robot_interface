@@ -5,6 +5,7 @@ namespace app\modules\main\controllers;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
 use yii\data\ActiveDataProvider;
 use app\modules\main\models\VideoInterviewProcessingStatus;
 
@@ -21,6 +22,17 @@ class VideoInterviewProcessingStatusController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'view', 'delete'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'view', 'delete'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

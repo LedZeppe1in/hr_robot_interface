@@ -2,15 +2,16 @@
 
 namespace app\modules\main\controllers;
 
-use app\components\OSConnector;
-use Exception;
 use Yii;
-use yii\data\ActiveDataProvider;
+use Exception;
 use yii\web\Controller;
+use yii\web\UploadedFile;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
+use yii\data\ActiveDataProvider;
+use app\components\OSConnector;
 use app\modules\main\models\KnowledgeBase;
-use yii\web\UploadedFile;
 
 /**
  * KnowledgeBaseController implements the CRUD actions for KnowledgeBase model.
@@ -25,6 +26,17 @@ class KnowledgeBaseController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'upload', 'view', 'update', 'delete', 'knowledge-base-download'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'upload', 'view', 'update', 'delete', 'knowledge-base-download'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

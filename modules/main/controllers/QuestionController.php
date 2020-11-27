@@ -2,25 +2,18 @@
 
 namespace app\modules\main\controllers;
 
-use app\components\AnalysisHelper;
-use app\modules\main\models\AnalysisResult;
-use app\modules\main\models\FinalConclusion;
-use app\modules\main\models\FinalResult;
-use app\modules\main\models\ModuleMessage;
-use app\modules\main\models\QuestionProcessingStatus;
-use app\modules\main\models\VideoInterview;
-use app\modules\main\models\VideoInterviewProcessingStatus;
-use SoapClient;
-use stdClass;
 use Yii;
 use Exception;
-use yii\filters\VerbFilter;
-use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
+use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\modules\main\models\Question;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\VideoInterview;
 
 /**
  * QuestionController implements the CRUD actions for Question model.
@@ -35,6 +28,19 @@ class QuestionController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'view', 'delete', 'video-file-download', 'get-ivan-landmarks',
+                    'get-andrey-landmarks'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'view', 'delete', 'video-file-download', 'get-ivan-landmarks',
+                            'get-andrey-landmarks'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

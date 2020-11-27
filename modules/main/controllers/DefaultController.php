@@ -10,6 +10,7 @@ use yii\web\Response;
 use yii\web\Controller;
 use yii\web\UploadedFile;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
@@ -33,6 +34,19 @@ class DefaultController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['sing-out', 'test', 'interview', 'gerchikov-test-conclusion-view', 'interview-analysis',
+                    'upload', 'record', 'analysis'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['sing-out', 'test', 'interview', 'gerchikov-test-conclusion-view',
+                            'interview-analysis', 'upload', 'record', 'analysis'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

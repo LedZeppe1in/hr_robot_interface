@@ -3,11 +3,12 @@
 namespace app\modules\main\controllers;
 
 use Yii;
-use app\modules\main\models\Respondent;
-use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
+use app\modules\main\models\Respondent;
 
 /**
  * RespondentController implements the CRUD actions for Respondent model.
@@ -22,6 +23,17 @@ class RespondentController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'create', 'view', 'update', 'delete'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'create', 'view', 'update', 'delete'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

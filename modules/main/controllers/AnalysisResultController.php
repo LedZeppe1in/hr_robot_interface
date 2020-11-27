@@ -5,10 +5,11 @@ namespace app\modules\main\controllers;
 use Yii;
 use stdClass;
 use Exception;
-use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
+use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\modules\main\models\Landmark;
@@ -29,6 +30,19 @@ class AnalysisResultController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'detection', 'view', 'update', 'delete', 'detection-file-download',
+                    'facts-download', 'interpretation-file-download', 'interpretation-facts-download'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'detection', 'view', 'update', 'delete', 'detection-file-download',
+                            'facts-download', 'interpretation-file-download', 'interpretation-facts-download'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

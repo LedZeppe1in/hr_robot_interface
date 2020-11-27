@@ -4,15 +4,15 @@ namespace app\modules\main\controllers;
 
 use Yii;
 use Exception;
-use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\UploadedFile;
 use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
 use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
-use app\modules\main\models\TestQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 
@@ -29,6 +29,19 @@ class VideoInterviewController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'upload', 'view', 'update', 'delete', 'video-download', 'get-ivan-landmarks',
+                    'get-andrey-landmarks'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'upload', 'view', 'update', 'delete', 'video-download',
+                            'get-ivan-landmarks', 'get-andrey-landmarks'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

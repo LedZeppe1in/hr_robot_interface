@@ -4,11 +4,12 @@ namespace app\modules\main\controllers;
 
 use Yii;
 use Exception;
-use yii\data\ActiveDataProvider;
 use yii\web\Controller;
+use yii\web\UploadedFile;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use yii\web\UploadedFile;
+use yii\filters\AccessControl;
+use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\modules\main\models\TestQuestion;
 
@@ -25,6 +26,17 @@ class TestQuestionController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'create', 'view', 'update', 'delete', 'audio-file-download'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'create', 'view', 'update', 'delete', 'audio-file-download'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

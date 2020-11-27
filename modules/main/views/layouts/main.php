@@ -38,8 +38,8 @@ AppAsset::register($this);
         echo Nav::widget([
             'options' => ['class' => 'navbar-nav navbar-left'],
             'encodeLabels' => false,
-            'items' => [
-                ['label' => 'Данные', 'url' => '#',
+            'items' => array_filter([
+                !Yii::$app->user->isGuest ? ['label' => 'Данные', 'url' => '#',
                     'items' => [
                         ['label' => 'Респонденты', 'url' => ['/respondent/list']],
                         ['label' => 'Заказчики', 'url' => ['/customer/list']],
@@ -51,16 +51,16 @@ AppAsset::register($this);
                         '<li class="divider"></li>',
                         ['label' => 'Тестовый запуск', 'url' => '/test'],
                     ],
-                ],
-                ['label' => 'Обработка', 'url' => '#',
+                ] : false,
+                !Yii::$app->user->isGuest ? ['label' => 'Обработка', 'url' => '#',
                     'items' => [
                         ['label' => 'Состояние обработки видеоинтервью',
                             'url' => ['/video-interview-processing-status/list']],
                         ['label' => 'Состояние обработки видео по вопросам',
                             'url' => ['/question-processing-status/list']],
                     ],
-                ],
-                ['label' => 'Результаты', 'url' => '#',
+                ] : false,
+                !Yii::$app->user->isGuest ? ['label' => 'Результаты', 'url' => '#',
                     'items' => [
                         ['label' => 'Результаты определения и интерпретации признаков',
                             'url' => ['/analysis-result/list']],
@@ -72,8 +72,8 @@ AppAsset::register($this);
                         ['label' => 'Итоговые заключения по видеоинтервью',
                             'url' => ['/final-conclusion/list']],
                     ],
-                ],
-                ['label' => 'Редактор цифровой маски', 'url' => '#',
+                ] : false,
+                !Yii::$app->user->isGuest ? ['label' => 'Редактор цифровой маски', 'url' => '#',
                     'items' => [
                         ['label' => 'Редактор цифровой маски (Иван)',
                             'url' => 'https://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan.html'],
@@ -86,16 +86,16 @@ AppAsset::register($this);
                         ['label' => 'Оценка цифровой маски',
                             'url' => 'https://84.201.129.65:8080/HRRMaskEditor/MaskWithResult.html'],
                     ],
-                ],
-                ['label' => 'Редактор тестов', 'url' => '#',
+                ] : false,
+                !Yii::$app->user->isGuest ? ['label' => 'Редактор тестов', 'url' => '#',
                     'items' => [
                         ['label' => 'Редактор опросов',
                             'url' => 'https://84.201.129.65:8080/HRRMaskEditor/Sandbox/PollEditor.php'],
                         ['label' => 'Генератор теста мотивации к труду',
                             'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
                     ],
-                ],
-            ],
+                ] : false,
+            ]),
         ]);
 
         echo Nav::widget([
@@ -103,7 +103,7 @@ AppAsset::register($this);
             'encodeLabels' => false,
             'items' => [
                 Yii::$app->user->isGuest ? ['label' => '<span class="glyphicon glyphicon-log-in"></span> Вход',
-                    'url' => ['sing-in']] : ['label' => '<span class="glyphicon glyphicon-user"></span> Аккаунт',
+                    'url' => ['/main/default/sing-in']] : ['label' => '<span class="glyphicon glyphicon-user"></span> Аккаунт',
                     'url' => ['#'], 'items' => [
                         ['label' => '<span class="glyphicon glyphicon-cog"></span> Настройки',
                             'url' => '#'],

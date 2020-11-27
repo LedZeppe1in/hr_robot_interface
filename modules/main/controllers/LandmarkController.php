@@ -4,12 +4,13 @@ namespace app\modules\main\controllers;
 
 use Yii;
 use Exception;
-use yii\data\ActiveDataProvider;
-use yii\helpers\ArrayHelper;
 use yii\web\Controller;
+use yii\web\UploadedFile;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use yii\web\UploadedFile;
+use yii\filters\AccessControl;
+use yii\helpers\ArrayHelper;
+use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
@@ -28,6 +29,19 @@ class LandmarkController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'upload', 'view', 'update', 'delete', 'landmark-file-download',
+                    'processed-video-file-download'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'upload', 'view', 'update', 'delete', 'landmark-file-download',
+                            'processed-video-file-download'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [

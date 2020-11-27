@@ -2,12 +2,12 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\ModuleMessage;
-use yii\data\SqlDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
 use yii\data\ActiveDataProvider;
+use app\modules\main\models\ModuleMessage;
 use app\modules\main\models\QuestionProcessingStatus;
 
 /**
@@ -23,6 +23,17 @@ class QuestionProcessingStatusController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['list', 'view', 'delete'],
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['list', 'view', 'delete'],
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
