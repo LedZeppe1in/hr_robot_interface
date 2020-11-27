@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\DetailView;
+use yii\bootstrap\ButtonDropdown;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\VideoInterview */
@@ -17,8 +18,18 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1>Видеоинтервью: <?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= ($model->video_file_name != '') ? Html::a('Сформировать цифровую маску',
-            ['get-landmarks', 'id' => $model->id], ['class' => 'btn btn-success']) : false ?>
+        <?php if ($model->video_file_name != '') {
+            echo ButtonDropdown::widget([
+                'label' => 'Сформировать цифровую маску',
+                'dropdown' => [
+                    'items' => [
+                        ['label' => 'Модулем Ивана', 'url' => '/video-interview/get-ivan-landmarks/' . $model->id],
+                        ['label' => 'Модулем Андрея', 'url' => '/video-interview/get-andrey-landmarks/' . $model->id],
+                    ],
+                ],
+                'options' => ['class' => 'btn btn-success']
+            ]);
+        } ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',

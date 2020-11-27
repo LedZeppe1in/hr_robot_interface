@@ -37,7 +37,6 @@ class Question extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['videoFile'], 'required'],
             [['video_file_name', 'description'], 'string'],
             [['test_question_id', 'video_interview_id'], 'integer'],
             [['videoFile'], 'file', 'extensions' => ['avi', 'mp4'], 'checkExtensionByMimeType' => false],
