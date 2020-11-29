@@ -27,6 +27,8 @@ use yii\web\IdentityInterface;
  */
 class User extends ActiveRecord implements IdentityInterface
 {
+    const CHANGE_PASSWORD_SCENARIO = 'change_password_hash'; // Сценарий изменения пароля пользователя
+
     // Роли пользователей
     const ROLE_ADMINISTRATOR = 0; // Администратор
     const ROLE_PSYCHOLOGIST  = 1; // Психолог
@@ -56,12 +58,12 @@ class User extends ActiveRecord implements IdentityInterface
             ['username', 'string', 'min' => 5, 'max' => 100],
             ['username', 'unique', 'targetClass' => self::className(),
                 'message' => 'Это имя пользователя уже занято.'],
-            ['password', 'required', 'on' => 'create_and_update_password_hash'],
-            ['password', 'string', 'min' => 5, 'on' => 'create_and_update_password_hash'],
             ['full_name', 'match', 'pattern' => '/^[ А-Яа-яs,]+$/u',
                 'message' => 'ФИО может содержать только символы русского алфавита.'],
             [['full_name', 'email'], 'string', 'max' => 255],
             [['role', 'status'], 'integer'],
+            ['password', 'required', 'on' => self::CHANGE_PASSWORD_SCENARIO],
+            ['password', 'string', 'min' => 5, 'on' => self::CHANGE_PASSWORD_SCENARIO],
         ];
     }
 
@@ -82,7 +84,7 @@ class User extends ActiveRecord implements IdentityInterface
             'password_reset_token' => 'Токен сброса пароля',
             'role' => 'Роль',
             'status' => 'Статус',
-            'full_name' => 'ФИО',
+            'full_name' => 'Фамилия Имя Отчество',
             'email' => 'Электронная почта',
         ];
     }

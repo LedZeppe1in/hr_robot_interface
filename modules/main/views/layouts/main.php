@@ -103,13 +103,15 @@ AppAsset::register($this);
             'encodeLabels' => false,
             'items' => [
                 Yii::$app->user->isGuest ? ['label' => '<span class="glyphicon glyphicon-log-in"></span> Вход',
-                    'url' => ['/main/default/sing-in']] : ['label' => '<span class="glyphicon glyphicon-user"></span> Аккаунт',
+                    'url' => ['/main/default/sing-in']] : ['label' => '<span class="glyphicon glyphicon-home"></span> Аккаунт',
                     'url' => ['#'], 'items' => [
-                        ['label' => '<span class="glyphicon glyphicon-cog"></span> Настройки',
-                            'url' => '#'],
-                        ['label' => '<span class="glyphicon glyphicon-log-out"></span> Выход' .
-                            ' (' . Yii::$app->user->identity->username . ')', 'url' => ['/main/default/sing-out'],
-                                'linkOptions' => ['data-method' => 'post']]
+                        ['label' => 'Добро пожаловать,'],
+                        ['label' => '<b style="font-size:small">' . Yii::$app->user->identity->username . '</b>'],
+                        '<li class="divider"></li>',
+                        ['label' => '<span class="glyphicon glyphicon-user"></span> Профиль',
+                            'url' => '/user/profile/' . Yii::$app->user->identity->getId()],
+                        ['label' => '<span class="glyphicon glyphicon-log-out"></span> Выход',
+                            'url' => ['/main/default/sing-out'], 'linkOptions' => ['data-method' => 'post']]
                     ],
                 ],
             ],
