@@ -23,9 +23,10 @@ class AnalysisHelper
         // Создание модели для результатов определения признаков
         $analysisResultModel = new AnalysisResult();
         $analysisResultModel->landmark_id = $landmark->id;
+        $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
         $analysisResultModel->facts_file_name = 'facts.json';
         $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
-                ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
+            ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
         $analysisResultModel->save();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
         $osConnector = new OSConnector();

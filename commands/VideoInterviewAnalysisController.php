@@ -350,10 +350,13 @@ class VideoInterviewAnalysisController extends Controller
                 ini_set('default_socket_timeout', 60 * 30);
                 $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                 $client = new SoapClient($addressOfRBRWebServiceDefinition);
-                $addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
-                $addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
+                //$addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
+                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=1';
+                //$addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
+                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
                 $idsOfInitialConditions = '[' . $analysisResultIds . ']';
-                $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+                //$addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
                 $additionalDataToSend = new stdClass;
                 $additionalDataToSend->{'IDOfFile'} = Null;
                 $client->LaunchReasoningProcessForSetOfInitialConditions(array(
@@ -436,11 +439,13 @@ class VideoInterviewAnalysisController extends Controller
                 ini_set('default_socket_timeout', 60 * 30);
                 $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                 $client = new SoapClient($addressOfRBRWebServiceDefinition);
-                $addressForCodeOfKnowledgeBaseRetrieval =
-                    'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
-                $addressForInitialConditionsRetrieval =
-                    'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
-                $addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+                //$addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
+                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=2';
+                //$addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
+                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' .
+                    $finalConclusionModel->id;
+                //$addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
                 $additionalDataToSend = new stdClass;
                 $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
                 $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
