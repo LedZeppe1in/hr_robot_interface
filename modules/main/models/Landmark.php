@@ -29,10 +29,10 @@ class Landmark extends \yii\db\ActiveRecord
 {
     const UPLOAD_LANDMARK_SCENARIO = 'upload-landmark'; // Сценарий загрузки новой цифровой маски
 
-    const TYPE_ZERO                    = 0;   // Поворот на 0 градусов
-    const TYPE_NINETY                  = 90;  // Поворот на 90 градусов
-    const TYPE_ONE_HUNDRED_EIGHTY      = 180; // Поворот на 180 градусов
-    const TYPE_TWO_HUNDRED_AND_SEVENTY = 270; // Поворот на 270 градусов
+    const TYPE_ZERO                    = 0; // Поворот на 0 градусов
+    const TYPE_NINETY                  = 1; // Поворот на 90 градусов
+    const TYPE_ONE_HUNDRED_EIGHTY      = 2; // Поворот на 180 градусов
+    const TYPE_TWO_HUNDRED_AND_SEVENTY = 3; // Поворот на 270 градусов
 
     const TYPE_MIRRORING_TRUE  = true;  // Отзеркаливание есть
     const TYPE_MIRRORING_FALSE = false; // Отзеркаливания нет
@@ -196,10 +196,10 @@ class Landmark extends \yii\db\ActiveRecord
     public static function getRotationTypes()
     {
         return [
-            self::TYPE_ZERO => self::TYPE_ZERO,
-            self::TYPE_NINETY => self::TYPE_NINETY,
-            self::TYPE_ONE_HUNDRED_EIGHTY => self::TYPE_ONE_HUNDRED_EIGHTY,
-            self::TYPE_TWO_HUNDRED_AND_SEVENTY => self::TYPE_TWO_HUNDRED_AND_SEVENTY,
+            self::TYPE_ZERO => 0,
+            self::TYPE_NINETY => 90,
+            self::TYPE_ONE_HUNDRED_EIGHTY => 180,
+            self::TYPE_TWO_HUNDRED_AND_SEVENTY => 270
         ];
     }
 

@@ -68,16 +68,11 @@ class VideoInterviewAnalysisController extends Controller
             $videoPath
         );
         // Название видео-файла с результатами обработки видео
-        $videoResultFile = 'out_' . $landmark->id . '.avi';
+        $videoResultFile = 'out_' . $question->id . '.avi';
         // Название json-файла с результатами обработки видео
-        $jsonResultFile = 'out_' . $landmark->id . '.json';
+        $jsonResultFile = 'out_' . $question->id . '.json';
         // Название аудио-файла (mp3) с результатами обработки видео
-        $audioResultFile = 'out_' . $landmark->id . '.mp3';
-        // Формирование информации по вопросу
-        $questionParameter = array();
-        $questionParameter['id'] = $landmark->id;
-        $questionParameter['start'] = 0;
-        $questionParameter['finish'] = $landmark->finish_time - $landmark->start_time;
+        $audioResultFile = 'out_' . $question->id . '.mp3';
         // Формирование массива с параметрами запуска программы обработки видео
         $parameters['nameVidFilesIn'] = 'video/' . $question->video_file_name;
         $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
@@ -85,8 +80,13 @@ class VideoInterviewAnalysisController extends Controller
         $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
         $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
             [35, 47, 75], [27, 35, 42], [27, 31, 39]];
-        $parameters['rotate_mode'] = VideoInterview::TYPE_ZERO;
-        $parameters['questions'] = [$questionParameter];
+        $parameters['rotate_mode'] = AnalysisHelper::ROTATE_MODE_ZERO;
+        $parameters['Mirroring'] = AnalysisHelper::MIRRORING_FALSE;
+        $parameters['AlignMode'] = AnalysisHelper::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
+        $parameters['id'] = $question->id;
+        $parameters['landmark_mode'] = AnalysisHelper::LANDMARK_MODE_FAST;
+        $parameters['parameters'] = AnalysisHelper::PARAMETER_CHECK_ALL_VIDEO_DATA;
+
         // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
         $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
         // Открытие файла на запись для сохранения параметров запуска программы обработки видео
@@ -120,7 +120,7 @@ class VideoInterviewAnalysisController extends Controller
         try {
             // Запуск программы обработки видео Ивана
             chdir($mainPath);
-            exec('./venv/bin/python ./main.py ./test' . $question->id . '.json');
+            exec('./venv/bin/python ./main_new.py ./test' . $question->id . '.json');
         } catch (Exception $e) {
             // Создание сообщения об ошибке МОВ Ивана в БД
             $moduleMessageModel = new ModuleMessage();
@@ -141,9 +141,9 @@ class VideoInterviewAnalysisController extends Controller
         $analysisResultId = '';
         $analysisResultIds = '';
         // Формирование названия json-файла с результатами обработки видео
-        $landmark->landmark_file_name = 'out_' . $landmark->id . '.json';
+        $landmark->landmark_file_name = $jsonResultFile;
         // Формирование названия видео-файла с нанесенной цифровой маской
-        $landmark->processed_video_file_name = 'out_' . $landmark->id . '.avi';
+        $landmark->processed_video_file_name = $videoResultFile;
         // Формирование описания цифровой маски
         $landmark->description = $videoInterview->description . ' (время нарезки: ' .
             $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
@@ -279,10 +279,6 @@ class VideoInterviewAnalysisController extends Controller
                 $landmarkModel->question_id = $question->id;
                 $landmarkModel->video_interview_id = $videoInterview->id;
                 $landmarkModel->save();
-                // Формирование названия json-файла с результатами обработки видео
-                $landmarkModel->landmark_file_name = 'out_' . $landmarkModel->id . '.json';
-                // Обновление атрибута цифровой маски в БД
-                $landmarkModel->updateAttributes(['landmark_file_name']);
                 // Получение json-файла с результатами обработки видео в виде цифровой маски
                 $landmarkFile = file_get_contents($jsonAndrewResultPath .
                     $jsonFileName . '.json', true);
