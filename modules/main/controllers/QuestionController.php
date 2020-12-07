@@ -77,8 +77,12 @@ class QuestionController extends Controller
      */
     public function actionView($id)
     {
+        // Создание формы настройки параметров запуска модуля обработки видео (Иван)
+        $videoProcessingModuleSettingForm = new VideoProcessingModuleSettingForm();
+
         return $this->render('view', [
             'model' => $this->findModel($id),
+            'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
         ]);
     }
 

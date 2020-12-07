@@ -1,18 +1,46 @@
 <?php
 
-use app\modules\main\models\Landmark;
-use yii\bootstrap\ButtonDropdown;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
+use yii\bootstrap\ButtonDropdown;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\Question */
+/* @var $videoProcessingModuleSettingForm app\modules\main\models\VideoProcessingModuleSettingForm */
 
 $this->title = 'Видео на вопрос №' . $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Видео на вопросы', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
+
+<?= $this->render('_modal_form_video_processing_module_setting', [
+    'model' => $model,
+    'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
+]); ?>
+
+<script type="text/javascript">
+    let actionName = "";
+    // Выполнение скрипта при загрузке страницы
+    $(document).ready(function() {
+        // Обработка нажатия кнопки-иконки формирования цифровой маски модулем Ивана
+        $(".get-ivan-landmarks").click(function(e) {
+            // Форма параметров настроек запуска модуля обработки видео
+            var form = document.getElementById("get-landmark-form");
+            // Формирование названия URL-адреса для запроса
+            if (actionName === "")
+                actionName = form.action;
+            form.action = actionName + "/" + this.id;
+            // Открытие модального окна
+            $("#formLandmarkModalForm").modal("show");
+        });
+        // Обработка нажатия кнопки подтверждения формирования цифровой маски модулем Ивана
+        $("#form-landmark-button").click(function(e) {
+            // Скрывание модального окна
+            $("#formLandmarkModalForm").modal("hide");
+        });
+    });
+</script>
 
 <div class="video-interview-question-view">
 
@@ -24,7 +52,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Сформировать цифровую маску',
                 'dropdown' => [
                     'items' => [
-                        ['label' => 'Модулем Ивана', 'url' => '/question/get-ivan-landmarks/' . $model->id],
+                        ['label' => 'Модулем Ивана', 'url' => '#', 'options' => ['class' => 'get-ivan-landmarks',
+                            'id' => $model->id]],
                         ['label' => 'Модулем Андрея', 'url' => '/question/get-andrey-landmarks/' . $model->id],
                     ],
                 ],
