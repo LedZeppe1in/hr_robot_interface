@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\Survey;
 use Yii;
 use stdClass;
 use Exception;
@@ -132,10 +133,14 @@ class DefaultController extends Controller
      */
     public function actionTest()
     {
+        // Создание модели теста Герчикова
         $model = new GerchikovTestConclusion();
+        // Выборка всех опросов
+        $surveys = Survey::find()->all();
 
         return $this->render('test', [
             'model' => $model,
+            'surveys' => $surveys
         ]);
     }
 
@@ -598,26 +603,27 @@ class DefaultController extends Controller
     /**
      * Страница интервьюирования респондента.
      *
-     * @return string
+     * @param $id - идентификатор опроса
+     * @return bool|string|Response
      */
-    public function actionInterview()
+    public function actionInterview($id)
     {
+        // Создание модели видеоинтервью
+        $videoInterviewModel = new VideoInterview();
+        $videoInterviewModel->description = 'Видео-интервью для профиля кассира.';
+        $videoInterviewModel->respondent_id = 1;
+        $videoInterviewModel->save();
+        // Создание модели итогового результата
+        $FinalResultModel = new FinalResult();
+        $FinalResultModel->description = 'Итоговый результат для интервью по профилю кассира.';
+        $FinalResultModel->video_interview_id = $videoInterviewModel->id;
+        $FinalResultModel->save();
+        // Создание модели заключения по тесту Герчикова
+        $gerchikovTestConclusionModel = new GerchikovTestConclusion();
+        // Установка первичного ключа с итогового результата
+        $gerchikovTestConclusionModel->id = $FinalResultModel->id;
         // Если пришел POST-запрос
         if (Yii::$app->request->isPost) {
-            // Создание модели видеоинтервью
-            $videoInterviewModel = new VideoInterview();
-            $videoInterviewModel->description = 'Видео-интервью для профиля кассира.';
-            $videoInterviewModel->respondent_id = 1;
-            $videoInterviewModel->save();
-            // Создание модели итогового результата
-            $FinalResultModel = new FinalResult();
-            $FinalResultModel->description = 'Итоговый результат для интервью по профилю кассира.';
-            $FinalResultModel->video_interview_id = $videoInterviewModel->id;
-            $FinalResultModel->save();
-            // Создание модели заключения по тесту Герчикова
-            $gerchikovTestConclusionModel = new GerchikovTestConclusion();
-            // Установка первичного ключа с итогового результата
-            $gerchikovTestConclusionModel->id = $FinalResultModel->id;
             // Если пришли параметры с модуля опроса (теста Герчикова)
             if (Yii::$app->request->post('AcceptTest')) {
                 $gerchikovTestConclusionModel->accept_test = Yii::$app->request->post('AcceptTest');
@@ -630,94 +636,100 @@ class DefaultController extends Controller
                 $gerchikovTestConclusionModel->master_motivation = Yii::$app->request->post('MotivMaster');
                 $gerchikovTestConclusionModel->avoid_motivation = Yii::$app->request->post('MotivAvoid');
                 $gerchikovTestConclusionModel->description = 'Итоговое заключение по тесту Герчикова';
-            } else
-                // Если нет, то загрузка параметров модели из формы
-                $gerchikovTestConclusionModel->load(Yii::$app->request->post());
-            // Сохранение модели заключения по тесту Герчикова
-            $gerchikovTestConclusionModel->save();
+            }
+        } else {
+            // Если не POST-запрос, то формирование данных по тесту Герчикова автоматически
+            $gerchikovTestConclusionModel->accept_test = 1;
+            $gerchikovTestConclusionModel->accept_level = 100;
+            $gerchikovTestConclusionModel->instrumental_motivation = 1;
+            $gerchikovTestConclusionModel->professional_motivation = 2;
+            $gerchikovTestConclusionModel->patriot_motivation = 3;
+            $gerchikovTestConclusionModel->master_motivation = 3;
+            $gerchikovTestConclusionModel->avoid_motivation = 3;
+            $gerchikovTestConclusionModel->description = 'Автоматически созданная запись';
+        }
+        // Сохранение модели заключения по тесту Герчикова
+        $gerchikovTestConclusionModel->save();
 
-            // Если респондент прошел тест Герчикова
-            if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED) {
-                // Создание модели цифровой маски
-                $landmarkModel = new Landmark();
-                // Поиск всех вопросов связанных с опросом по профилю "Кассир" и сортировка записей по индексу и id
-                $surveyQuestions = SurveyQuestion::find()->where(['survey_id' => 29])->orderBy([
-                    'index' => SORT_ASC,
-                    'test_question_id' => SORT_ASC
-                ])->all();
-                // Формирование массива c id вопросов опроса
-                $testQuestionIds = array();
+        // Если респондент прошел тест Герчикова
+        if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED) {
+            // Создание модели цифровой маски
+            $landmarkModel = new Landmark();
+            // Поиск всех вопросов связанных с выбранным опросом и сортировка записей по индексу и id
+            $surveyQuestions = SurveyQuestion::find()->where(['survey_id' => $id])->orderBy([
+                'index' => SORT_ASC,
+                'test_question_id' => SORT_ASC
+            ])->all();
+            // Формирование массива c id вопросов опроса
+            $testQuestionIds = array();
 //                foreach ($surveyQuestions as $surveyQuestion)
 //                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
-                $num = 0;
-                foreach ($surveyQuestions as $surveyQuestion) {
-                    if ($num < 3)
-                        array_push($testQuestionIds, $surveyQuestion->test_question_id);
-                    $num++;
-                }
-                // Поиск вопросов опросов по набору id
-                $testQuestions = TestQuestion::find()->where(['id' => $testQuestionIds])->all();
-                // Массивы с параметрами вопросов
-                $questionIds = array();
-                $questionTexts = array();
-                $questionMaximumTimes = array();
-                $questionTimes = array();
-                $questionAudioFilePaths = array();
-                // Создание объекта коннектора с Yandex.Cloud Object Storage
-                $osConnector = new OSConnector();
-                // Обход вопросов опроса
-                foreach ($surveyQuestions as $surveyQuestion)
-                    foreach ($testQuestions as $testQuestion)
-                        if ($surveyQuestion->test_question_id == $testQuestion->id) {
-                            // Формирование массивов с параметрами вопроса
-                            array_push($questionIds, $testQuestion->id);
-                            array_push($questionTexts, $testQuestion->text);
-                            array_push($questionMaximumTimes, $testQuestion->maximum_time);
-                            array_push($questionTimes, $testQuestion->time);
-                            array_push($questionAudioFilePaths, $testQuestion->id . '/' .
-                                $testQuestion->audio_file_name);
-                            // Создание директории для аудио-файла с озвучкой вопроса опроса
-                            if (!file_exists(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id))
-                                mkdir(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id, 0777);
-                            // Сохранение аудио-файла с озвучкой вопроса опроса из Object Storage на сервер
-                            $osConnector->saveFileToServer(
-                                OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
-                                $testQuestion->id,
-                                $testQuestion->audio_file_name,
-                                Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id . '/'
-                            );
-                        }
-
-                // Вывод сообщения об успешном прохождении теста Герчикова
-                if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED)
-                    Yii::$app->getSession()->setFlash('success',
-                        'Вы успешно прошли тест по мотивации к труду по профилю «Кассир»!');
-
-                return $this->render('interview', [
-                    'videoInterviewModel' => $videoInterviewModel,
-                    'gerchikovTestConclusionModel' => $gerchikovTestConclusionModel,
-                    'landmarkModel' => $landmarkModel,
-                    'questionIds' => $questionIds,
-                    'questionTexts' => $questionTexts,
-                    'questionMaximumTimes' => $questionMaximumTimes,
-                    'questionTimes' => $questionTimes,
-                    'questionAudioFilePaths' => $questionAudioFilePaths,
-                ]);
+            $num = 0;
+            foreach ($surveyQuestions as $surveyQuestion) {
+                if ($num < 3)
+                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
+                $num++;
             }
+            // Поиск вопросов опросов по набору id
+            $testQuestions = TestQuestion::find()->where(['id' => $testQuestionIds])->all();
+            // Массивы с параметрами вопросов
+            $questionIds = array();
+            $questionTexts = array();
+            $questionMaximumTimes = array();
+            $questionTimes = array();
+            $questionAudioFilePaths = array();
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Обход вопросов опроса
+            foreach ($surveyQuestions as $surveyQuestion)
+                foreach ($testQuestions as $testQuestion)
+                    if ($surveyQuestion->test_question_id == $testQuestion->id) {
+                        // Формирование массивов с параметрами вопроса
+                        array_push($questionIds, $testQuestion->id);
+                        array_push($questionTexts, $testQuestion->text);
+                        array_push($questionMaximumTimes, $testQuestion->maximum_time);
+                        array_push($questionTimes, $testQuestion->time);
+                        array_push($questionAudioFilePaths, $testQuestion->id . '/' .
+                            $testQuestion->audio_file_name);
+                        // Создание директории для аудио-файла с озвучкой вопроса опроса
+                        if (!file_exists(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id))
+                            mkdir(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id, 0777);
+                        // Сохранение аудио-файла с озвучкой вопроса опроса из Object Storage на сервер
+                        $osConnector->saveFileToServer(
+                            OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                            $testQuestion->id,
+                            $testQuestion->audio_file_name,
+                            Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id . '/'
+                        );
+                    }
 
-            // Вывод сообщения о не успешном прохождении теста Герчикова по профилю кассира
-            if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
-                Yii::$app->getSession()->setFlash('warning',
-                    'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
-            // Вывод сообщения о не успешном прохождении теста Герчикова (мало или нет ответов)
-            if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
-                Yii::$app->getSession()->setFlash('warning',
-                    'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
+            // Вывод сообщения об успешном прохождении теста Герчикова
+            if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED)
+                Yii::$app->getSession()->setFlash('success',
+                    'Вы успешно прошли тест по мотивации к труду по профилю «Кассир»!');
 
-            return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusionModel->id]);
+            return $this->render('interview', [
+                'videoInterviewModel' => $videoInterviewModel,
+                'gerchikovTestConclusionModel' => $gerchikovTestConclusionModel,
+                'landmarkModel' => $landmarkModel,
+                'questionIds' => $questionIds,
+                'questionTexts' => $questionTexts,
+                'questionMaximumTimes' => $questionMaximumTimes,
+                'questionTimes' => $questionTimes,
+                'questionAudioFilePaths' => $questionAudioFilePaths,
+            ]);
         }
 
-        return false;
+        // Вывод сообщения о не успешном прохождении теста Герчикова по профилю кассира
+        if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
+            Yii::$app->getSession()->setFlash('warning',
+                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
+        // Вывод сообщения о не успешном прохождении теста Герчикова (мало или нет ответов)
+        if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
+            Yii::$app->getSession()->setFlash('warning',
+                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
+
+        return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusionModel->id]);
     }
 
     /**

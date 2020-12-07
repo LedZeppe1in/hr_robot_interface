@@ -2,9 +2,10 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
+use yii\bootstrap\ButtonDropdown;
 
 /* @var $this yii\web\View */
-/* @var $model app\modules\main\models\GerchikovTestConclusion */
+/* @var $surveys app\modules\main\models\Survey */
 
 $this->title = 'Тестирование HR Robot';
 $this->params['breadcrumbs'][] = $this->title;
@@ -18,39 +19,33 @@ $this->params['breadcrumbs'][] = $this->title;
         <p>
             <?= Html::a('Пройти собеседование',
                 'https://84.201.129.65:8080/HRRMaskEditor/GenerateR1Test.php',
-                ['class' => 'btn btn-success', 'style' => 'width: 180px;']) ?>
+                ['class' => 'btn btn-success', 'style' => 'width: 192px;']) ?>
         </p>
 
-        <?php $form = ActiveForm::begin(['action' => 'interview', 'method' => 'POST']); ?>
-            <?= $form->field($model, 'accept_test')->hiddenInput(['value' => 1])
-                ->label(false); ?>
-            <?= $form->field($model, 'accept_level')->hiddenInput(['value' => 100])
-                ->label(false); ?>
-            <?= $form->field($model, 'instrumental_motivation')->hiddenInput(['value' => '1'])
-                ->label(false); ?>
-            <?= $form->field($model, 'professional_motivation')->hiddenInput(['value' => '2'])
-                ->label(false); ?>
-            <?= $form->field($model, 'patriot_motivation')->hiddenInput(['value' => '3'])
-                ->label(false); ?>
-            <?= $form->field($model, 'master_motivation')->hiddenInput(['value' => '3'])
-                ->label(false); ?>
-            <?= $form->field($model, 'avoid_motivation')->hiddenInput(['value' => '3'])
-                ->label(false); ?>
-            <?= $form->field($model, 'description')->hiddenInput(['value' => 'Автоматически созданная запись'])
-                ->label(false); ?>
-            <div class="form-group">
-                <?= Html::submitButton('Пройти видеоинтервью',
-                    ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
-            </div>
-        <?php ActiveForm::end(); ?>
+        <p>
+            <?php
+                $items = array();
+                foreach ($surveys as $survey) {
+                    $items[$survey->id]['label'] = $survey->name;
+                    $items[$survey->id]['url'] = 'interview/' . $survey->id;
+                }
+                echo ButtonDropdown::widget([
+                    'label' => 'Пройти видеоинтервью',
+                    'dropdown' => [
+                        'items' => $items,
+                    ],
+                    'options' => ['class' => 'btn btn-primary', 'style' => 'width: 192px;']
+                ]);
+            ?>
+        </p>
 
         <p>
             <?= Html::a('Анализ видеоинтервью', ['analysis'],
-                ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
+                ['class' => 'btn btn-primary', 'style' => 'width: 192px;']) ?>
         </p>
         <p>
             <?= Html::a('Записать видео', ['record'],
-                ['class' => 'btn btn-primary', 'style' => 'width: 180px;']) ?>
+                ['class' => 'btn btn-primary', 'style' => 'width: 192px;']) ?>
         </p>
     </div>
 </div>
