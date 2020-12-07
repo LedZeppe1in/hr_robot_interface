@@ -7,7 +7,8 @@ use yii\console\Controller;
 use app\modules\main\models\User;
 
 /**
- * UserController реализует консольные команды для работы с пользователями.
+ * UserController - реализует консольные команды для работы с пользователями.
+ * @package app\commands
  */
 class UserController extends Controller
 {

@@ -10,31 +10,6 @@ use app\modules\main\models\AnalysisResult;
  */
 class AnalysisHelper
 {
-    // Режим поворота изображения
-    const ROTATE_MODE_ZERO                    = 0; // Поворот на 0 градусов
-    const ROTATE_MODE_NINETY                  = 1; // Поворот на 90 градусов
-    const ROTATE_MODE_ONE_HUNDRED_EIGHTY      = 2; // Поворот на 180 градусов
-    const ROTATE_MODE_TWO_HUNDRED_AND_SEVENTY = 3; // Поворот на 270 градусов
-
-    // Режим зеркального отображения
-    const MIRRORING_TRUE  = true;  // Отзеркаливание есть
-    const MIRRORING_FALSE = false; // Отзеркаливания нет
-
-    // Режим выравнивания изображения
-    const ALIGN_MODE_BY_THREE_FACIAL_POINTS = 0; // По трем точкам лица [39, 42, 33]
-    const ALIGN_MODE_BY_FOUR_FACIAL_POINTS  = 1; // По четырем точкам лица [39, 42, 11, 5]
-
-    // Режим построения лэндмарков
-    const LANDMARK_MODE_FAST        = 0; // Быстрый 2D-режим
-    const LANDMARK_MODE_FIRST_SLOW  = 1; // Медленный 2D-режим (первый)
-    const LANDMARK_MODE_SECOND_SLOW = 2; // Медленный 2D-режим (второй)
-
-    // Параметр работы основного модуля обработки видео
-    const PARAMETER_NONE                   = 'None';                   // Определение всех параметров видео и поиск лэндмарков
-    const PARAMETER_CHECK_ALL_VIDEO_DATA   = 'CheckAllDataOfVideo';    // Определение всех параметров видео и поиск лэндмарков
-    const PARAMETER_CHECK_VIDEO_DATA       = 'CheckDataOfVideo';       // Поиск лэндмарков (если FPS задана, то не определять его)
-    const PARAMETER_CHECK_VIDEO_PARAMETERS = 'CheckParametersOfVideo'; // Определение параметров видео без поиска лэндмарков
-
     /**
      * Создание модели результатов анализа и запуск модуля определения признаков.
      *

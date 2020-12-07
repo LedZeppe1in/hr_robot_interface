@@ -2,24 +2,25 @@
 
 namespace app\commands;
 
+use stdClass;
 use Exception;
 use SoapClient;
-use stdClass;
 use yii\helpers\Console;
 use yii\console\Controller;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
-use app\modules\main\models\VideoInterview;
 use app\modules\main\models\FinalResult;
 use app\modules\main\models\ModuleMessage;
+use app\modules\main\models\VideoInterview;
 use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\QuestionProcessingStatus;
 use app\modules\main\models\VideoInterviewProcessingStatus;
+use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
- * Class VideoInterviewAnalysisController - содержит команду для последовательного анализа видеоинтервью.
+ * VideoInterviewAnalysisController - класс содержит команду для последовательного анализа видеоинтервью.
  * @package app\commands
  */
 class VideoInterviewAnalysisController extends Controller
@@ -80,12 +81,12 @@ class VideoInterviewAnalysisController extends Controller
         $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
         $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
             [35, 47, 75], [27, 35, 42], [27, 31, 39]];
-        $parameters['rotate_mode'] = AnalysisHelper::ROTATE_MODE_ZERO;
-        $parameters['Mirroring'] = AnalysisHelper::MIRRORING_FALSE;
-        $parameters['AlignMode'] = AnalysisHelper::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
+        $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
+        $parameters['Mirroring'] = VideoProcessingModuleSettingForm::MIRRORING_FALSE;
+        $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
         $parameters['id'] = $question->id;
-        $parameters['landmark_mode'] = AnalysisHelper::LANDMARK_MODE_FAST;
-        $parameters['parameters'] = AnalysisHelper::PARAMETER_CHECK_ALL_VIDEO_DATA;
+        $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
+        $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
 
         // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
         $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
