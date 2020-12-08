@@ -238,11 +238,12 @@ class QuestionController extends Controller
             $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
             $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
                 [35, 47, 75], [27, 35, 42], [27, 31, 39]];
-            $parameters['rotate_mode'] = Yii::$app->request->post('VideoProcessingModuleSettingForm')['rotateMode'];
-            $parameters['Mirroring'] = Yii::$app->request->post('VideoProcessingModuleSettingForm')['mirroring'];
-            $parameters['AlignMode'] = Yii::$app->request->post('VideoProcessingModuleSettingForm')['alignMode'];
+            $parameters['rotate_mode'] = (int)Yii::$app->request->post('VideoProcessingModuleSettingForm')['rotateMode'];
+            $parameters['enableAutoRotate'] = (bool)Yii::$app->request->post('VideoProcessingModuleSettingForm')['enableAutoRotate'];
+            $parameters['Mirroring'] = (bool)Yii::$app->request->post('VideoProcessingModuleSettingForm')['mirroring'];
+            $parameters['AlignMode'] = (int)Yii::$app->request->post('VideoProcessingModuleSettingForm')['alignMode'];
             $parameters['id'] = $question->id;
-            $parameters['landmark_mode'] = Yii::$app->request->post('VideoProcessingModuleSettingForm')['landmarkMode'];
+            $parameters['landmark_mode'] = (int)Yii::$app->request->post('VideoProcessingModuleSettingForm')['landmarkMode'];
             $parameters['parameters'] = Yii::$app->request->post('VideoProcessingModuleSettingForm')['videoProcessingParameter'];
             // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
             $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
@@ -261,7 +262,8 @@ class QuestionController extends Controller
                 $messages = 'Ошибка модуля обработки видео Ивана! ' . $e->getMessage();
             }
 
-            $success = false;
+            $firstScriptSuccess = false;
+            $secondScriptSuccess = false;
             // Формирование названия json-файла с результатами обработки видео
             $landmarkModel->landmark_file_name = $jsonResultFile;
             // Формирование названия видео-файла с нанесенной цифровой маской
@@ -296,10 +298,10 @@ class QuestionController extends Controller
                 if (isset($jsonLandmarkFile['err_msg']))
                     // Сохранение сообщения о предупреждении МОВ Ивана
                     $messages .= ' ' . $jsonLandmarkFile['err_msg'];
-                $success = true;
+                $firstScriptSuccess = true;
             }
             // Удаление записи о цифровой маски для которой не сформирован json-файл
-            if ($success == false) {
+            if ($firstScriptSuccess == false) {
                 Landmark::findOne($landmarkModel->id)->delete();
                 $messages .= ' Не удалось сформировать цифровую маску!';
             }
@@ -328,6 +330,75 @@ class QuestionController extends Controller
             //            unlink($jsonResultPath . 'out_error.json');
             //        }
 
+            $additionalLandmarkModel = null;
+            // Если включен запуск второго скрипта МОВ Ивана
+            if ((bool)Yii::$app->request->post('VideoProcessingModuleSettingForm')['enableSecondScript']) {
+                // Название видео-файла с результатами обработки видео
+                $extVideoResultFile = 'out_' . $question->id . '_ext.avi';
+                // Название json-файла с результатами обработки видео
+                $extJsonResultFile = 'out_' . $question->id . '_ext.json';
+                // Создание второй цифровой маски в БД
+                $additionalLandmarkModel = new Landmark();
+                $additionalLandmarkModel->start_time = '00:00:00:000';
+                $additionalLandmarkModel->finish_time = '12:00:00:000';
+                $additionalLandmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                $additionalLandmarkModel->rotation = Landmark::TYPE_ZERO;
+                $additionalLandmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+                $additionalLandmarkModel->description = 'Цифровая маска получена на основе цифровой маски №' .
+                    $landmarkModel->id;
+                $additionalLandmarkModel->landmark_file_name = $extJsonResultFile;
+                $additionalLandmarkModel->processed_video_file_name = $extVideoResultFile;
+                $additionalLandmarkModel->question_id = $question->id;
+                $additionalLandmarkModel->video_interview_id = $videoInterview->id;
+                $additionalLandmarkModel->save();
+                try {
+                    // Запуск второго скрипта модуля обработки видео Ивана
+                    chdir($mainPath);
+                    exec('./venv/bin/python ./main_new2.py ./json/' . $jsonResultFile);
+                } catch (Exception $e) {
+                    // Сохранение сообщения об ошибке второго скрипта МОВ Ивана
+                    $messages = 'Ошибка второго скрипта модуля обработки видео Ивана! ' . $e->getMessage();
+                }
+                // Проверка существования json-файл с результатами обработки видео
+                if (file_exists($jsonResultPath . $additionalLandmarkModel->landmark_file_name)) {
+                    // Получение json-файла с результатами обработки видео в виде цифровой маски
+                    $landmarkFile = file_get_contents($jsonResultPath .
+                        $additionalLandmarkModel->landmark_file_name, true);
+                    // Сохранение файла с лицевыми точками на Object Storage
+                    $osConnector->saveFileToObjectStorage(
+                        OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                        $additionalLandmarkModel->id,
+                        $additionalLandmarkModel->landmark_file_name,
+                        $landmarkFile
+                    );
+                    // Сохранение файла видео с нанесенной цифровой маской на Object Storage
+                    $osConnector->saveFileToObjectStorage(
+                        OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                        $additionalLandmarkModel->id,
+                        $additionalLandmarkModel->processed_video_file_name,
+                        $jsonResultPath . $additionalLandmarkModel->processed_video_file_name
+                    );
+                    // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+                    $jsonLandmarkFile = json_decode($landmarkFile, true);
+                    // Если в json-файле с цифровой маской есть текст с предупреждением
+                    if (isset($jsonLandmarkFile['err_msg']))
+                        // Сохранение сообщения о предупреждении МОВ Ивана
+                        $messages .= ' ' . $jsonLandmarkFile['err_msg'];
+                    $secondScriptSuccess = true;
+                }
+                // Удаление записи о цифровой маски для которой не сформирован json-файл
+                if ($secondScriptSuccess == false) {
+                    Landmark::findOne($additionalLandmarkModel->id)->delete();
+                    $messages .= ' Не удалось сформировать цифровую маску вторым скриптом МОВ Ивана!';
+                }
+                // Удаление видео-файла с результатами обработки видеоинтервью вторым скриптом МОВ ИВана
+                if (file_exists($jsonResultPath . $extVideoResultFile))
+                    unlink($jsonResultPath . $extVideoResultFile);
+                // Удаление json-файла с результатами обработки видео вторым скриптом МОВ ИВана
+                if (file_exists($jsonResultPath . $extJsonResultFile))
+                    unlink($jsonResultPath . $extJsonResultFile);
+            }
+
             // Удаление файла с видеоинтервью
             if (file_exists($videoPath . $question->video_file_name))
                 unlink($videoPath . $question->video_file_name);
@@ -350,14 +421,23 @@ class QuestionController extends Controller
             if ($messages != '')
                 // Вывод всех сообщений, сформированных по ходу формирования цифровой маски
                 Yii::$app->getSession()->setFlash('warning', $messages);
-            else
-                // Вывод сообщения об успешном формировании цифровой маски
-                Yii::$app->getSession()->setFlash('success', 'Вы успешно сформировали цифровую маску!');
+            else {
+                if (($firstScriptSuccess && !$secondScriptSuccess) || (!$firstScriptSuccess && $secondScriptSuccess))
+                    // Вывод сообщения об успешном формировании одной цифровой маски
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно сформировали цифровую маску!');
+                if ($firstScriptSuccess && $secondScriptSuccess)
+                    // Вывод сообщения об успешном формировании двух цифровых масок
+                    Yii::$app->getSession()->setFlash('success', 'Вы успешно сформировали цифровые маски!');
+            }
 
-            if ($success == false)
+            if ($firstScriptSuccess == false)
                 return $this->redirect(['/question/list']);
-            else
-                return $this->redirect(['/landmark/view/' . $landmarkModel->id]);
+            else {
+                if ($firstScriptSuccess && !$secondScriptSuccess)
+                    return $this->redirect(['/landmark/view/' . $landmarkModel->id]);
+                if ($secondScriptSuccess && $additionalLandmarkModel !== null)
+                    return $this->redirect(['/landmark/view/' . $additionalLandmarkModel->id]);
+            }
         }
 
         return false;

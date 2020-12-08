@@ -16,6 +16,10 @@ class VideoProcessingModuleSettingForm extends Model
     const ROTATE_MODE_ONE_HUNDRED_EIGHTY      = 2; // Поворот на 180 градусов
     const ROTATE_MODE_TWO_HUNDRED_AND_SEVENTY = 3; // Поворот на 270 градусов
 
+    // Режим автоматического покадрового разворота головы
+    const AUTO_ROTATE_TRUE  = true;  // Включение режима
+    const AUTO_ROTATE_FALSE = false; // Выключение режима
+
     // Режим зеркального отображения
     const MIRRORING_FALSE = false; // Отзеркаливания нет
     const MIRRORING_TRUE  = true;  // Отзеркаливание есть
@@ -35,11 +39,17 @@ class VideoProcessingModuleSettingForm extends Model
     const PARAMETER_CHECK_VIDEO_DATA       = 'CheckDataOfVideo';       // Поиск лэндмарков (если FPS задана, то не определять его)
     const PARAMETER_CHECK_VIDEO_PARAMETERS = 'CheckParametersOfVideo'; // Определение параметров видео без поиска лэндмарков
 
+    // Флаг запуска второго скрипта МОВ Ивана
+    const ENABLE_SECOND_SCRIPT_FALSE = false; // Не запускать второй скрипт МОВ Ивана
+    const ENABLE_SECOND_SCRIPT_TRUE  = true;  // Запустить второй скрипт МОВ Ивана
+
     public $rotateMode;               // Режим поворота изображения
+    public $enableAutoRotate;         // Режим автоматического покадрового разворота головы
     public $mirroring;                // Режим зеркального отображения
     public $alignMode;                // Режим выравнивания изображения
     public $landmarkMode;             // Режим построения лэндмарков
     public $videoProcessingParameter; // Параметр работы основного модуля обработки видео
+    public $enableSecondScript;       // Флаг запуска второго скрипта МОВ Ивана
 
     /**
      * @return array the validation rules.
@@ -47,7 +57,8 @@ class VideoProcessingModuleSettingForm extends Model
     public function rules()
     {
         return [
-            [['rotateMode', 'mirroring', 'alignMode', 'landmarkMode', 'videoProcessingParameter'], 'required'],
+            [['rotateMode', 'enableAutoRotate', 'mirroring', 'alignMode', 'landmarkMode',
+                'videoProcessingParameter', 'enableSecondScript'], 'required'],
         ];
     }
 
@@ -58,10 +69,12 @@ class VideoProcessingModuleSettingForm extends Model
     {
         return [
             'rotateMode' => 'Режим поворота изображения (градусы)',
+            'enableAutoRotate' => 'Режим автоматического покадрового разворота головы',
             'mirroring' => 'Режим зеркального отображения',
             'alignMode' => 'Режим выравнивания изображения',
             'landmarkMode' => 'Режим построения лэндмарков',
             'videoProcessingParameter' => 'Параметр обработки видео',
+            'enableSecondScript' => 'Запуск второго скрипта МОВ Ивана',
         ];
     }
 
@@ -88,6 +101,29 @@ class VideoProcessingModuleSettingForm extends Model
     public function getRotateMode()
     {
         return ArrayHelper::getValue(self::getRotateModes(), $this->rotateMode);
+    }
+
+    /**
+     * Получение списка значений для режимов автоматического покадрового разворота головы.
+     *
+     * @return array - массив всех возможных значений режимов автоматического покадрового разворота головы
+     */
+    public static function getAutoRotates()
+    {
+        return [
+            self::AUTO_ROTATE_TRUE => 'Включить',
+            self::AUTO_ROTATE_FALSE => 'Выключить',
+        ];
+    }
+
+    /**
+     * Получение значения режима автоматического покадрового разворота головы.
+     *
+     * @return mixed
+     */
+    public function getAutoRotate()
+    {
+        return ArrayHelper::getValue(self::getAutoRotates(), $this->enableAutoRotate);
     }
 
     /**
@@ -183,5 +219,28 @@ class VideoProcessingModuleSettingForm extends Model
     public function getParameterValue()
     {
         return ArrayHelper::getValue(self::getParameterValues(), $this->videoProcessingParameter);
+    }
+
+    /**
+     * Получение списка значений для флага запуска второго скрипта МОВ Ивана.
+     *
+     * @return array - массив всех возможных значений флагов запуска второго скрипта МОВ Ивана
+     */
+    public static function getSecondScriptFlags()
+    {
+        return [
+            self::ENABLE_SECOND_SCRIPT_FALSE => 'Нет',
+            self::ENABLE_SECOND_SCRIPT_TRUE => 'Да',
+        ];
+    }
+
+    /**
+     * Получение значения флага запуска второго скрипта МОВ Ивана.
+     *
+     * @return mixed
+     */
+    public function getSecondScriptFlag()
+    {
+        return ArrayHelper::getValue(self::getSecondScriptFlags(), $this->enableSecondScript);
     }
 }

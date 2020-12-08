@@ -26,6 +26,9 @@ use app\modules\main\models\VideoProcessingModuleSettingForm;
         <?= $form->field($videoProcessingModuleSettingForm, 'rotateMode')
             ->dropDownList(VideoProcessingModuleSettingForm::getRotateModes()) ?>
 
+        <?= $form->field($videoProcessingModuleSettingForm, 'enableAutoRotate')
+            ->dropDownList(VideoProcessingModuleSettingForm::getAutoRotates()) ?>
+
         <?= $form->field($videoProcessingModuleSettingForm, 'mirroring')
             ->dropDownList(VideoProcessingModuleSettingForm::getMirroringModes()) ?>
 
@@ -37,6 +40,9 @@ use app\modules\main\models\VideoProcessingModuleSettingForm;
 
         <?= $form->field($videoProcessingModuleSettingForm, 'videoProcessingParameter')
             ->dropDownList(VideoProcessingModuleSettingForm::getParameterValues()) ?>
+
+        <?= $form->field($videoProcessingModuleSettingForm, 'enableSecondScript')
+            ->dropDownList(VideoProcessingModuleSettingForm::getSecondScriptFlags()) ?>
 
         <?= Button::widget([
             'label' => 'Сформировать цифровую маску',
