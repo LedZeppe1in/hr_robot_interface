@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\Survey;
 use Yii;
 use stdClass;
 use Exception;
@@ -15,10 +14,13 @@ use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
+use app\modules\main\models\Survey;
+use app\modules\main\models\Profile;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\LoginForm;
 use app\modules\main\models\TestQuestion;
+use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\FinalResult;
@@ -608,14 +610,17 @@ class DefaultController extends Controller
      */
     public function actionInterview($id)
     {
+        //
+        $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
+        $profile = Profile::findOne($profileSurvey->profile_id);
         // Создание модели видеоинтервью
         $videoInterviewModel = new VideoInterview();
-        $videoInterviewModel->description = 'Видео-интервью для профиля кассира.';
+        $videoInterviewModel->description = 'Видео-интервью для профиля: ' . $profile->name;
         $videoInterviewModel->respondent_id = 1;
         $videoInterviewModel->save();
         // Создание модели итогового результата
         $FinalResultModel = new FinalResult();
-        $FinalResultModel->description = 'Итоговый результат для интервью по профилю кассира.';
+        $FinalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
         $FinalResultModel->video_interview_id = $videoInterviewModel->id;
         $FinalResultModel->save();
         // Создание модели заключения по тесту Герчикова
@@ -666,7 +671,7 @@ class DefaultController extends Controller
 //                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
             $num = 0;
             foreach ($surveyQuestions as $surveyQuestion) {
-                if ($num < 3)
+                if ($num < 4)
                     array_push($testQuestionIds, $surveyQuestion->test_question_id);
                 $num++;
             }
@@ -706,7 +711,7 @@ class DefaultController extends Controller
             // Вывод сообщения об успешном прохождении теста Герчикова
             if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED)
                 Yii::$app->getSession()->setFlash('success',
-                    'Вы успешно прошли тест по мотивации к труду по профилю «Кассир»!');
+                    'Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name . '!');
 
             return $this->render('interview', [
                 'videoInterviewModel' => $videoInterviewModel,
@@ -723,11 +728,13 @@ class DefaultController extends Controller
         // Вывод сообщения о не успешном прохождении теста Герчикова по профилю кассира
         if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
             Yii::$app->getSession()->setFlash('warning',
-                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
+                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю:' . $profile->name .
+                    '! Результаты будут отправлены Вам на почту.');
         // Вывод сообщения о не успешном прохождении теста Герчикова (мало или нет ответов)
         if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
             Yii::$app->getSession()->setFlash('warning',
-                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю «Кассир»! Результаты будут отправлены Вам на почту.');
+                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name .
+                    '! Результаты будут отправлены Вам на почту.');
 
         return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusionModel->id]);
     }

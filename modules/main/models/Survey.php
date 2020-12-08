@@ -117,5 +117,4 @@ class Survey extends \yii\db\ActiveRecord
     {
         return ArrayHelper::map(self::find()->all(), 'id', 'name');
     }
-
 }
