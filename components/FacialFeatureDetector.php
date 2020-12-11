@@ -5393,45 +5393,45 @@ class FacialFeatureDetector
         if (($sourceFeatureName == 'mouth_form') || ($sourceFeatureName == 'mouth_form2') || ($sourceFeatureName == 'mouth_lips_form')
             || ($sourceFeatureName == 'mouth_lowerlip_form') || ($sourceFeatureName == 'mouth_upperlip_form'))
             $targetValues['targetFacePart'] = 'Рот';
+//        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'down')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
+//            $targetValues['changeDirection'] = 'Дуга вниз';
+//        }
+//        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'none')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
+//            $targetValues['changeDirection'] = 'Не определено';
+//        }
+//        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'up')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
+//            $targetValues['changeDirection'] = 'Дуга вверх';
+//        }
+//        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'down')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
+//            $targetValues['changeDirection'] = 'Дуга вниз';
+//        }
+//        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'none')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
+//            $targetValues['changeDirection'] = 'Не определено';
+//        }
+//        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'up')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
+//            $targetValues['changeDirection'] = 'Дуга вверх';
+//        }
+//        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'down')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы губ';
+//            $targetValues['changeDirection'] = 'Дуга вниз';
+//        }
+//        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'none')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы губ';
+//            $targetValues['changeDirection'] = 'Не определено';
+//        }
+//        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'up')) {
+//            $targetValues['featureChangeType'] = 'Изменение формы губ';
+//            $targetValues['changeDirection'] = 'Дуга вверх';
+//        }
         if (($sourceFeatureName == 'mouth_form2') && ($sourceValue == 'none')) {
             $targetValues['featureChangeType'] = 'Изменение формы';
             $targetValues['changeDirection'] = 'Не определено';
-        }
-        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'down')) {
-            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
-            $targetValues['changeDirection'] = 'Дуга вниз';
-        }
-        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'none')) {
-            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
-            $targetValues['changeDirection'] = 'Не определено';
-        }
-        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'up')) {
-            $targetValues['featureChangeType'] = 'Изменение формы нижней губы';
-            $targetValues['changeDirection'] = 'Дуга вверх';
-        }
-        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'down')) {
-            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
-            $targetValues['changeDirection'] = 'Дуга вниз';
-        }
-        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'none')) {
-            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
-            $targetValues['changeDirection'] = 'Не определено';
-        }
-        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'up')) {
-            $targetValues['featureChangeType'] = 'Изменение формы верхней губы';
-            $targetValues['changeDirection'] = 'Дуга вверх';
-        }
-        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'down')) {
-            $targetValues['featureChangeType'] = 'Изменение формы губ';
-            $targetValues['changeDirection'] = 'Дуга вниз';
-        }
-        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'none')) {
-            $targetValues['featureChangeType'] = 'Изменение формы губ';
-            $targetValues['changeDirection'] = 'Не определено';
-        }
-        if (($sourceFeatureName == 'mouth_lips_form') && ($sourceValue == 'up')) {
-            $targetValues['featureChangeType'] = 'Изменение формы губ';
-            $targetValues['changeDirection'] = 'Дуга вверх';
         }
         if (($sourceFeatureName == 'mouth_form') && ($sourceValue == 'ellipse')) {
             $targetValues['featureChangeType'] = 'Изменение формы';
@@ -5527,6 +5527,34 @@ class FacialFeatureDetector
             $targetValues['targetFacePart'] = 'Верхняя губа';
         if ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')
             $targetValues['targetFacePart'] = 'Нижняя губа';
+        if ($sourceFeatureName == 'mouth_upperlip_form')
+            $targetValues['targetFacePart'] = 'Верхняя губа';
+        if ($sourceFeatureName == 'mouth_lowerlip_form')
+            $targetValues['targetFacePart'] = 'Нижняя губа';
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Дуга вниз';
+        }
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if (($sourceFeatureName == 'mouth_lowerlip_form') && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Дуга вверх';
+        }
+        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'down')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Дуга вниз';
+        }
+        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'none')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Не определено';
+        }
+        if (($sourceFeatureName == 'mouth_upperlip_form') && ($sourceValue == 'up')) {
+            $targetValues['featureChangeType'] = 'Изменение формы';
+            $targetValues['changeDirection'] = 'Дуга вверх';
+        }
         if ((($sourceFeatureName == 'mouth_upper_lip_outer_center_movement') ||
                 ($sourceFeatureName == 'mouth_lower_lip_outer_center_movement')) &&
             ($sourceValue == 'none')) {
