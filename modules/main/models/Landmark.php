@@ -40,7 +40,8 @@ class Landmark extends \yii\db\ActiveRecord
     const TYPE_LANDMARK_IVAN_MODULE   = 0; // Цифровая маска получена от программы Ивана
     const TYPE_LANDMARK_ANDREW_MODULE = 1; // Цифровая маска получена от программы Андрея
 
-    public $landmarkFile; // Файл с лицевыми точками
+    public $landmarkFile;   // Файл с лицевыми точками
+    public $testQuestionId; // Идентификатор вопроса
 
     /**
      * @return string table name
@@ -56,7 +57,7 @@ class Landmark extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['landmarkFile'], 'required', 'on' => self::UPLOAD_LANDMARK_SCENARIO],
+            [['landmarkFile', 'testQuestionId'], 'required', 'on' => self::UPLOAD_LANDMARK_SCENARIO],
             [['start_time', 'finish_time', 'video_interview_id'], 'required'],
             [['video_interview_id'], 'integer'],
             [['landmark_file_name', 'processed_video_file_name', 'description'], 'string'],
@@ -89,6 +90,7 @@ class Landmark extends \yii\db\ActiveRecord
             'video_interview_id' => 'ID видеоинтервью',
             'question_id' => 'ID видео на вопрос',
             'landmarkFile' => 'Файл с лицевыми точками',
+            'testQuestionId' => 'ID вопроса',
         ];
     }
 

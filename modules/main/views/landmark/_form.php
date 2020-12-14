@@ -3,9 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use janisto\timepicker\TimePicker;
-use app\modules\main\models\Question;
 use app\modules\main\models\Landmark;
-use app\modules\main\models\VideoInterview;
 
 /* @var $this yii\web\View */
 /* @var $form yii\widgets\ActiveForm */
@@ -17,10 +15,11 @@ use app\modules\main\models\VideoInterview;
 
     <?php $form = ActiveForm::begin(); ?>
 
-        <?= $form->field($model, 'video_interview_id')->dropDownList(VideoInterview::getVideoInterviews())
-            ->label('Видеоинтервью') ?>
+        <?= $form->field($model, 'video_interview_id')->textInput() ?>
 
         <?= $form->field($model, 'landmarkFile')->fileInput() ?>
+
+        <?= $form->field($model, 'type')->dropDownList(Landmark::getTypes()) ?>
 
         <?= $form->field($model, 'description')->textarea(['maxlength' => true, 'rows'=>6]) ?>
 
@@ -28,8 +27,7 @@ use app\modules\main\models\VideoInterview;
 
         <?= $form->field($model, 'mirroring')->dropDownList(Landmark::getMirroringValues()) ?>
 
-        <?= $form->field($model, 'question_id')->dropDownList(Question::getQuestions())
-            ->label('Вопрос') ?>
+        <?= $form->field($model, 'testQuestionId')->textInput() ?>
 
         <?= $form->field($model, 'start_time')->widget(TimePicker::className(), ['mode' => 'time',
             'clientOptions'=> [
