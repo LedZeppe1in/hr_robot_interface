@@ -72,6 +72,43 @@ $this->params['breadcrumbs'][] = $this->title;
     console.log(questionTimes);
     console.log(questionAudioFilePaths);
 
+    // Запуск таймера вопросов
+    function startQuestionTimer(previousTime) {
+        // Запуск миллисекундомера
+        let time = new Date();
+        questionTimer = setInterval(function() {
+            let milliseconds = new Date().getTime() - time.getTime();
+            // Вывод текущего времени таймера в миллисекундах
+            document.querySelector("#milliseconds").innerHTML = previousTime + milliseconds;
+            // Запоминание текущего времени в миллисекундах
+            currentTime = previousTime + milliseconds;
+            // Если время завершения вопроса меньше текущего времени
+            if (buttonActivationTime <= parseInt(currentTime)) {
+                // Активация кнопки следующего вопроса
+                nextQuestionButton.disabled = false;
+                nextQuestionButton.innerText = "Следующий вопрос";
+                // Если текущий индекс вопроса указывает на последний калибровочный вопрос
+                if (questionIndex === 3) {
+                    // Скрытие кнопки следующего вопроса
+                    nextQuestionButton.style.display = "none";
+                    // Отображение кнопки завершения настройки камеры
+                    finishCameraSetupButton.style.display = "inline-block";
+                }
+                // Если вопросов больше нет
+                if (questionTexts.indexOf(questionTexts[questionIndex]) === -1) {
+                    // Скрытие кнопки следующего вопроса
+                    nextQuestionButton.style.display = "none";
+                    // Отображение завершения интервью (загрузки)
+                    uploadButton.style.display = "inline-block";
+                }
+            } else {
+                // Деактивация кнопки следующего вопроса
+                nextQuestionButton.disabled = true;
+                nextQuestionButton.innerText = "Ожидание ответа...";
+            }
+        }, 1);
+    }
+
     // Выполнение скрипта при загрузке страницы
     $(document).ready(function() {
         let num = 1;
@@ -79,39 +116,43 @@ $this->params['breadcrumbs'][] = $this->title;
         let timer;
         // Запоминание времени ответа для первого вопроса
         let answerTime = parseInt(questionMaximumTimes[questionIndex]);
-        // Слой таймера ответа
+        // Слой с текстом информации о ходе видеоинтервью
         let answerTimeText = document.getElementById("answer-time");
-        // Установка таймера по первому времени ответа
+        // Обновление текста информации о ходе видеоинтервью
         answerTimeText.textContent = "Начните интервью!";
         // Слой финальной фразы об ожидании результатов обработки
         let finalText = document.getElementById("final-text");
-        // Кнопка подготовки к интервью
-        let startInterviewButton = document.getElementById("start-interview");
-        // Кнопка начала интервью (записи видео)
-        let recordButton = document.getElementById("record");
-        // Кнопка следующего вопроса
-        let nextQuestionButton = document.getElementById("next-question");
-        // Кнопка завершения интервью (загрузки)
-        let uploadButton = document.getElementById("upload");
         // Аудио-плеер
         let audioPlayer = document.getElementById("audio-player");
         // Ресурс аудио-плеера
         let audioSource = document.getElementById("audio-source");
         // Слой с отображением записываемого видео
         let gumVideo = document.getElementById("gum");
-        // Слой с записанным видео
-        let recordedVideo = document.getElementById("recorded");
         // Поле времени начала вопроса
         let landmarkStartTimeInput = document.getElementById("landmark-start_time");
         // Поле времени окончания вопроса
         let landmarkFinishTimeInput = document.getElementById("landmark-finish_time");
+
+        // Запуск таймера для ответа
+        function startAnswerTimer() {
+            timer = setInterval(function () {
+                answerTime = answerTime - 1000;
+                answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(answerTime, false);
+                if (answerTime === 0 && num < 5 && num !== 3)
+                    $("#next-question").trigger("click");
+                if (answerTime === 0 && num === 3)
+                    $("#finish-camera-setup").trigger("click");
+                if (answerTime === 0 && num === 5)
+                    $("#upload").trigger("click");
+            }, 1000);
+        }
 
         // Обработка нажатия кнопки подготовки к интервью
         $("#start-interview").click(function(e) {
             // Отображение кнопки начала записи интервью
             recordButton.style.display = "inline-block";
             // Скрытие кнопки подготовки к интервью
-            startInterviewButton.style.display = "none";
+            document.querySelector('button#start-interview').style.display = "none";
             // Проигрывание аудио-файла с озвучкой не вопроса
             audioSource.src = "/web/audio/interview-preparation-audio.mp3";
             audioPlayer.load();
@@ -130,40 +171,11 @@ $this->params['breadcrumbs'][] = $this->title;
             audioSource.src = "/web/audio/" + questionAudioFilePaths[questionIndex];
             audioPlayer.load();
             audioPlayer.play();
-            // Запуск миллисекундомера
-            const time = new Date();
-            questionTimer = setInterval(function() {
-                const milliseconds = new Date().getTime() - time.getTime();
-                document.querySelector("#milliseconds").innerHTML = milliseconds;
-                // Запоминание текущего времени в миллисекундах
-                currentTime = milliseconds;
-                // Если время завершения вопроса меньше текущего времени
-                if (buttonActivationTime <= parseInt(currentTime)) {
-                    // Активация кнопки следующего вопроса
-                    nextQuestionButton.disabled = false;
-                    nextQuestionButton.innerText = "Следующий вопрос";
-                    // Если вопросов больше нет
-                    if (questionTexts.indexOf(questionTexts[questionIndex]) === -1) {
-                        // Скрытие кнопки следующего вопроса
-                        nextQuestionButton.style.display = "none";
-                        // Отображение завершения интервью (загрузки)
-                        uploadButton.style.display = "inline-block";
-                    }
-                } else {
-                    // Деактивация кнопки следующего вопроса
-                    nextQuestionButton.disabled = true;
-                    nextQuestionButton.innerText = "Ожидание ответа...";
-                }
-            }, 1);
+            // Запуск таймера вопросов
+            startQuestionTimer(0);
             // Запуск таймера для ответа
-            timer = setInterval(function () {
-                answerTime = answerTime - 1000;
-                answerTimeText.textContent = "Вопрос №" + num + ". Осталось на ответ: " + msToTime(answerTime, false);
-                if (answerTime === 0 && num < 3)
-                    $("#next-question").trigger("click");
-                if (answerTime === 0 && num === 3)
-                    $("#upload").trigger("click");
-            }, 1000);
+            startAnswerTimer();
+            // Увеличение индекса вопроса
             questionIndex++;
         });
 
@@ -176,7 +188,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 landmarkStartTimeInput.value = landmarkFinishTimeInput.value;
                 landmarkFinishTimeInput.value = msToTime(finishTime, true);
             } else {
-                console.log("TIME: " + msToTime(0, true));
                 landmarkStartTimeInput.value = msToTime(0, true);
                 landmarkFinishTimeInput.value = msToTime(finishTime, true);
             }
@@ -198,7 +209,19 @@ $this->params['breadcrumbs'][] = $this->title;
                 // Запоминание времени для текущего ответа
                 answerTime = parseInt(questionMaximumTimes[questionIndex]);
                 num++;
+                // Если текущий индекс вопроса указывает на последний калибровочный вопрос
+                if (questionIndex === 3) {
+                    // Скрытие кнопки завершения настройки камеры
+                    this.style.display = "none";
+                    // Отображение кнопки следующего вопроса
+                    nextQuestionButton.style.display = "inline-block";
+                    // Запуск таймера вопросов
+                    startQuestionTimer(currentTime);
+                    // Запуск таймера для ответа
+                    startAnswerTimer();
+                }
             }
+            // Увеличение индекса вопроса
             questionIndex++;
         });
 
@@ -209,16 +232,40 @@ $this->params['breadcrumbs'][] = $this->title;
             // Задание значений полей времени начала и окончания вопроса
             landmarkStartTimeInput.value = landmarkFinishTimeInput.value;
             landmarkFinishTimeInput.value = msToTime(finishTime, true);
-            // Вызов метода отправки последнего видео ответа на вопрос на сервер
-            upload();
-            // Остановка таймера
-            clearInterval(timer);
             // Скрытие слоя текста с временем вопроса и слоев с видео
             answerTimeText.style.display = "none";
             gumVideo.style.display = "none";
-            recordedVideo.style.display = "none";
             // Отображение слоя с текстом финальной фразы об ожидании результатов обработки
             finalText.style.display = "inline-block";
+            // Остановка таймера
+            clearInterval(timer);
+            // Вызов метода отправки последнего видео ответа на вопрос на сервер
+            upload();
+        });
+
+        // Обработка нажатия кнопки завершения настройки камеры
+        $("#finish-camera-setup").click(function(e) {
+            // Определение времени окончания вопроса
+            finishTime = currentTime;
+            // Задание значений полей времени начала и окончания вопроса
+            if (landmarkStartTimeInput.value !== "") {
+                landmarkStartTimeInput.value = landmarkFinishTimeInput.value;
+                landmarkFinishTimeInput.value = msToTime(finishTime, true);
+            } else {
+                landmarkStartTimeInput.value = msToTime(0, true);
+                landmarkFinishTimeInput.value = msToTime(finishTime, true);
+            }
+            // Деактивация кнопки завершения настройки камеры
+            finishCameraSetupButton.disabled = true;
+            finishCameraSetupButton.innerText = "Ожидание ответа...";
+            // Обновление текста информации о ходе видеоинтервью
+            answerTimeText.textContent = "Обработка калибровочных вопросов...";
+            // Остановка таймера
+            clearInterval(timer);
+            // Остановка таймера вопросов
+            clearInterval(questionTimer);
+            // Остановка записи видео и отправка его на сервер
+            uploadCalibrationVideo();
         });
     });
 </script>
@@ -263,7 +310,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 ]
             ]); ?>
             <?= Button::widget([
-                'label' => Yii::t('app', 'Старт записи'),
+                'label' => Yii::t('app', 'Продолжить видео-интервью'),
                 'options' => [
                     'id' => 'start-record',
                     'class' => 'btn-success',
@@ -278,10 +325,18 @@ $this->params['breadcrumbs'][] = $this->title;
                     'style' => 'margin:5px; display:none'
                 ]
             ]); ?>
+            <?= Button::widget([
+                'label' => Yii::t('app', 'Завершить настройку камеры'),
+                'options' => [
+                    'id' => 'finish-camera-setup',
+                    'class' => 'btn-success',
+                    'style' => 'margin:5px; display:none'
+                ]
+            ]); ?>
         </div>
     </div>
 
-    <div id="milliseconds" style="display: none">0</div>
+    <div id="milliseconds">0</div>
 
     <audio id="audio-player" style="display: none" controls>
         <source id="audio-source" src="" type="audio/mpeg">
@@ -294,7 +349,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <div class="row">
         <video id="gum" class="col-sm-12" autoplay muted playsinline></video>
-        <video id="recorded" autoplay loop playsinline></video>
+        <video id="recorded" style="display: none" autoplay loop playsinline></video>
     </div>
 
 </div>

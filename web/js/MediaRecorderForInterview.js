@@ -33,6 +33,10 @@ var playButton = document.querySelector('button#play');
 var uploadButton = document.querySelector('button#upload');
 var downloadButton = document.querySelector('button#download');
 
+var nextQuestionButton = document.querySelector('button#next-question'); // Кнопка следующего вопроса
+var finishCameraSetupButton = document.querySelector('button#finish-camera-setup'); // Кнопка завершения настройки камеры
+var startRecordButton = document.querySelector('button#start-record'); // Кнопка старта записи видео
+
 recordButton.onclick = toggleRecording;
 //playButton.onclick = play;
 //uploadButton.onclick = upload;
@@ -89,7 +93,9 @@ function handleDataAvailable(event) {
 
 function handleStop(event) {
   console.log('Recorder stopped: ', event);
-  $("#start-record").trigger("click");
+  if (questionIndex !== 3) {
+      $("#start-record").trigger("click");
+  }
  }
 
 function toggleRecording() {
@@ -241,6 +247,76 @@ function uploadVideo() {
         if (xhr.status == 200)
         {
             console.log("Успех");
+        }
+        else
+        {
+            console.log("Ошибка " + this.status);
+        }
+    }
+
+    xhr.open("POST", '/interview-analysis/' + questionIds[questionIndex - 1]);
+    xhr.send(formData);
+}
+
+function uploadCalibrationVideo() {
+    stopRecording();
+
+    var landmarkForm = document.getElementById('landmark-form');
+    var blob = new Blob(RecoderedVideo[RecoderedVideo.length - 1].recordedBlobs, {type: 'video/mp4'});
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData(landmarkForm);
+
+    formData.append("FileToUpload", blob, Date.now() + ".mp4");
+    formData.append("_csrf", _csrf);
+
+    // отслеживаем процесс отправки
+    xhr.upload.onprogress = function(event)
+    {
+        console.log(`Отправлено ${event.loaded} из ${event.total}`);
+    };
+
+    // Ждём завершения: неважно, успешного или нет
+    xhr.onloadend = function()
+    {
+        if (xhr.status == 200)
+        {
+            console.log("Успех");
+
+            // Получение ответа от сервера
+            let response = xhr.responseText;
+            response = JSON.parse(response);
+
+            console.log(response.success);
+            console.log(response.turnRight);
+            console.log(response.turnLeft);
+
+            // Скрытие кнопки завершения настройки камеры
+            finishCameraSetupButton.style.display = "none";
+            // Слой с текстом информации о ходе видеоинтервью
+            let answerTimeText = document.getElementById("answer-time");
+            // Если проверка калибровочных вопросов прошла успешно
+            if (response.success === true && response.turnRight !== false && response.turnLeft !== false) {
+                // Отображение кнопки запуска новой записи видео
+                startRecordButton.style.display = "inline-block";
+                // Обновление текста информации о ходе видеоинтервью
+                answerTimeText.textContent = "Калибровочные вопросы успешно обработаны!";
+                // Поле наличия отзеркаливания
+                let mirroringField = document.getElementById("landmark-mirroring");
+                // Если повороты головы определены верно, то отключение отзеркаливания
+                if (response.turnRight === 0 && response.turnLeft === 1)
+                    mirroringField.value = 0;
+                // Если повороты головы определены с инверсией, то включаем наличие отзеркаливания
+                if (response.turnRight === 1 && response.turnLeft === 0)
+                    mirroringField.value = 1;
+            } else {
+                // Скрытие слоя текста с временем вопроса и слоя с видео
+                answerTimeText.style.display = "none";
+                gumVideo.style.display = "none";
+                // Отображение слоя с текстом финальной фразы об ожидании результатов обработки
+                let finalText = document.getElementById("final-text");
+                finalText.textContent = "Спасибо за ожидание! К сожалению, Ваше видео плохого качества.";
+                finalText.style.display = "inline-block";
+            }
         }
         else
         {

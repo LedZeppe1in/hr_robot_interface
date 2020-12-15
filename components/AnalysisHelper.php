@@ -4,16 +4,65 @@ namespace app\components;
 
 use app\modules\main\models\Landmark;
 use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
  * AnalysisHelper - класс с общими функциями анализа видео-интервью.
  */
 class AnalysisHelper
 {
+    const TURN_RIGHT = 0; // Поворот вправо
+    const TURN_LEFT  = 1; // Поворот влево
+
+    /**
+     * Определение поворота головы на основе анализа событий.
+     *
+     * @param $landmark - цифровая маска
+     * @return bool|int
+     */
+    public static function determineTurn($landmark)
+    {
+        // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+        if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+            // Количество поворотов головы вправо и влево
+            $turnRightNumber = 0;
+            $turnLeftNumber = 0;
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Получение содержимого json-файла с лицевыми точками из Object Storage
+            $jsonFaceData = $osConnector->getFileContentFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id,
+                $landmark->landmark_file_name
+            );
+            // Замена в строке некорректных значений для правильного декодирования json-формата
+            $jsonFaceData = str_ireplace('NaN','99999', $jsonFaceData);
+            // Декодирование json-файла с цифровой маской
+            $faceData = json_decode($jsonFaceData, true);
+            // Определение кол-ва событий поворотов головы вправо и влево
+            foreach ($faceData as $key => $value)
+                if (strpos(Trim($key), 'frame_') !== false)
+                    if (isset($value['EVENTS']))
+                        foreach ($value['EVENTS'] as $event) {
+                            if ($event == VideoProcessingModuleSettingForm::TURN_RIGHT_EVENT)
+                                $turnRightNumber++;
+                            if ($event == VideoProcessingModuleSettingForm::TURN_LEFT_EVENT)
+                                $turnLeftNumber++;
+                        }
+            // Возвращение значения определения поворота головы
+            if ($turnRightNumber > $turnLeftNumber)
+                return self::TURN_RIGHT;
+            if ($turnRightNumber < $turnLeftNumber)
+                return self::TURN_LEFT;
+        }
+
+        return false;
+    }
+
     /**
      * Создание модели результатов анализа и запуск модуля определения признаков.
      *
-     * @param $landmark - модель цифровой маски
+     * @param $landmark - цифровая маска
      * @param $index - порядковый номер цифровой маски
      * @param $processingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
      * @return int - id результатов анализа

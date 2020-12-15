@@ -14,6 +14,7 @@ use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
+use app\components\AnalysisHelper;
 use app\modules\main\models\Survey;
 use app\modules\main\models\Profile;
 use app\modules\main\models\Landmark;
@@ -22,10 +23,13 @@ use app\modules\main\models\LoginForm;
 use app\modules\main\models\TestQuestion;
 use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\FinalResult;
 use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\GerchikovTestConclusion;
+use app\modules\main\models\QuestionProcessingStatus;
+use app\modules\main\models\VideoInterviewProcessingStatus;
 
 class DefaultController extends Controller
 {
@@ -610,7 +614,7 @@ class DefaultController extends Controller
      */
     public function actionInterview($id)
     {
-        //
+        // Поиск профиля связанного с данным опросом
         $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
         $profile = Profile::findOne($profileSurvey->profile_id);
         // Создание модели видеоинтервью
@@ -671,7 +675,7 @@ class DefaultController extends Controller
 //                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
             $num = 0;
             foreach ($surveyQuestions as $surveyQuestion) {
-                if ($num < 4)
+                if ($num < 5)
                     array_push($testQuestionIds, $surveyQuestion->test_question_id);
                 $num++;
             }
@@ -764,27 +768,30 @@ class DefaultController extends Controller
      */
     public function actionInterviewAnalysis($id)
     {
+        // Установка времени выполнения скрипта в 3 часа
+        set_time_limit(60 * 200);
         // Если пришел POST-запрос
         if (Yii::$app->request->isPost) {
             // Поиск вопроса опроса по id
             $testQuestion = TestQuestion::findOne($id);
             // Создание модели вопроса видео-интервью
-            $question = new Question();
+            $questionModel = new Question();
             $videoFile = UploadedFile::getInstanceByName('FileToUpload');
-            $question->videoFile = $videoFile;
-            $question->video_file_name = $question->videoFile->baseName . '.' . $question->videoFile->extension;
-            $question->description = 'Видео-интервью для профиля кассира.';
-            $question->video_interview_id = Yii::$app->request->post('Landmark')['video_interview_id'];
-            $question->test_question_id = $testQuestion->id;
-            $question->save();
+            $questionModel->videoFile = $videoFile;
+            $questionModel->video_file_name = $questionModel->videoFile->baseName . '.' .
+                $questionModel->videoFile->extension;
+            $questionModel->description = 'Видео-интервью для профиля кассира.';
+            $questionModel->video_interview_id = Yii::$app->request->post('Landmark')['video_interview_id'];
+            $questionModel->test_question_id = $testQuestion->id;
+            $questionModel->save();
             // Создание объекта коннектора с Yandex.Cloud Object Storage
             $osConnector = new OSConnector();
             // Сохранение файла видеоинтервью на Object Storage
-            if ($question->video_file_name != '')
+            if ($questionModel->video_file_name != '')
                 $osConnector->saveFileToObjectStorage(
                     OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
-                    $question->id,
-                    $question->video_file_name,
+                    $questionModel->id,
+                    $questionModel->video_file_name,
                     $videoFile->tempName
                 );
             // Пусть до аудио-файла с озвучкой вопроса
@@ -802,15 +809,91 @@ class DefaultController extends Controller
             $landmarkModel->finish_time = Yii::$app->request->post('Landmark')['finish_time'];
             $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
             $landmarkModel->rotation = Landmark::TYPE_ZERO;
-            $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
-            $landmarkModel->question_id = $question->id;
+            $landmarkModel->mirroring = Yii::$app->request->post('Landmark')['mirroring'];
+            $landmarkModel->question_id = $questionModel->id;
             $landmarkModel->video_interview_id = Yii::$app->request->post('Landmark')['video_interview_id'];
             $landmarkModel->save();
-            // Определение количества записей вопросов видеоинтервью
-            $index = Question::find()->where(['video_interview_id' => $landmarkModel->video_interview_id])->count();
-            // Выполнение команды анализа видео ответа на вопрос в фоновом режиме
-            $cr = new ConsoleRunner(['file' => '@app/yii']);
-            $cr->run('video-interview-analysis/start ' . $question->id . ' ' . $landmarkModel->id . ' ' . $index);
+            // Поиск темы для вопроса - Topic 24 (поворот вправо), 25 (поворот влево), 27 (калибровочный для камеры)
+            $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $id])->one();
+            // Создание объекта запуска консольной команды
+            $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+            // Если вопросы калибровочные (темы 24, 25 и 27)
+            if ($topicQuestion->topic_id == 24 || $topicQuestion->topic_id == 25 || $topicQuestion->topic_id == 27)
+                // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
+                $consoleRunner->run('video-interview-analysis/preparation ' . $questionModel->id . ' ' .
+                    $landmarkModel->id);
+            // Если текущий вопрос является калибровочным и он последний
+            if ($topicQuestion->topic_id == 25) {
+                // Поиск полного видеоинтервью по id
+                $videoInterview = VideoInterview::findOne($landmarkModel->video_interview_id);
+                // Ожидание завершения анализа видео по калибровочным вопросам
+                do {
+                    // Задержка выполнения скрипта в 1 секунду
+                    sleep(1);
+                    // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                    $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                        ->where(['video_interview_id' => $videoInterview->id])
+                        ->one();
+                } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
+                // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
+                $questionProcessingStatuses = QuestionProcessingStatus::find()
+                    ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                    ->orderBy(['question_id' => SORT_ASC])
+                    ->all();
+                // Параметр успешности получения цифровых масок МОВ Ивана
+                $successfullyFormedLandmark = true;
+                // Параметры наличия поворота головы вправо и влево
+                $turnRight = false;
+                $turnLeft = false;
+                // Обход всех статусов обработки видео на вопрос
+                foreach ($questionProcessingStatuses as $questionProcessingStatus) {
+                    // Поиск цифровых масок по определенному вопросу
+                    $landmarks = Landmark::find()
+                        ->where(['question_id' => $questionProcessingStatus->question_id])
+                        ->all();
+                    // Если цифровые маски по данному вопросу сформированы
+                    if (!empty($landmarks)) {
+                        foreach ($landmarks as $landmark) {
+                            // Поиск видео ответа на вопрос по id
+                            $question = Question::findOne($landmark->question_id);
+                            // Поиск темы вопроса по id вопроса
+                            $topicQuestion = TopicQuestion::find()
+                                ->where(['test_question_id' => $question->test_question_id])
+                                ->one();
+                            // Создание объекта AnalysisHelper
+                            $analysisHelper = new AnalysisHelper();
+                            // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                            if ($topicQuestion->topic_id == 24)
+                                $turnRight = $analysisHelper->determineTurn($landmark);
+                            // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                            if ($topicQuestion->topic_id == 25)
+                                $turnLeft = $analysisHelper->determineTurn($landmark);
+                        }
+                    } else
+                        $successfullyFormedLandmark = false;
+                }
+                // Определение массива возвращаемых данных
+                $data = array();
+                // Установка формата JSON для возвращаемых данных
+                $response = Yii::$app->response;
+                $response->format = Response::FORMAT_JSON;
+                // Формирование массива возвращаемых значений
+                $data['success'] = $successfullyFormedLandmark;
+                $data['turnRight'] = $turnRight;
+                $data['turnLeft'] = $turnLeft;
+                // Возвращение данных
+                $response->data = $data;
+
+                return $response;
+            }
+            // Если вопросы не калибровочные
+            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27) {
+                // Определение количества записей вопросов видеоинтервью
+                $index = Question::find()->where(['video_interview_id' => $landmarkModel->video_interview_id])->count();
+                // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
+                $consoleRunner->run('video-interview-analysis/start ' . $questionModel->id . ' ' .
+                    $landmarkModel->id . ' ' . $index);
+            }
         }
 
         return false;

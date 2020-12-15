@@ -30,22 +30,20 @@ class VideoInterviewAnalysisController extends Controller
      */
     public function actionIndex()
     {
+        echo 'yii video-interview-analysis/preparation' . PHP_EOL;
         echo 'yii video-interview-analysis/start' . PHP_EOL;
     }
 
     /**
-     * Команда запуска анализа видеоинтервью респондента.
+     * Команда запуска анализа ответов респондента на калибровочные вопросы.
+     *
      * @param $questionId - идентификатор вопроса видеоинтервью
      * @param $landmarkId - идентификатор цифровой маски
-     * @param $questionIndex - номер вопроса
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
-    public function actionStart($questionId, $landmarkId, $questionIndex)
+    public function actionPreparation($questionId, $landmarkId)
     {
-        // Время начала выполнения анализа видеоинтервью
-        $videoInterviewProcessingStart = microtime(true);
-
         // Поиск вопроса видеоинтервью по id
         $question = Question::findOne((int)$questionId);
         // Поиск цифровой маски по id
@@ -82,12 +80,12 @@ class VideoInterviewAnalysisController extends Controller
         $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
             [35, 47, 75], [27, 35, 42], [27, 31, 39]];
         $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
+        $parameters['enableAutoRotate'] = VideoProcessingModuleSettingForm::AUTO_ROTATE_TRUE;
         $parameters['Mirroring'] = VideoProcessingModuleSettingForm::MIRRORING_FALSE;
         $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
         $parameters['id'] = $question->id;
         $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
         $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
-
         // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
         $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
         // Открытие файла на запись для сохранения параметров запуска программы обработки видео
@@ -115,6 +113,296 @@ class VideoInterviewAnalysisController extends Controller
         } else
             $questionProcessingStatusModel->video_interview_processing_status_id = $videoInterviewProcessingStatus->id;
         // Сохранение модели статуса обработки вопроса в БД
+        $questionProcessingStatusModel->save();
+        try {
+            // Запуск программы обработки видео Ивана
+            chdir($mainPath);
+            exec('./venv/bin/python ./main_new.py ./test' . $question->id . '.json');
+        } catch (Exception $e) {
+            // Создание сообщения об ошибке МОВ Ивана в БД
+            $moduleMessageModel = new ModuleMessage();
+            $moduleMessageModel->message = 'Ошибка модуля обработки видео Ивана! ' . $e->getMessage();
+            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+            $moduleMessageModel->save();
+        }
+
+        $firstScriptSuccess = false;
+        // Формирование названия json-файла с результатами обработки видео
+        $landmark->landmark_file_name = $jsonResultFile;
+        // Формирование названия видео-файла с нанесенной цифровой маской
+        $landmark->processed_video_file_name = $videoResultFile;
+        // Формирование описания цифровой маски
+        $landmark->description = $videoInterview->description . ' (время нарезки: ' .
+            $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
+        // Обновление атрибутов цифровой маски в БД
+        $landmark->updateAttributes(['landmark_file_name', 'processed_video_file_name', 'description']);
+        // Проверка существования json-файл с результатами обработки видео
+        if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
+            // Получение json-файла с результатами обработки видео в виде цифровой маски
+            $landmarkFile = file_get_contents($jsonResultPath .
+                $landmark->landmark_file_name, true);
+            // Сохранение файла с лицевыми точками на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id,
+                $landmark->landmark_file_name,
+                $landmarkFile
+            );
+            // Сохранение файла видео с нанесенной цифровой маской на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id,
+                $landmark->processed_video_file_name,
+                $jsonResultPath . $landmark->processed_video_file_name
+            );
+            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+            $jsonLandmarkFile = json_decode($landmarkFile, true);
+            // Если в json-файле с цифровой маской есть текст с предупреждением
+            if (isset($jsonLandmarkFile['err_msg'])) {
+                // Создание сообщения о предупреждении МОВ Ивана в БД
+                $moduleMessageModel = new ModuleMessage();
+                $moduleMessageModel->message = $jsonLandmarkFile['err_msg'];
+                $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+                $moduleMessageModel->save();
+            }
+            $firstScriptSuccess = true;
+        }
+        // Удаление записи о цифровой маски для которой не сформирован json-файл
+        if ($firstScriptSuccess == false) {
+            Landmark::findOne($landmark->id)->delete();
+            // Создание сообщения о не созданной цифровой маски
+            $moduleMessageModel = new ModuleMessage();
+            $moduleMessageModel->message = 'Не удалось сформировать цифровую маску!';
+            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+            $moduleMessageModel->save();
+        }
+//        // Текст сообщения об ошибке
+//        $errorMessage = 'Не удалось проанализировать видеоинтервью!';
+//        // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
+//        if (file_exists($mainPath . 'error.json')) {
+//            // Получение json-файл с ошибками обработки видеоинтервью
+//            $jsonErrorFile = file_get_contents($mainPath . 'error.json', true);
+//            // Декодирование json
+//            $jsonErrorFile = json_decode($jsonErrorFile, true);
+//            // Дополнение текста сообщения об ошибке
+//            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
+//            // Удаление json-файла с сообщением ошибке
+//            unlink($mainPath . 'error.json');
+//        }
+//        // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
+//        if (file_exists($jsonResultPath . 'out_error.json')) {
+//            // Получение json-файл с ошибками обработки видеоинтервью
+//            $jsonErrorFile = file_get_contents($jsonResultPath . 'out_error.json', true);
+//            // Декодирование json
+//            $jsonErrorFile = json_decode($jsonErrorFile, true);
+//            // Дополнение текста сообщения об ошибке
+//            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
+//            // Удаление json-файла с сообщением ошибке
+//            unlink($jsonResultPath . 'out_error.json');
+//        }
+
+        $secondScriptSuccess = false;
+        // Название видео-файла с результатами обработки видео
+        $extVideoResultFile = 'out_' . $question->id . '_ext.avi';
+        // Название json-файла с результатами обработки видео
+        $extJsonResultFile = 'out_' . $question->id . '_ext.json';
+        // Создание второй цифровой маски в БД
+        $additionalLandmarkModel = new Landmark();
+        $additionalLandmarkModel->start_time = '00:00:00:000';
+        $additionalLandmarkModel->finish_time = '12:00:00:000';
+        $additionalLandmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+        $additionalLandmarkModel->rotation = Landmark::TYPE_ZERO;
+        $additionalLandmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+        $additionalLandmarkModel->description = 'Цифровая маска получена на основе цифровой маски №' . $landmark->id;
+        $additionalLandmarkModel->landmark_file_name = $extJsonResultFile;
+        $additionalLandmarkModel->processed_video_file_name = $extVideoResultFile;
+        $additionalLandmarkModel->question_id = $question->id;
+        $additionalLandmarkModel->video_interview_id = $videoInterview->id;
+        $additionalLandmarkModel->save();
+        try {
+            // Запуск второго скрипта модуля обработки видео Ивана
+            chdir($mainPath);
+            exec('./venv/bin/python ./main_new2.py ./json/' . $jsonResultFile);
+        } catch (Exception $e) {
+            // Создание сообщения об ошибке МОВ Ивана в БД
+            $moduleMessageModel = new ModuleMessage();
+            $moduleMessageModel->message = 'Ошибка второго скрипта модуля обработки видео Ивана! ' . $e->getMessage();
+            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+            $moduleMessageModel->save();
+        }
+        // Проверка существования json-файл с результатами обработки видео
+        if (file_exists($jsonResultPath . $additionalLandmarkModel->landmark_file_name)) {
+            // Получение json-файла с результатами обработки видео в виде цифровой маски
+            $landmarkFile = file_get_contents($jsonResultPath .
+                $additionalLandmarkModel->landmark_file_name, true);
+            // Сохранение файла с лицевыми точками на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $additionalLandmarkModel->id,
+                $additionalLandmarkModel->landmark_file_name,
+                $landmarkFile
+            );
+            // Сохранение файла видео с нанесенной цифровой маской на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $additionalLandmarkModel->id,
+                $additionalLandmarkModel->processed_video_file_name,
+                $jsonResultPath . $additionalLandmarkModel->processed_video_file_name
+            );
+            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+            $jsonLandmarkFile = json_decode($landmarkFile, true);
+            // Если в json-файле с цифровой маской есть текст с предупреждением
+            if (isset($jsonLandmarkFile['err_msg'])) {
+                // Создание сообщения о предупреждении МОВ Ивана в БД
+                $moduleMessageModel = new ModuleMessage();
+                $moduleMessageModel->message = $jsonLandmarkFile['err_msg'];
+                $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+                $moduleMessageModel->save();
+            }
+            $secondScriptSuccess = true;
+        }
+        // Удаление записи о цифровой маски для которой не сформирован json-файл
+        if ($secondScriptSuccess == false) {
+            Landmark::findOne($additionalLandmarkModel->id)->delete();
+            // Создание сообщения о не созданной цифровой маски
+            $moduleMessageModel = new ModuleMessage();
+            $moduleMessageModel->message = 'Не удалось сформировать цифровую маску вторым скриптом МОВ Ивана!';
+            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+            $moduleMessageModel->save();
+        }
+        // Обновление атрибута статуса обработки вопроса в БД
+        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_COMPLETED;
+        $questionProcessingStatusModel->updateAttributes(['status']);
+
+        // Удаление файла с видеоинтервью
+        if (file_exists($videoPath . $question->video_file_name))
+            unlink($videoPath . $question->video_file_name);
+        // Удаление файла с параметрами запуска программы обработки видео
+        if (file_exists($mainPath . 'test' . $question->id . '.json'))
+            unlink($mainPath . 'test' . $question->id . '.json');
+        // Удаление файла с выходной аудио-информацией
+        //if (file_exists($mainPath . 'audio_out.mp3'))
+        //    unlink($mainPath . 'audio_out.mp3');
+        // Удаление видео-файла с результатами обработки видеоинтервью
+        if (file_exists($jsonResultPath . $videoResultFile))
+            unlink($jsonResultPath . $videoResultFile);
+        // Удаление json-файла с результатами обработки видео программой Ивана
+        if (file_exists($jsonResultPath . $jsonResultFile))
+            unlink($jsonResultPath . $jsonResultFile);
+        // Удаление аудио-файла с результатами обработки видео программой Ивана
+        if (file_exists($jsonResultPath . $audioResultFile))
+            unlink($jsonResultPath . $audioResultFile);
+        // Удаление видео-файла с результатами обработки видеоинтервью вторым скриптом МОВ ИВана
+        if (file_exists($jsonResultPath . $extVideoResultFile))
+            unlink($jsonResultPath . $extVideoResultFile);
+        // Удаление json-файла с результатами обработки видео вторым скриптом МОВ ИВана
+        if (file_exists($jsonResultPath . $extJsonResultFile))
+            unlink($jsonResultPath . $extJsonResultFile);
+
+        $completed = true;
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => $videoInterview->id])
+            ->one();
+        // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
+        $questionProcessingStatuses = QuestionProcessingStatus::find()
+            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+            ->all();
+        // Обход всех статусов обработки вопросов и определение завершенности каждого
+        foreach ($questionProcessingStatuses as $questionProcessingStatus)
+            if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
+                $completed = false;
+        // Если анализ всех видео ответов на вопросы завершен
+        if ($completed) {
+            // Обновление атрибутов статуса обработки видеоинтервью в БД
+            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
+            $videoInterviewProcessingStatus->updateAttributes(['status']);
+        }
+    }
+
+    /**
+     * Команда запуска анализа видеоинтервью респондента.
+     *
+     * @param $questionId - идентификатор вопроса видеоинтервью
+     * @param $landmarkId - идентификатор цифровой маски
+     * @param $questionIndex - номер вопроса
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionStart($questionId, $landmarkId, $questionIndex)
+    {
+        // Время начала выполнения анализа видеоинтервью
+        $videoInterviewProcessingStart = microtime(true);
+
+        // Поиск вопроса видеоинтервью по id
+        $question = Question::findOne((int)$questionId);
+        // Поиск цифровой маски по id
+        $landmark = Landmark::findOne((int)$landmarkId);
+        // Поиск полного видеоинтервью по id
+        $videoInterview = VideoInterview::findOne($landmark->video_interview_id);
+
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => $videoInterview->id])
+            ->one();
+        // Обновление атрибута статуса обработки видеоинтервью в БД
+        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
+        $videoInterviewProcessingStatus->updateAttributes(['status']);
+
+        // Путь к программе обработки видео от Ивана
+        $mainPath = '/home/-Common/-ivan/';
+        // Путь к файлу видеоинтервью
+        $videoPath = $mainPath . 'video/';
+        // Путь к json-файлу результатов обработки видеоинтервью
+        $jsonResultPath = $mainPath . 'json/';
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Сохранение файла видео ответа на вопрос на сервер
+        $osConnector->saveFileToServer(
+            OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+            $question->id,
+            $question->video_file_name,
+            $videoPath
+        );
+        // Название видео-файла с результатами обработки видео
+        $videoResultFile = 'out_' . $question->id . '.avi';
+        // Название json-файла с результатами обработки видео
+        $jsonResultFile = 'out_' . $question->id . '.json';
+        // Название аудио-файла (mp3) с результатами обработки видео
+        $audioResultFile = 'out_' . $question->id . '.mp3';
+        // Формирование массива с параметрами запуска программы обработки видео
+        $parameters['nameVidFilesIn'] = 'video/' . $question->video_file_name;
+        $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
+        $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
+        $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
+        $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
+            [35, 47, 75], [27, 35, 42], [27, 31, 39]];
+        $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
+        $parameters['enableAutoRotate'] = VideoProcessingModuleSettingForm::AUTO_ROTATE_TRUE;
+        $parameters['Mirroring'] = $landmark->mirroring;
+        $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
+        $parameters['id'] = $question->id;
+        $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
+        $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
+        // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
+        $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
+        // Открытие файла на запись для сохранения параметров запуска программы обработки видео
+        $jsonFile = fopen($mainPath . 'test' . $question->id . '.json', 'a');
+        // Запись в файл json-строки с параметрами запуска программы обработки видео
+        fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
+        // Закрытие файла
+        fclose($jsonFile);
+        // Создание модели статуса обработки вопроса
+        $questionProcessingStatusModel = new QuestionProcessingStatus();
+        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_IVAN_VIDEO_PROCESSING_MODULE_IN_PROGRESS;
+        $questionProcessingStatusModel->question_id = $question->id;
+        $questionProcessingStatusModel->video_interview_processing_status_id = $videoInterviewProcessingStatus->id;
         $questionProcessingStatusModel->save();
         // Время начала выполнения МОВ Ивана
         $ivanVideoAnalysisStart = microtime(true);
@@ -404,10 +692,6 @@ class VideoInterviewAnalysisController extends Controller
             unlink($jsonResultPath . $audioResultFile);
 
         $completed = true;
-        // Поиск статуса обработки видеоинтервью по id видеоинтервью
-        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
-            ->where(['video_interview_id' => $videoInterview->id])
-            ->one();
         // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
         $questionProcessingStatuses = QuestionProcessingStatus::find()
             ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
