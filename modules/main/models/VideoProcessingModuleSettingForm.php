@@ -43,6 +43,20 @@ class VideoProcessingModuleSettingForm extends Model
     const ENABLE_SECOND_SCRIPT_FALSE = false; // Не запускать второй скрипт МОВ Ивана
     const ENABLE_SECOND_SCRIPT_TRUE  = true;  // Запустить второй скрипт МОВ Ивана
 
+    const TILT_LEFT_EVENT       = 'TiltLeft';      // Наклон влево
+    const TILT_RIGHT_EVENT      = 'TiltRight';     // Наклон вправо
+    const TURN_LEFT_EVENT       = 'TurnLeft';      // Поворот влево
+    const TURN_RIGHT_EVENT      = 'TurnRight';     // Поворот вправо
+    const CLOSE_LEFT_EYE_EVENT  = 'CloseLeftEye';  // Левый глаз закрыт
+    const CLOSE_RIGHT_EYE_EVENT = 'CloseRightEye'; // Правый глаз закрыт
+    const GAZE_LEFT_EVENT       = 'GazeLeft';      // Взгляд слева
+    const GAZE_RIGHT_EVENT      = 'GazeRight';     // Взгляд справа
+    const GAZE_TOP_EVENT        = 'GazeTop';       // Взгляд сверху
+    const GAZE_BOTTOM_EVENT     = 'GazeBottom';    // Взгляд снизу
+    const OPEN_MOUTH_EVENT      = 'OpenMouth';     // Рот открыт
+    const HEAD_NOD_DOWN_EVENT   = 'HeadNodDown';   // Наклон назад
+    const HEAD_NOD_UP_EVENT     = 'HeadNodUp';     // Наклон вперед
+
     public $rotateMode;               // Режим поворота изображения
     public $enableAutoRotate;         // Режим автоматического покадрового разворота головы
     public $mirroring;                // Режим зеркального отображения
