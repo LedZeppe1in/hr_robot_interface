@@ -33,6 +33,7 @@ class Respondent extends \yii\db\ActiveRecord
         return [
             [['name'], 'required'],
             [['name'], 'string', 'max' => 255],
+            ['name', 'unique', 'message' => 'Такое имя (код) респондента уже существует!'],
         ];
     }
 

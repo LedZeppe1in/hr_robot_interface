@@ -3,6 +3,7 @@
 /* @var $this \yii\web\View */
 /* @var $content string */
 
+use app\modules\main\models\User;
 use app\widgets\Alert;
 use yii\bootstrap\Nav;
 use yii\helpers\Html;
@@ -39,8 +40,8 @@ AppAsset::register($this);
             'options' => ['class' => 'navbar-nav navbar-left'],
             'encodeLabels' => false,
             'items' => array_filter([
-                !Yii::$app->user->isGuest ? ['label' => 'Данные', 'url' => '#',
-                    'items' => [
+                (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
+                    ['label' => 'Данные', 'url' => '#', 'items' => [
                         ['label' => 'Респонденты', 'url' => ['/respondent/list']],
                         ['label' => 'Заказчики', 'url' => ['/customer/list']],
                         ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
@@ -48,20 +49,21 @@ AppAsset::register($this);
                         ['label' => 'Видео на вопросы', 'url' => ['/question/list']],
                         ['label' => 'Цифровые маски', 'url' => ['/landmark/list']],
                         ['label' => 'Базы знаний', 'url' => ['/knowledge-base/list']],
+                        ['label' => 'Пользователи', 'url' => ['/user/list']],
                         '<li class="divider"></li>',
                         ['label' => 'Тестовый запуск', 'url' => '/test'],
                     ],
                 ] : false,
-                !Yii::$app->user->isGuest ? ['label' => 'Обработка', 'url' => '#',
-                    'items' => [
+                (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
+                    ['label' => 'Обработка', 'url' => '#', 'items' => [
                         ['label' => 'Состояние обработки видеоинтервью',
                             'url' => ['/video-interview-processing-status/list']],
                         ['label' => 'Состояние обработки видео по вопросам',
                             'url' => ['/question-processing-status/list']],
                     ],
                 ] : false,
-                !Yii::$app->user->isGuest ? ['label' => 'Результаты', 'url' => '#',
-                    'items' => [
+                (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
+                    ['label' => 'Результаты', 'url' => '#', 'items' => [
                         ['label' => 'Результаты определения и интерпретации признаков',
                             'url' => ['/analysis-result/list']],
                         ['label' => 'Результаты определения признаков', 'url' => ['/detection-result/list']],
@@ -73,8 +75,8 @@ AppAsset::register($this);
                             'url' => ['/final-conclusion/list']],
                     ],
                 ] : false,
-                !Yii::$app->user->isGuest ? ['label' => 'Редактор цифровой маски', 'url' => '#',
-                    'items' => [
+                (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
+                    ['label' => 'Редактор цифровой маски', 'url' => '#', 'items' => [
                         ['label' => 'Редактор цифровой маски (Иван)',
                             'url' => 'https://84.201.129.65:8080/HRRMaskEditor/MaskDrawIvan.html'],
                         ['label' => 'Редактор цифровой маски (Андрей)',
@@ -87,8 +89,8 @@ AppAsset::register($this);
                             'url' => 'https://84.201.129.65:8080/HRRMaskEditor/MaskWithResult.html'],
                     ],
                 ] : false,
-                !Yii::$app->user->isGuest ? ['label' => 'Редактор тестов', 'url' => '#',
-                    'items' => [
+                (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
+                    ['label' => 'Редактор тестов', 'url' => '#', 'items' => [
                         ['label' => 'Редактор опросов',
                             'url' => 'https://84.201.129.65:8080/HRRMaskEditor/Sandbox/PollEditor.php'],
                         ['label' => 'Генератор теста мотивации к труду',

@@ -28,6 +28,7 @@ use yii\web\IdentityInterface;
 class User extends ActiveRecord implements IdentityInterface
 {
     const CHANGE_PASSWORD_SCENARIO = 'change_password_hash'; // Сценарий изменения пароля пользователя
+    const CREATE_NEW_USER_SCENARIO = 'create_new_user';      // Сценарий создания нового пользователя
 
     // Роли пользователей
     const ROLE_ADMINISTRATOR = 0; // Администратор
@@ -62,8 +63,8 @@ class User extends ActiveRecord implements IdentityInterface
                 'message' => 'ФИО может содержать только символы русского алфавита.'],
             [['full_name', 'email'], 'string', 'max' => 255],
             [['role', 'status'], 'integer'],
-            ['password', 'required', 'on' => self::CHANGE_PASSWORD_SCENARIO],
-            ['password', 'string', 'min' => 5, 'on' => self::CHANGE_PASSWORD_SCENARIO],
+            ['password', 'required', 'on' => [self::CHANGE_PASSWORD_SCENARIO, self::CREATE_NEW_USER_SCENARIO]],
+            ['password', 'string', 'min' => 5, 'on' => [self::CHANGE_PASSWORD_SCENARIO, self::CREATE_NEW_USER_SCENARIO]],
         ];
     }
 

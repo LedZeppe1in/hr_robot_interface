@@ -3,6 +3,7 @@
 namespace app\modules\main\controllers;
 
 use Yii;
+use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -43,6 +44,107 @@ class UserController extends Controller
     }
 
     /**
+     * Lists all User models.
+     * @return mixed
+     */
+    public function actionList()
+    {
+        $dataProvider = new ActiveDataProvider([
+            'query' => User::find(),
+        ]);
+
+        return $this->render('list', [
+            'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    /**
+     * Displays a single User model.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionView($id)
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
+
+    /**
+     * Creates a new User model.
+     * If creation is successful, the browser will be redirected to the 'view' page.
+     * @return string|\yii\web\Response
+     * @throws \yii\base\Exception
+     */
+    public function actionCreate()
+    {
+        $model = new User();
+        $model->scenario = User::CREATE_NEW_USER_SCENARIO;
+
+        if (Yii::$app->request->post()) {
+            $model->attributes = Yii::$app->request->post('User');
+            $model->setPassword($model->password);
+            if ($model->save()) {
+                // Вывод сообщения об удачном создании пользователя
+                Yii::$app->getSession()->setFlash('success', 'Вы успешно добавили нового пользователя!');
+
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+        }
+
+        return $this->render('create', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Updates an existing User model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionUpdate($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            // Вывод сообщения об удачном изменении данных пользователя
+            Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили данные пользователя!');
+
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        return $this->render('update', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Deletes an existing User model.
+     * If deletion is successful, the browser will be redirected to the 'list' page.
+     * @param $id
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionDelete($id)
+    {
+        // Авторизованный пользователь не может удалить сам себя
+        if (Yii::$app->user->getId() == $id) {
+            Yii::$app->getSession()->setFlash('warning', 'Вы не можете удалить себя!');
+        } else {
+            $this->findModel($id)->delete();
+            // Вывод сообщения об успешном удалении пользователя
+            Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили пользователя!');
+        }
+
+        return $this->redirect(['list']);
+    }
+
+    /**
      * Displays a single User model.
      * @param integer $id
      * @return mixed
@@ -62,15 +164,18 @@ class UserController extends Controller
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionUpdate($id)
+    public function actionUpdateProfile($id)
     {
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            // Вывод сообщения об успешном удалении пользователя
+            Yii::$app->getSession()->setFlash('success', 'Вы успешно обновили данные своего аккаунта!');
+
             return $this->redirect(['profile', 'id' => $model->id]);
         }
 
-        return $this->render('update', [
+        return $this->render('update-profile', [
             'model' => $model,
         ]);
     }

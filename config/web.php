@@ -78,7 +78,8 @@ $config = [
                 '/video-interview-processing-status/<_vips:(view|delete)>/<id:\d+>' => 'main/video-interview-processing-status/<_vips>',
                 '/question-processing-status/<_qps:(list)>' => 'main/question-processing-status/<_qps>',
                 '/question-processing-status/<_qps:(view|delete)>/<id:\d+>' => 'main/question-processing-status/<_qps>',
-                '/user/<_usr:(profile|update|change-password)>/<id:\d+>' => 'main/user/<_usr>',
+                '/user/<_usr:(list|create)>' => 'main/user/<_usr>',
+                '/user/<_usr:(view|update|delete|profile|update-profile|change-password)>/<id:\d+>' => 'main/user/<_usr>',
             ],
         ],
         'cache' => [

@@ -11,12 +11,13 @@ $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
 
-<div class="user-profile">
+<div class="profile">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Обновить учетные данные', ['update', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Обновить учетные данные', ['update-profile', 'id' => $model->id],
+            ['class' => 'btn btn-success']) ?>
         <?= Html::a('Поменять пароль', ['change-password', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
     </p>
 
