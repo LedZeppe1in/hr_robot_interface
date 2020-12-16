@@ -6,7 +6,7 @@ use yii\helpers\Html;
 /* @var $model app\modules\main\models\Respondent */
 
 $this->title = 'Обновить: ' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Респонденты', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Интервью респондентов', 'url' => ['list']];
 $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Обновить';
 ?>

@@ -42,8 +42,8 @@ AppAsset::register($this);
             'items' => array_filter([
                 (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
                     ['label' => 'Данные', 'url' => '#', 'items' => [
-                        ['label' => 'Респонденты', 'url' => ['/respondent/list']],
                         ['label' => 'Заказчики', 'url' => ['/customer/list']],
+                        ['label' => 'Интервью респондентов', 'url' => ['/respondent/list']],
                         ['label' => 'Видеоинтервью', 'url' => ['/video-interview/list']],
                         ['label' => 'Вопросы', 'url' => ['/test-question/list']],
                         ['label' => 'Видео на вопросы', 'url' => ['/question/list']],
@@ -71,8 +71,7 @@ AppAsset::register($this);
                         '<li class="divider"></li>',
                         ['label' => 'Итоговые заключения по тесту мотивации к труду',
                             'url' => ['/gerchikov-test-conclusion/list']],
-                        ['label' => 'Итоговые заключения по видеоинтервью',
-                            'url' => ['/final-conclusion/list']],
+                        ['label' => 'Итоговые заключения по видеоинтервью', 'url' => ['/final-conclusion/list']],
                     ],
                 ] : false,
                 (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_ADMINISTRATOR) ?
@@ -97,6 +96,8 @@ AppAsset::register($this);
                             'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
                     ],
                 ] : false,
+                !Yii::$app->user->isGuest ? ['label' => 'Разметка интервью',
+                    'url' => ['/respondent/interview-markup']] : false,
             ]),
         ]);
 

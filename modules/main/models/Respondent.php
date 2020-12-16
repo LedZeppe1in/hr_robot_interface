@@ -12,8 +12,10 @@ use yii\behaviors\TimestampBehavior;
  * @property int $created_at
  * @property int $updated_at
  * @property string $name
+ * @property string $main_respondent_id
  *
  * @property VideoInterview[] $videoInterviews
+ * @property MainRespondent $mainRespondent
  */
 class Respondent extends \yii\db\ActiveRecord
 {
@@ -31,9 +33,12 @@ class Respondent extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name'], 'required'],
+            [['name', 'main_respondent_id'], 'required'],
             [['name'], 'string', 'max' => 255],
             ['name', 'unique', 'message' => 'Такое имя (код) респондента уже существует!'],
+            [['main_respondent_id'], 'integer'],
+            [['main_respondent_id'], 'exist', 'skipOnError' => true, 'targetClass' => MainRespondent::className(),
+                'targetAttribute' => ['main_respondent_id' => 'id']],
         ];
     }
 
@@ -47,6 +52,7 @@ class Respondent extends \yii\db\ActiveRecord
             'created_at' => 'Создан',
             'updated_at' => 'Обновлен',
             'name' => 'Имя',
+            'main_respondent_id' => 'ID респондента',
         ];
     }
 
@@ -65,6 +71,16 @@ class Respondent extends \yii\db\ActiveRecord
     public function getVideoInterviews()
     {
         return $this->hasMany(VideoInterview::className(), ['respondent_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[MainRespondent]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getMainRespondent()
+    {
+        return $this->hasOne(MainRespondent::className(), ['id' => 'main_respondent_id']);
     }
 
     /**

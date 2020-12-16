@@ -7,7 +7,7 @@ use yii\widgets\DetailView;
 /* @var $model app\modules\main\models\Respondent */
 
 $this->title = $model->name;
-$this->params['breadcrumbs'][] = ['label' => 'Респонденты', 'url' => ['list']];
+$this->params['breadcrumbs'][] = ['label' => 'Интервью респондентов', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
@@ -40,6 +40,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => ['date', 'dd.MM.Y HH:mm:ss']
             ],
             'name',
+            'main_respondent_id',
+            [
+                'attribute' => 'main_respondent_id',
+                'label' => 'Код (ключ) респондента',
+                'value' => $model->main_respondent_id ? $model->mainRespondent->code : null,
+            ],
         ],
     ]) ?>
 

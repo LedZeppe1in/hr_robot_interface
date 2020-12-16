@@ -6,7 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Респонденты';
+$this->title = 'Интервью респондентов';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -23,6 +23,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             'name',
+            'main_respondent_id',
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
