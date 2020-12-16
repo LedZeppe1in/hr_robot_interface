@@ -25,11 +25,11 @@ class RespondentController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['list', 'create', 'view', 'update', 'delete'],
+                'only' => ['list', 'create', 'view', 'update', 'delete', 'interview-markup'],
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['list', 'create', 'view', 'update', 'delete'],
+                        'actions' => ['list', 'create', 'view', 'update', 'delete', 'interview-markup'],
                         'roles' => ['@'],
                     ],
                 ],
@@ -131,6 +131,20 @@ class RespondentController extends Controller
         Yii::$app->getSession()->setFlash('success', 'Вы успешно удалили респондента!');
 
         return $this->redirect(['list']);
+    }
+
+    /**
+     * Страница разметки интервью.
+     *
+     * @param $id - идентификатор интервью респондента (respondent)
+     * @return string
+     * @throws NotFoundHttpException
+     */
+    public function actionInterviewMarkup($id)
+    {
+        return $this->render('interview-markup', [
+            'model' => $this->findModel($id),
+        ]);
     }
 
     /**

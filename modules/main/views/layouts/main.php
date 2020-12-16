@@ -96,8 +96,8 @@ AppAsset::register($this);
                             'url' => 'https://84.201.129.65:8080/HRRTester/GenerateR1Test.php'],
                     ],
                 ] : false,
-                !Yii::$app->user->isGuest ? ['label' => 'Разметка интервью',
-                    'url' => ['/respondent/interview-markup']] : false,
+                (!Yii::$app->user->isGuest && Yii::$app->user->identity->role == User::ROLE_PSYCHOLOGIST) ?
+                    ['label' => 'Интервью респондентов', 'url' => ['/respondent/list']] : false,
             ]),
         ]);
 

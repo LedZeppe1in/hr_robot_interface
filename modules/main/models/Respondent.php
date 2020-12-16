@@ -33,7 +33,7 @@ class Respondent extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'main_respondent_id'], 'required'],
+            [['name'], 'required'],
             [['name'], 'string', 'max' => 255],
             ['name', 'unique', 'message' => 'Такое имя (код) респондента уже существует!'],
             [['main_respondent_id'], 'integer'],
