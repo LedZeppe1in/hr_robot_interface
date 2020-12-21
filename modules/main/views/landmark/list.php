@@ -63,7 +63,7 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {update} {mask-editor} {raw-detection} {norm-detection} {delete}',
+                'template' => '{view} {update} {mask-editor} {raw-detection} {norm-detection} {new-fdm} {delete}',
                 'buttons' => [
                     'mask-editor' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
@@ -83,6 +83,13 @@ $this->params['breadcrumbs'][] = $this->title;
                         $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-save-file',
                             'title' => 'Определение признаков по нормализованным точкам']);
                         $url = ['/analysis-result/detection/' . $model->id . '/' . 1];
+                        return ($model->landmark_file_name != '' &&
+                            $model->type != Landmark::TYPE_LANDMARK_ANDREW_MODULE) ? Html::a($icon, $url) : null;
+                    },
+                    'new-fdm' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-circle-arrow-down',
+                            'title' => 'Определение признаков по нормализованным точкам новый МОП']);
+                        $url = ['/analysis-result/detection/' . $model->id . '/' . 2];
                         return ($model->landmark_file_name != '' &&
                             $model->type != Landmark::TYPE_LANDMARK_ANDREW_MODULE) ? Html::a($icon, $url) : null;
                     },

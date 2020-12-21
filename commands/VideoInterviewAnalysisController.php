@@ -331,11 +331,10 @@ class VideoInterviewAnalysisController extends Controller
      *
      * @param $questionId - идентификатор вопроса видеоинтервью
      * @param $landmarkId - идентификатор цифровой маски
-     * @param $questionIndex - номер вопроса
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
-    public function actionStart($questionId, $landmarkId, $questionIndex)
+    public function actionStart($questionId, $landmarkId)
     {
         // Время начала выполнения анализа видеоинтервью
         $videoInterviewProcessingStart = microtime(true);
@@ -418,6 +417,42 @@ class VideoInterviewAnalysisController extends Controller
             $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
             $moduleMessageModel->save();
         }
+
+//        // Название json-файла с результатами обработки видео
+//        $extJsonResultFile = 'out_' . $question->id . '_ext.json';
+//        try {
+//            // Запуск второго скрипта модуля обработки видео Ивана
+//            chdir($mainPath);
+//            exec('./venv/bin/python ./main_new2.py ./json/' . $jsonResultFile);
+//        } catch (Exception $e) {
+//            // Создание сообщения об ошибке МОВ Ивана в БД
+//            $moduleMessageModel = new ModuleMessage();
+//            $moduleMessageModel->message = 'Ошибка второго скрипта модуля обработки видео Ивана! ' . $e->getMessage();
+//            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+//            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//            $moduleMessageModel->save();
+//        }
+//        // Проверка существования json-файл с результатами обработки видео
+//        if (file_exists($jsonResultPath . $extJsonResultFile)) {
+//            // Получение json-файла с результатами обработки видео в виде цифровой маски
+//            $jsonLandmarkFile = file_get_contents($jsonResultPath . $extJsonResultFile, true);
+//            // Замена в строке некорректных значений для правильного декодирования json-формата
+//            $jsonLandmarkFile = str_ireplace('NaN','99999', $jsonLandmarkFile);
+//            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+//            $landmarkFile = json_decode($jsonLandmarkFile, true);
+//
+//            // Определение кол-ва событий поворотов головы вправо и влево
+//            foreach ($landmarkFile as $key => $value)
+//                if (strpos(Trim($key), 'frame_') !== false)
+//                    if (isset($value['EVENTS']))
+//                        foreach ($value['EVENTS'] as $event) {
+//                            if ($event == VideoProcessingModuleSettingForm::TURN_RIGHT_EVENT)
+//                                $turnRightNumber++;
+//                            if ($event == VideoProcessingModuleSettingForm::TURN_LEFT_EVENT)
+//                                $turnLeftNumber++;
+//                        }
+//        }
+
         // Время окончания выполнения МОВ Ивана
         $ivanVideoAnalysisEnd = microtime(true);
         // Вычисление времени выполнения МОВ Ивана
@@ -465,10 +500,11 @@ class VideoInterviewAnalysisController extends Controller
             try {
                 // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
                 $analysisHelper = new AnalysisHelper();
+                $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id);
                 $analysisResultId = $analysisHelper->getAnalysisResult(
                     $landmark,
-                    (int)$questionIndex,
-                    VideoInterview::TYPE_NORMALIZED_POINTS
+                    VideoInterview::TYPE_NORMALIZED_POINTS,
+                    $baseFrame
                 );
             } catch (Exception $e) {
                 // Создание сообщения об ошибке МОП в БД
@@ -586,10 +622,11 @@ class VideoInterviewAnalysisController extends Controller
                 try {
                     // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
                     $analysisHelper = new AnalysisHelper();
+                    $baseFrame = $analysisHelper->getBaseFrame($landmarkModel->video_interview_id);
                     $analysisResultId = $analysisHelper->getAnalysisResult(
                         $landmarkModel,
-                        (int)$questionIndex,
-                        VideoInterview::TYPE_RAW_POINTS
+                        VideoInterview::TYPE_RAW_POINTS,
+                        $baseFrame
                     );
                 } catch (Exception $e) {
                     // Создание сообщения об ошибке МОП в БД

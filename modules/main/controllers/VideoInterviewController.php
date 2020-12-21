@@ -308,8 +308,8 @@ class VideoInterviewController extends Controller
             $landmarkModel->start_time = '00:00:00:000';
             $landmarkModel->finish_time = '12:00:00:000';
             $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
-            $landmarkModel->rotation = Landmark::TYPE_ZERO;
-            $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+            $landmarkModel->rotation = (int)Yii::$app->request->post('VideoProcessingModuleSettingForm')['rotateMode'];
+            $landmarkModel->mirroring = (bool)Yii::$app->request->post('VideoProcessingModuleSettingForm')['mirroring'];
             $landmarkModel->question_id = $questionModel->id;
             $landmarkModel->video_interview_id = $videoInterview->id;
             $landmarkModel->save();

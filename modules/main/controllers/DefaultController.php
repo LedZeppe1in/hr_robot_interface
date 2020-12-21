@@ -887,13 +887,10 @@ class DefaultController extends Controller
                 return $response;
             }
             // Если вопросы не калибровочные
-            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27) {
-                // Определение количества записей вопросов видеоинтервью
-                $index = Question::find()->where(['video_interview_id' => $landmarkModel->video_interview_id])->count();
+            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27)
                 // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
                 $consoleRunner->run('video-interview-analysis/start ' . $questionModel->id . ' ' .
-                    $landmarkModel->id . ' ' . $index);
-            }
+                    $landmarkModel->id);
         }
 
         return false;

@@ -29,6 +29,8 @@ $this->params['breadcrumbs'][] = $this->title;
                                 $model->id . '/' . 0],
                             ['label' => 'По нормализованным точкам', 'url' => '/analysis-result/detection/' .
                                 $model->id . '/' . 1],
+                            ['label' => 'По нормализованным точкам новый МОП', 'url' => '/analysis-result/detection/' .
+                                $model->id . '/' . 2],
                         ],
                     ],
                     'options' => ['class' => 'btn btn-success']

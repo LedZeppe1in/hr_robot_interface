@@ -160,10 +160,11 @@ class AnalysisResultController extends Controller
         $landmark = Landmark::findOne($id);
         // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
         $analysisHelper = new AnalysisHelper();
+        $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id);
         $analysisResultId = $analysisHelper->getAnalysisResult(
             $landmark,
-            1,
-            $processingType
+            $processingType,
+            $baseFrame
         );
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
