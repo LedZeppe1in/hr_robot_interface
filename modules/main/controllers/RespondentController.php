@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\User;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -9,6 +10,8 @@ use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use app\modules\main\models\Respondent;
+use app\modules\main\models\Question;
+use app\modules\main\models\VideoInterview;
 
 /**
  * RespondentController implements the CRUD actions for Respondent model.
@@ -134,7 +137,7 @@ class RespondentController extends Controller
     }
 
     /**
-     * Страница разметки интервью.
+     * Страница разметки интервью для психолога.
      *
      * @param $id - идентификатор интервью респондента (respondent)
      * @return string
@@ -144,6 +147,7 @@ class RespondentController extends Controller
     {
         return $this->render('interview-markup', [
             'model' => $this->findModel($id),
+            'userId' => Yii::$app->user->identity->getId()
         ]);
     }
 
