@@ -293,8 +293,8 @@ class VideoInterviewController extends Controller
     public function actionGetIvanLandmarks($id) {
         // Если пришел POST-запрос
         if (Yii::$app->request->isPost) {
-            // Установка времени выполнения скрипта в 1 час.
-            set_time_limit(60 * 60);
+            // Установка времени выполнения скрипта в 3 часа
+            set_time_limit(60 * 200);
             // Поиск полного видеоинтервью по id
             $videoInterview = VideoInterview::findOne($id);
             // Создание вопроса видеоинтервью (видео ответа на вопрос) в БД
@@ -411,30 +411,6 @@ class VideoInterviewController extends Controller
                 Landmark::findOne($landmarkModel->id)->delete();
                 $messages .= ' Не удалось сформировать цифровую маску!';
             }
-    //        // Текст сообщения об ошибке
-    //        $errorMessage = 'Не удалось проанализировать видеоинтервью!';
-    //        // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
-    //        if (file_exists($mainPath . 'error.json')) {
-    //            // Получение json-файл с ошибками обработки видеоинтервью
-    //            $jsonErrorFile = file_get_contents($mainPath . 'error.json', true);
-    //            // Декодирование json
-    //            $jsonErrorFile = json_decode($jsonErrorFile, true);
-    //            // Дополнение текста сообщения об ошибке
-    //            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
-    //            // Удаление json-файла с сообщением ошибке
-    //            unlink($mainPath . 'error.json');
-    //        }
-    //        // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
-    //        if (file_exists($jsonResultPath . 'out_error.json')) {
-    //            // Получение json-файл с ошибками обработки видеоинтервью
-    //            $jsonErrorFile = file_get_contents($jsonResultPath . 'out_error.json', true);
-    //            // Декодирование json
-    //            $jsonErrorFile = json_decode($jsonErrorFile, true);
-    //            // Дополнение текста сообщения об ошибке
-    //            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
-    //            // Удаление json-файла с сообщением ошибке
-    //            unlink($jsonResultPath . 'out_error.json');
-    //        }
 
             $additionalLandmarkModel = null;
             // Если включен запуск второго скрипта МОВ Ивана

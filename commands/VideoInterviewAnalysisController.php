@@ -31,7 +31,7 @@ class VideoInterviewAnalysisController extends Controller
     public function actionIndex()
     {
         echo 'yii video-interview-analysis/preparation' . PHP_EOL;
-        echo 'yii video-interview-analysis/start' . PHP_EOL;
+        echo 'yii video-interview-analysis/start-full-video-analysis' . PHP_EOL;
     }
 
     /**
@@ -335,14 +335,14 @@ class VideoInterviewAnalysisController extends Controller
     }
 
     /**
-     * Команда запуска анализа видеоинтервью респондента.
+     * Команда запуска полного анализа видео.
      *
      * @param $questionId - идентификатор вопроса видеоинтервью
      * @param $landmarkId - идентификатор цифровой маски
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
-    public function actionStart($questionId, $landmarkId)
+    public function actionStartFullVideoAnalysis($questionId, $landmarkId)
     {
         // Время начала выполнения анализа видеоинтервью
         $videoInterviewProcessingStart = microtime(true);

@@ -889,7 +889,7 @@ class DefaultController extends Controller
 //            // Если вопросы не калибровочные
 //            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27)
 //                // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
-//                $consoleRunner->run('video-interview-analysis/start ' . $questionModel->id . ' ' .
+//                $consoleRunner->run('video-interview-analysis/start-full-video-analysis ' . $questionModel->id . ' ' .
 //                    $landmarkModel->id);
         }
 
