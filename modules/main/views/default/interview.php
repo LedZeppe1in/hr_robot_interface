@@ -336,7 +336,7 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <div id="milliseconds">0</div>
+    <div id="milliseconds" style="display: none">0</div>
 
     <audio id="audio-player" style="display: none" controls>
         <source id="audio-source" src="" type="audio/mpeg">

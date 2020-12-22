@@ -43,12 +43,12 @@ class DefaultController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['sing-out', 'test', 'interview', 'gerchikov-test-conclusion-view', 'interview-analysis',
+                'only' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'interview-analysis',
                     'upload', 'record', 'analysis'],
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['sing-out', 'test', 'interview', 'gerchikov-test-conclusion-view',
+                        'actions' => ['sing-out', 'test', 'gerchikov-test-conclusion-view',
                             'interview-analysis', 'upload', 'record', 'analysis'],
                         'roles' => ['@'],
                     ],
@@ -671,14 +671,14 @@ class DefaultController extends Controller
             ])->all();
             // Формирование массива c id вопросов опроса
             $testQuestionIds = array();
-//                foreach ($surveyQuestions as $surveyQuestion)
-//                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
-            $num = 0;
-            foreach ($surveyQuestions as $surveyQuestion) {
-                if ($num < 5)
+                foreach ($surveyQuestions as $surveyQuestion)
                     array_push($testQuestionIds, $surveyQuestion->test_question_id);
-                $num++;
-            }
+//            $num = 0;
+//            foreach ($surveyQuestions as $surveyQuestion) {
+//                if ($num < 5)
+//                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
+//                $num++;
+//            }
             // Поиск вопросов опросов по набору id
             $testQuestions = TestQuestion::find()->where(['id' => $testQuestionIds])->all();
             // Массивы с параметрами вопросов
@@ -821,7 +821,7 @@ class DefaultController extends Controller
             if ($topicQuestion->topic_id == 24 || $topicQuestion->topic_id == 25 || $topicQuestion->topic_id == 27)
                 // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
                 $consoleRunner->run('video-interview-analysis/preparation ' . $questionModel->id . ' ' .
-                    $landmarkModel->id);
+                    $landmarkModel->id . ' ' . $topicQuestion->topic_id);
             // Если текущий вопрос является калибровочным и он последний
             if ($topicQuestion->topic_id == 25) {
                 // Поиск полного видеоинтервью по id
@@ -886,11 +886,11 @@ class DefaultController extends Controller
 
                 return $response;
             }
-            // Если вопросы не калибровочные
-            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27)
-                // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
-                $consoleRunner->run('video-interview-analysis/start ' . $questionModel->id . ' ' .
-                    $landmarkModel->id);
+//            // Если вопросы не калибровочные
+//            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27)
+//                // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
+//                $consoleRunner->run('video-interview-analysis/start ' . $questionModel->id . ' ' .
+//                    $landmarkModel->id);
         }
 
         return false;

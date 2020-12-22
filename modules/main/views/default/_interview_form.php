@@ -10,7 +10,7 @@ use app\modules\main\models\Landmark;
 /* @var $landmarkModel app\modules\main\models\Landmark */
 ?>
 
-<div class="interview" style="display: block">
+<div class="interview" style="display: none">
 
     <?php $form = ActiveForm::begin(['id' => 'landmark-form']); ?>
 

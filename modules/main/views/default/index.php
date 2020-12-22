@@ -4,6 +4,7 @@
 
 $this->title = 'HR Robot';
 
+use app\modules\main\models\User;
 use yii\helpers\Html;
 ?>
 
@@ -21,13 +22,14 @@ use yii\helpers\Html;
             полученной с веб-камеры или камеры смартфона при проведении интервью (собеседования), а также результатов
             психологического тестирования.
         </h4><br />
-        <h4>На данный моменент, система находиться в тестовом режиме и поддерживает собеседование (тестирование)
-            по профилю "Кассир".
+        <h4>На данный моменент, система находиться в тестовом режиме.
         </h4><br />
         <p>
             <?= Html::a('Пройти собеседование',
                 'https://84.201.129.65:8080/HRRMaskEditor/GenerateR1Test.php',
-                ['class' => 'btn btn-lg btn-success']) ?>
+                ['class' => 'btn btn-lg btn-success', 'style' => 'display:none']) ?>
+            <?= (Yii::$app->user->isGuest || !Yii::$app->user->identity->role == User::ROLE_PSYCHOLOGIST) ?
+                Html::a('Пройти видео-интервью', 'interview/31', ['class' => 'btn btn-lg btn-success']) : null ?>
         </p>
     </div>
 </div>

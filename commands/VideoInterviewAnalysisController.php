@@ -39,10 +39,11 @@ class VideoInterviewAnalysisController extends Controller
      *
      * @param $questionId - идентификатор вопроса видеоинтервью
      * @param $landmarkId - идентификатор цифровой маски
+     * @param $topicId - идентификатор темы
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
-    public function actionPreparation($questionId, $landmarkId)
+    public function actionPreparation($questionId, $landmarkId, $topicId)
     {
         // Поиск вопроса видеоинтервью по id
         $question = Question::findOne((int)$questionId);
@@ -85,7 +86,10 @@ class VideoInterviewAnalysisController extends Controller
         $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
         $parameters['id'] = $question->id;
         $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
-        $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
+        if ($topicId == 27)
+            $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_VIDEO_PARAMETERS;
+        if ($topicId == 24 || $topicId == 25)
+            $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
         // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
         $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
         // Открытие файла на запись для сохранения параметров запуска программы обработки видео
@@ -314,12 +318,16 @@ class VideoInterviewAnalysisController extends Controller
         $questionProcessingStatuses = QuestionProcessingStatus::find()
             ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
             ->all();
+        // Определение кол-ва записей статусов обработки вопросов по id статуса обработки видеоинтервью
+        $questionProcessingStatusCount = QuestionProcessingStatus::find()
+            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+            ->count();
         // Обход всех статусов обработки вопросов и определение завершенности каждого
         foreach ($questionProcessingStatuses as $questionProcessingStatus)
             if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
                 $completed = false;
         // Если анализ всех видео ответов на вопросы завершен
-        if ($completed) {
+        if ($completed && $questionProcessingStatusCount == 3) {
             // Обновление атрибутов статуса обработки видеоинтервью в БД
             $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
             $videoInterviewProcessingStatus->updateAttributes(['status']);
