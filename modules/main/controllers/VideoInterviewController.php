@@ -61,7 +61,7 @@ class VideoInterviewController extends Controller
         $dataProvider = new ActiveDataProvider([
             'query' => VideoInterview::find(),
         ]);
-        // Создание формы настройки параметров запуска модуля обработки видео (Иван)
+        // Создание формы настройки параметров запуска модуля обработки видео Ивана и Андрея
         $videoProcessingModuleSettingForm = new VideoProcessingModuleSettingForm();
 
         return $this->render('list', [
@@ -581,9 +581,20 @@ class VideoInterviewController extends Controller
         $messages = '';
 
         try {
+            // Формирование значения поворота видео
+            $rotateMode = (int)Yii::$app->request->post('VideoProcessingModuleSettingForm')['rotateMode'];
+            if ($rotateMode == VideoProcessingModuleSettingForm::ROTATE_MODE_ONE_HUNDRED_EIGHTY)
+                $rotateMode = 3;
+            if ($rotateMode == VideoProcessingModuleSettingForm::ROTATE_MODE_TWO_HUNDRED_AND_SEVENTY)
+                $rotateMode = 2;
+            // Формирование команды для запука программы обработки видео Андрея
+            $command = './EmotionDetection -f ' . $videoPath . $videoInterview->video_file_name;
+            // Добавление параметра поворота видео к команде
+            if ($rotateMode != 0)
+                $command .= ' -rot ' . $rotateMode;
             // Запуск программы обработки видео Андрея
             chdir($mainAndrewModulePath);
-            exec('./EmotionDetection -f ' . $videoPath . $videoInterview->video_file_name);
+            exec($command);
             // Получение имени файла без расширения
             $jsonFileName = preg_replace('/\.\w+$/', '', $videoInterview->video_file_name);
             // Проверка существования json-файл с результатами обработки видео

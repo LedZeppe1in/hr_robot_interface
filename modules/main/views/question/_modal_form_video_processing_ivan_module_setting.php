@@ -10,18 +10,16 @@ use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 <!-- Модальное окно запуска модуля обработки видео (Иван) -->
 <?php Modal::begin([
-    'id' => 'formLandmarkModalForm',
+    'id' => 'formIvanLandmarkModalForm',
     'header' => '<h3>Настройки модуля обработки видео (Иван)</h3>',
 ]); ?>
 
     <?php $form = ActiveForm::begin([
-        'id' => 'get-landmark-form',
+        'id' => 'get-ivan-landmark-form',
         'method' => 'post',
         'action' => ['/video-interview/get-ivan-landmarks'],
         'enableClientValidation' => true,
     ]); ?>
-
-        <?= $form->errorSummary($videoProcessingModuleSettingForm); ?>
 
         <?= $form->field($videoProcessingModuleSettingForm, 'rotateMode')
             ->dropDownList(VideoProcessingModuleSettingForm::getRotateModes()) ?>
@@ -47,7 +45,7 @@ use app\modules\main\models\VideoProcessingModuleSettingForm;
         <?= Button::widget([
             'label' => 'Сформировать цифровую маску',
             'options' => [
-                'id' => 'form-landmark-button',
+                'id' => 'form-ivan-landmark-button',
                 'class' => 'btn-success',
                 'style' => 'margin:5px'
             ]

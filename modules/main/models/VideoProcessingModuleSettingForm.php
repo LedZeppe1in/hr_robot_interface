@@ -72,7 +72,7 @@ class VideoProcessingModuleSettingForm extends Model
     {
         return [
             [['rotateMode', 'enableAutoRotate', 'mirroring', 'alignMode', 'landmarkMode',
-                'videoProcessingParameter', 'enableSecondScript'], 'required'],
+                'videoProcessingParameter', 'enableSecondScript'], 'safe'],
         ];
     }
 

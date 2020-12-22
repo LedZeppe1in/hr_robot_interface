@@ -11,7 +11,11 @@ $this->title = 'Видео на вопросы';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<?= $this->render('_modal_form_video_processing_module_setting', [
+<?= $this->render('_modal_form_video_processing_ivan_module_setting', [
+    'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
+]); ?>
+
+<?= $this->render('_modal_form_video_processing_andrey_module_setting', [
     'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
 ]); ?>
 
@@ -22,18 +26,35 @@ $this->params['breadcrumbs'][] = $this->title;
         // Обработка нажатия кнопки-иконки формирования цифровой маски модулем Ивана
         $(".get-ivan-landmarks").click(function(e) {
             // Форма параметров настроек запуска модуля обработки видео
-            var form = document.getElementById("get-landmark-form");
+            var form = document.getElementById("get-ivan-landmark-form");
             // Формирование названия URL-адреса для запроса
             if (actionName === "")
                 actionName = form.action;
             form.action = actionName + "/" + this.id;
             // Открытие модального окна
-            $("#formLandmarkModalForm").modal("show");
+            $("#formIvanLandmarkModalForm").modal("show");
         });
         // Обработка нажатия кнопки подтверждения формирования цифровой маски модулем Ивана
-        $("#form-landmark-button").click(function(e) {
+        $("#form-ivan-landmark-button").click(function(e) {
             // Скрывание модального окна
-            $("#formLandmarkModalForm").modal("hide");
+            $("#formIvanLandmarkModalForm").modal("hide");
+        });
+
+        // Обработка нажатия кнопки-иконки формирования цифровой маски модулем Андрея
+        $(".get-andrey-landmarks").click(function(e) {
+            // Форма параметров настроек запуска модуля обработки видео
+            var form = document.getElementById("get-andrey-landmark-form");
+            // Формирование названия URL-адреса для запроса
+            if (actionName === "")
+                actionName = form.action;
+            form.action = actionName + "/" + this.id;
+            // Открытие модального окна
+            $("#formAndreyLandmarkModalForm").modal("show");
+        });
+        // Обработка нажатия кнопки подтверждения формирования цифровой маски модулем Андрея
+        $("#form-andrey-landmark-button").click(function(e) {
+            // Скрывание модального окна
+            $("#formAndreyLandmarkModalForm").modal("hide");
         });
     });
 </script>
@@ -91,10 +112,9 @@ $this->params['breadcrumbs'][] = $this->title;
                     },
                     'get-andrey-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
-                            ['class' => 'glyphicon glyphicon-save-file',
+                            ['class' => 'glyphicon glyphicon-save-file get-andrey-landmarks', 'id' => $model->id,
                                 'title' => 'Сформировать цифровую маску модулем Андрея']) : false;
-                        $url = ($model->video_file_name != '') ? ['/question/get-andrey-landmarks/' . $model->id] :
-                            false;
+                        $url = '#';
                         return Html::a($icon, $url);
                     },
                 ],

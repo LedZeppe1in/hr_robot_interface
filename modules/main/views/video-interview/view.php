@@ -14,8 +14,11 @@ $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
 
-<?= $this->render('_modal_form_video_processing_module_setting', [
-    'model' => $model,
+<?= $this->render('_modal_form_video_processing_ivan_module_setting', [
+    'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
+]); ?>
+
+<?= $this->render('_modal_form_video_processing_andrey_module_setting', [
     'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
 ]); ?>
 
@@ -26,18 +29,35 @@ $this->params['breadcrumbs'][] = $this->title;
         // Обработка нажатия кнопки-иконки формирования цифровой маски модулем Ивана
         $(".get-ivan-landmarks").click(function(e) {
             // Форма параметров настроек запуска модуля обработки видео
-            var form = document.getElementById("get-landmark-form");
+            var form = document.getElementById("get-ivan-landmark-form");
             // Формирование названия URL-адреса для запроса
             if (actionName === "")
                 actionName = form.action;
             form.action = actionName + "/" + this.id;
             // Открытие модального окна
-            $("#formLandmarkModalForm").modal("show");
+            $("#formIvanLandmarkModalForm").modal("show");
         });
         // Обработка нажатия кнопки подтверждения формирования цифровой маски модулем Ивана
-        $("#form-landmark-button").click(function(e) {
+        $("#form-ivan-landmark-button").click(function(e) {
             // Скрывание модального окна
-            $("#formLandmarkModalForm").modal("hide");
+            $("#formIvanLandmarkModalForm").modal("hide");
+        });
+
+        // Обработка нажатия кнопки-иконки формирования цифровой маски модулем Андрея
+        $(".get-andrey-landmarks").click(function(e) {
+            // Форма параметров настроек запуска модуля обработки видео
+            var form = document.getElementById("get-andrey-landmark-form");
+            // Формирование названия URL-адреса для запроса
+            if (actionName === "")
+                actionName = form.action;
+            form.action = actionName + "/" + this.id;
+            // Открытие модального окна
+            $("#formAndreyLandmarkModalForm").modal("show");
+        });
+        // Обработка нажатия кнопки подтверждения формирования цифровой маски модулем Андрея
+        $("#form-andrey-landmark-button").click(function(e) {
+            // Скрывание модального окна
+            $("#formAndreyLandmarkModalForm").modal("hide");
         });
     });
 </script>
@@ -54,7 +74,8 @@ $this->params['breadcrumbs'][] = $this->title;
                     'items' => [
                         ['label' => 'Модулем Ивана', 'url' => '#', 'options' => ['class' => 'get-ivan-landmarks',
                             'id' => $model->id]],
-                        ['label' => 'Модулем Андрея', 'url' => '/video-interview/get-andrey-landmarks/' . $model->id],
+                        ['label' => 'Модулем Андрея', 'url' => '#', 'options' => ['class' => 'get-andrey-landmarks',
+                            'id' => $model->id]],
                     ],
                 ],
                 'options' => ['class' => 'btn btn-success']
