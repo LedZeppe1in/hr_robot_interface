@@ -17,7 +17,7 @@ use app\modules\main\models\VideoProcessingModuleSettingForm;
     <?php $form = ActiveForm::begin([
         'id' => 'get-ivan-landmark-form',
         'method' => 'post',
-        'action' => ['/video-interview/get-ivan-landmarks'],
+        'action' => ['/question/get-ivan-landmarks'],
         'enableClientValidation' => true,
     ]); ?>
 

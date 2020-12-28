@@ -101,13 +101,19 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {get-ivan-landmarks} {get-andrey-landmarks} {delete}',
+                'template' => '{view} {get-ivan-landmarks} {get-recognized-speech} {get-andrey-landmarks} {delete}',
                 'buttons' => [
                     'get-ivan-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-file get-ivan-landmarks', 'id' => $model->id,
                                 'title' => 'Сформировать цифровую маску модулем Ивана']) : false;
                         $url = '#';
+                        return Html::a($icon, $url);
+                    },
+                    'get-recognized-speech' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-comment',
+                            'title' => 'Распознать речь в видео']);
+                        $url = ['/question/get-recognized-speech/' . $model->id];
                         return Html::a($icon, $url);
                     },
                     'get-andrey-landmarks' => function ($url, $model, $key) {

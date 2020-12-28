@@ -30,8 +30,8 @@ class VideoProcessingModuleSettingForm extends Model
 
     // Режим построения лэндмарков
     const LANDMARK_MODE_FAST        = 0; // Быстрый 2D-режим
-    const LANDMARK_MODE_FIRST_SLOW  = 1; // Медленный 2D-режим (первый)
-    const LANDMARK_MODE_SECOND_SLOW = 2; // Медленный 2D-режим (второй)
+    const LANDMARK_MODE_FIRST_SLOW  = 1; // Медленный 2D-режим
+    const LANDMARK_MODE_SECOND_SLOW = 2; // Медленный 3D-режим
 
     // Параметр работы основного модуля обработки видео
     const PARAMETER_NONE                   = 'None';                   // По-умолчанию (определение всех параметров видео и поиск лэндмарков)
@@ -195,8 +195,8 @@ class VideoProcessingModuleSettingForm extends Model
     {
         return [
             self::LANDMARK_MODE_FAST => 'Быстрый 2D-режим',
-            self::LANDMARK_MODE_FIRST_SLOW => 'Медленный 2D-режим 1',
-            self::LANDMARK_MODE_SECOND_SLOW => 'Медленный 2D-режим 2',
+            self::LANDMARK_MODE_FIRST_SLOW => 'Медленный 2D-режим',
+            self::LANDMARK_MODE_SECOND_SLOW => 'Медленный 3D-режим',
         ];
     }
 

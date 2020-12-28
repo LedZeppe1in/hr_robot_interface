@@ -81,6 +81,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'options' => ['class' => 'btn btn-success']
             ]);
         } ?>
+        <?= Html::a('Распознать речь в видео', ['get-recognized-speech', 'id' => $model->id],
+            ['class' => 'btn btn-success']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
             'data' => [

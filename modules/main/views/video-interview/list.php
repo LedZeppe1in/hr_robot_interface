@@ -98,7 +98,8 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {update} {get-ivan-landmarks} {get-andrey-landmarks} {delete}',
+                'template' => '{view} {update} {get-ivan-landmarks} {get-recognized-speech} {get-andrey-landmarks} ' .
+                    '{run-analysis} {delete}',
                 'buttons' => [
                     'get-ivan-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
@@ -107,11 +108,23 @@ $this->params['breadcrumbs'][] = $this->title;
                         $url = '#';
                         return Html::a($icon, $url);
                     },
+                    'get-recognized-speech' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-comment',
+                            'title' => 'Распознать речь в видео']);
+                        $url = ['/video-interview/get-recognized-speech/' . $model->id];
+                        return Html::a($icon, $url);
+                    },
                     'get-andrey-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
                             ['class' => 'glyphicon glyphicon-save-file get-andrey-landmarks', 'id' => $model->id,
                                 'title' => 'Сформировать цифровую маску модулем Андрея']) : false;
                         $url = '#';
+                        return Html::a($icon, $url);
+                    },
+                    'run-analysis' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-play-circle',
+                            'title' => 'Запуск анализа видеоинтервью по всем вопросам']);
+                        $url = ['/video-interview/run-analysis/' . $model->id];
                         return Html::a($icon, $url);
                     },
                 ],

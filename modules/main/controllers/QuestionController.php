@@ -32,12 +32,12 @@ class QuestionController extends Controller
             'access' => [
                 'class' => AccessControl::className(),
                 'only' => ['list', 'view', 'delete', 'video-file-download', 'get-ivan-landmarks',
-                    'get-andrey-landmarks'],
+                    'get-andrey-landmarks', 'get-recognized-speech'],
                 'rules' => [
                     [
                         'allow' => true,
                         'actions' => ['list', 'view', 'delete', 'video-file-download', 'get-ivan-landmarks',
-                            'get-andrey-landmarks'],
+                            'get-andrey-landmarks', 'get-recognized-speech'],
                         'roles' => ['@'],
                     ],
                 ],
@@ -414,6 +414,119 @@ class QuestionController extends Controller
                 if ($secondScriptSuccess && $additionalLandmarkModel !== null)
                     return $this->redirect(['/landmark/view/' . $additionalLandmarkModel->id]);
             }
+        }
+
+        return false;
+    }
+
+    /**
+     * Формирование текста распознанной речи.
+     *
+     * @param $id - идентификатор видео ответа на вопрос
+     * @return bool|string
+     */
+    public function actionGetRecognizedSpeech($id) {
+        // Установка времени выполнения скрипта в 3 часа
+        set_time_limit(60 * 200);
+        // Поиск видео ответа на вопрос по id
+        $question = Question::findOne($id);
+        // Если есть файл видео ответа на вопрос
+        if ($question->video_file_name != null) {
+            // Путь к программе обработки видео от Ивана
+            $mainPath = '/home/-Common/-ivan/';
+            // Путь к файлу видеоинтервью
+            $videoPath = $mainPath . 'video/';
+            // Путь к json-файлу результатов обработки видеоинтервью
+            $jsonResultPath = $mainPath . 'json/';
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Сохранение файла видео ответа на вопрос на сервер
+            $osConnector->saveFileToServer(
+                OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+                $question->id,
+                $question->video_file_name,
+                $videoPath
+            );
+            // Название json-файла с результатами обработки видео
+            $jsonResultFile = 'out_' . $question->id . '_audio.json';
+            // Формирование массива с параметрами запуска программы обработки видео
+            $parameters['nameVidFilesIn'] = 'video/' . $question->video_file_name;
+            $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
+            $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
+            $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
+            $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
+                [35, 47, 75], [27, 35, 42], [27, 31, 39]];
+            $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
+            $parameters['enableAutoRotate'] = VideoProcessingModuleSettingForm::AUTO_ROTATE_TRUE;
+            $parameters['Mirroring'] = VideoProcessingModuleSettingForm::MIRRORING_FALSE;
+            $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
+            $parameters['id'] = $question->id;
+            $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
+            $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_VIDEO_PARAMETERS;
+            // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
+            $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
+            // Открытие файла на запись для сохранения параметров запуска программы обработки видео
+            $jsonFile = fopen($mainPath . 'test' . $question->id . '.json', 'a');
+            // Запись в файл json-строки с параметрами запуска программы обработки видео
+            fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
+            // Закрытие файла
+            fclose($jsonFile);
+            // Сообщение об ошибке формирования текста распознанной речи
+            $errorMessage = '';
+            // Текст распознанной речи
+            $recognizedSpeechText = 'Текст отсутствует';
+
+            try {
+                // Запуск программы обработки видео Ивана
+                chdir($mainPath);
+                exec('./venv/bin/python ./main_audio.py ./test' . $question->id . '.json');
+            } catch (Exception $e) {
+                // Сохранение сообщения об ошибке МОВ Ивана
+                $errorMessage = 'Ошибка модуля обработки видео Ивана (скрипт распознования речи)! ' . $e->getMessage();
+            }
+
+            // Проверка существования json-файл с результатами обработки видео
+            if (file_exists($jsonResultPath . $jsonResultFile)) {
+                // Получение json-файла с результатами обработки видео в виде текста распознанной речи
+                $jsonRecognizedSpeechFile = file_get_contents($jsonResultPath . $jsonResultFile,
+                    true);
+                // Декодирование json-файла с результатами обработки видео в виде текста распознанной речи
+                $recognizedSpeechFile = json_decode($jsonRecognizedSpeechFile, true);
+                // Запоминание массива с распознанным текстом
+                foreach ($recognizedSpeechFile as $key => $value)
+                    if ($key == 'TEXT' && $value != null)
+                        $recognizedSpeechText = $value;
+            }
+
+            // Удаление файла с видео ответом на вопрос
+            if (file_exists($videoPath . $question->video_file_name))
+                unlink($videoPath . $question->video_file_name);
+            // Удаление файла с параметрами запуска программы обработки видео
+            if (file_exists($mainPath . 'test' . $question->id . '.json'))
+                unlink($mainPath . 'test' . $question->id . '.json');
+            // Удаление json-файла с результатами обработки видео программой Ивана
+            if (file_exists($jsonResultPath . $jsonResultFile))
+                unlink($jsonResultPath . $jsonResultFile);
+
+            if ($errorMessage != '')
+                // Вывод сообщения об ошибке формирования текста распознанной речи
+                Yii::$app->getSession()->setFlash('warning', $errorMessage);
+            else
+                if ($recognizedSpeechText != '') {
+                    // Вывод сообщения об успешном формировании текста распознанной речи
+                    Yii::$app->getSession()->setFlash('success', 'Распознование речи прошло успешно!');
+
+                    return $this->render('recognized-speech-text', [
+                        'model' => $question,
+                        'recognizedSpeechText' => $recognizedSpeechText
+                    ]);
+                }
+        } else {
+            // Вывод сообщения
+            Yii::$app->getSession()->setFlash('warning',
+                'Отсутствует файл видео ответа на вопрос для распознования!');
+
+            return $this->redirect(['/question/view/' . $question->id]);
         }
 
         return false;
