@@ -74,7 +74,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     'items' => [
                         ['label' => 'Модулем Ивана', 'url' => '#', 'options' => ['class' => 'get-ivan-landmarks',
                             'id' => $model->id]],
-                        ['label' => 'Модулем Андрея', 'url' => '#', 'options' => ['class' => 'get-ivan-landmarks',
+                        ['label' => 'Модулем Андрея', 'url' => '#', 'options' => ['class' => 'get-andrey-landmarks',
                             'id' => $model->id]],
                     ],
                 ],

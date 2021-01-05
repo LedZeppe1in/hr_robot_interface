@@ -81,10 +81,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'options' => ['class' => 'btn btn-success']
             ]);
         } ?>
+        <?= Html::a('Запуск анализа видеоинтервью по всем вопросам',
+            ['run-analysis', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Запуск МОП по всем вопросам видеоинтервью', ['run-features-detection', 'id' => $model->id],
+            ['class' => 'btn btn-success']) ?>
         <?= Html::a('Распознать речь в видео', ['get-recognized-speech', 'id' => $model->id],
-            ['class' => 'btn btn-success']) ?>
-        <?= Html::a('Запуск анализа видеоинтервью по всем вопросам', ['run-analysis', 'id' => $model->id],
-            ['class' => 'btn btn-success']) ?>
+            ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',

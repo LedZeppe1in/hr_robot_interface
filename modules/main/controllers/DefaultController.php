@@ -20,6 +20,7 @@ use app\modules\main\models\Profile;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\LoginForm;
+use app\modules\main\models\Respondent;
 use app\modules\main\models\TestQuestion;
 use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\VideoInterview;
@@ -43,13 +44,12 @@ class DefaultController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'interview-analysis',
-                    'upload', 'record', 'analysis'],
+                'only' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload', 'record', 'analysis'],
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['sing-out', 'test', 'gerchikov-test-conclusion-view',
-                            'interview-analysis', 'upload', 'record', 'analysis'],
+                        'actions' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload',
+                            'record', 'analysis'],
                         'roles' => ['@'],
                     ],
                 ],
@@ -617,11 +617,18 @@ class DefaultController extends Controller
         // Поиск профиля связанного с данным опросом
         $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
         $profile = Profile::findOne($profileSurvey->profile_id);
+        // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+        $respondent = new Respondent();
+        $respondent->name = 'test' . mt_rand(5, 15);
+        $respondent->save();
         // Создание модели видеоинтервью
         $videoInterviewModel = new VideoInterview();
         $videoInterviewModel->description = 'Видео-интервью для профиля: ' . $profile->name;
-        $videoInterviewModel->respondent_id = 1;
+        $videoInterviewModel->respondent_id = $respondent->id;
         $videoInterviewModel->save();
+        // Формирование и сохранение в БД уникального имени респондента
+        $respondent->name = 'Иван Иванович-' . $videoInterviewModel->id;
+        $respondent->updateAttributes(['name']);
         // Создание модели итогового результата
         $FinalResultModel = new FinalResult();
         $FinalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
@@ -786,7 +793,7 @@ class DefaultController extends Controller
             $questionModel->save();
             // Создание объекта коннектора с Yandex.Cloud Object Storage
             $osConnector = new OSConnector();
-            // Сохранение файла видеоинтервью на Object Storage
+            // Сохранение файла видео ответа на вопрос на Object Storage
             if ($questionModel->video_file_name != '')
                 $osConnector->saveFileToObjectStorage(
                     OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
@@ -803,88 +810,92 @@ class DefaultController extends Controller
                 // Удаление каталога
                 rmdir($path);
             }
-            // Создание цифровой маски в БД
-            $landmarkModel = new Landmark();
-            $landmarkModel->start_time = Yii::$app->request->post('Landmark')['start_time'];
-            $landmarkModel->finish_time = Yii::$app->request->post('Landmark')['finish_time'];
-            $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
-            $landmarkModel->rotation = Landmark::TYPE_ZERO;
-            $landmarkModel->mirroring = Yii::$app->request->post('Landmark')['mirroring'];
-            $landmarkModel->question_id = $questionModel->id;
-            $landmarkModel->video_interview_id = Yii::$app->request->post('Landmark')['video_interview_id'];
-            $landmarkModel->save();
             // Поиск темы для вопроса - Topic 24 (поворот вправо), 25 (поворот влево), 27 (калибровочный для камеры)
             $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $id])->one();
-            // Создание объекта запуска консольной команды
-            $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
-            // Если вопросы калибровочные (темы 24, 25 и 27)
-            if ($topicQuestion->topic_id == 24 || $topicQuestion->topic_id == 25 || $topicQuestion->topic_id == 27)
-                // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
-                $consoleRunner->run('video-interview-analysis/preparation ' . $questionModel->id . ' ' .
-                    $landmarkModel->id . ' ' . $topicQuestion->topic_id);
-            // Если текущий вопрос является калибровочным и он последний
-            if ($topicQuestion->topic_id == 25) {
-                // Поиск полного видеоинтервью по id
-                $videoInterview = VideoInterview::findOne($landmarkModel->video_interview_id);
-                // Ожидание завершения анализа видео по калибровочным вопросам
-                do {
-                    // Задержка выполнения скрипта в 1 секунду
-                    sleep(1);
-                    // Поиск статуса обработки видеоинтервью по id видеоинтервью
-                    $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
-                        ->where(['video_interview_id' => $videoInterview->id])
-                        ->one();
-                } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
-                // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
-                $questionProcessingStatuses = QuestionProcessingStatus::find()
-                    ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
-                    ->orderBy(['question_id' => SORT_ASC])
-                    ->all();
-                // Параметр успешности получения цифровых масок МОВ Ивана
-                $successfullyFormedLandmark = true;
-                // Параметры наличия поворота головы вправо и влево
-                $turnRight = false;
-                $turnLeft = false;
-                // Обход всех статусов обработки видео на вопрос
-                foreach ($questionProcessingStatuses as $questionProcessingStatus) {
-                    // Поиск цифровых масок по определенному вопросу
-                    $landmarks = Landmark::find()
-                        ->where(['question_id' => $questionProcessingStatus->question_id])
-                        ->all();
-                    // Если цифровые маски по данному вопросу сформированы
-                    if (!empty($landmarks)) {
-                        foreach ($landmarks as $landmark) {
-                            // Поиск видео ответа на вопрос по id
-                            $question = Question::findOne($landmark->question_id);
-                            // Поиск темы вопроса по id вопроса
-                            $topicQuestion = TopicQuestion::find()
-                                ->where(['test_question_id' => $question->test_question_id])
-                                ->one();
-                            // Создание объекта AnalysisHelper
-                            $analysisHelper = new AnalysisHelper();
-                            // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
-                            if ($topicQuestion->topic_id == 24)
-                                $turnRight = $analysisHelper->determineTurn($landmark);
-                            // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
-                            if ($topicQuestion->topic_id == 25)
-                                $turnLeft = $analysisHelper->determineTurn($landmark);
-                        }
-                    } else
-                        $successfullyFormedLandmark = false;
+            // Если тема для вопроса найдена
+            if (!empty($topicQuestion)) {
+                // Если вопросы калибровочные (темы 24, 25 и 27)
+                if ($topicQuestion->topic_id == 24 || $topicQuestion->topic_id == 25 || $topicQuestion->topic_id == 27) {
+                    // Создание цифровой маски в БД
+                    $landmarkModel = new Landmark();
+                    $landmarkModel->start_time = Yii::$app->request->post('Landmark')['start_time'];
+                    $landmarkModel->finish_time = Yii::$app->request->post('Landmark')['finish_time'];
+                    $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                    $landmarkModel->rotation = Landmark::TYPE_ZERO;
+                    $landmarkModel->mirroring = Yii::$app->request->post('Landmark')['mirroring'];
+                    $landmarkModel->question_id = $questionModel->id;
+                    $landmarkModel->video_interview_id = Yii::$app->request->post('Landmark')['video_interview_id'];
+                    $landmarkModel->save();
+                    // Создание объекта запуска консольной команды
+                    $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                    // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
+                    $consoleRunner->run('video-interview-analysis/preparation ' . $questionModel->id . ' ' .
+                        $landmarkModel->id . ' ' . $topicQuestion->topic_id);
                 }
-                // Определение массива возвращаемых данных
-                $data = array();
-                // Установка формата JSON для возвращаемых данных
-                $response = Yii::$app->response;
-                $response->format = Response::FORMAT_JSON;
-                // Формирование массива возвращаемых значений
-                $data['success'] = $successfullyFormedLandmark;
-                $data['turnRight'] = $turnRight;
-                $data['turnLeft'] = $turnLeft;
-                // Возвращение данных
-                $response->data = $data;
+                // Если текущий вопрос является калибровочным и он последний
+                if ($topicQuestion->topic_id == 25) {
+                    // Поиск полного видеоинтервью по id
+                    $videoInterview = VideoInterview::findOne($questionModel->video_interview_id);
+                    // Ожидание завершения анализа видео по калибровочным вопросам
+                    do {
+                        // Задержка выполнения скрипта в 1 секунду
+                        sleep(1);
+                        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                            ->where(['video_interview_id' => $videoInterview->id])
+                            ->one();
+                    } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
+                    // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
+                    $questionProcessingStatuses = QuestionProcessingStatus::find()
+                        ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                        ->orderBy(['question_id' => SORT_ASC])
+                        ->all();
+                    // Параметр успешности получения цифровых масок МОВ Ивана
+                    $successfullyFormedLandmark = true;
+                    // Параметры наличия поворота головы вправо и влево
+                    $turnRight = false;
+                    $turnLeft = false;
+                    // Обход всех статусов обработки видео на вопрос
+                    foreach ($questionProcessingStatuses as $questionProcessingStatus) {
+                        // Поиск цифровых масок по определенному вопросу
+                        $landmarks = Landmark::find()
+                            ->where(['question_id' => $questionProcessingStatus->question_id])
+                            ->all();
+                        // Если цифровые маски по данному вопросу сформированы
+                        if (!empty($landmarks)) {
+                            foreach ($landmarks as $landmark) {
+                                // Поиск видео ответа на вопрос по id
+                                $question = Question::findOne($landmark->question_id);
+                                // Поиск темы вопроса по id вопроса
+                                $topicQuestion = TopicQuestion::find()
+                                    ->where(['test_question_id' => $question->test_question_id])
+                                    ->one();
+                                // Создание объекта AnalysisHelper
+                                $analysisHelper = new AnalysisHelper();
+                                // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                                if ($topicQuestion->topic_id == 24)
+                                    $turnRight = $analysisHelper->determineTurn($landmark);
+                                // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                                if ($topicQuestion->topic_id == 25)
+                                    $turnLeft = $analysisHelper->determineTurn($landmark);
+                            }
+                        } else
+                            $successfullyFormedLandmark = false;
+                    }
+                    // Определение массива возвращаемых данных
+                    $data = array();
+                    // Установка формата JSON для возвращаемых данных
+                    $response = Yii::$app->response;
+                    $response->format = Response::FORMAT_JSON;
+                    // Формирование массива возвращаемых значений
+                    $data['success'] = true;//$successfullyFormedLandmark;
+                    $data['turnRight'] = 0;//$turnRight;
+                    $data['turnLeft'] = 1;//$turnLeft;
+                    // Возвращение данных
+                    $response->data = $data;
 
-                return $response;
+                    return $response;
+                }
             }
 //            // Если вопросы не калибровочные
 //            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27)

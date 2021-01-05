@@ -99,7 +99,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
                 'template' => '{view} {update} {get-ivan-landmarks} {get-recognized-speech} {get-andrey-landmarks} ' .
-                    '{run-analysis} {delete}',
+                    '{run-analysis} {run-features-detection} {run-features-interpretation} {delete}',
                 'buttons' => [
                     'get-ivan-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
@@ -123,8 +123,20 @@ $this->params['breadcrumbs'][] = $this->title;
                     },
                     'run-analysis' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-play-circle',
-                            'title' => 'Запуск анализа видеоинтервью по всем вопросам']);
+                            'title' => 'Запуск анализа видеоинтервью по всем вопросам (МОВ + МОП)']);
                         $url = ['/video-interview/run-analysis/' . $model->id];
+                        return Html::a($icon, $url);
+                    },
+                    'run-features-detection' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-cog',
+                            'title' => 'Запуск МОП по всем вопросам видеоинтервью']);
+                        $url = ['/video-interview/run-features-detection/' . $model->id];
+                        return Html::a($icon, $url);
+                    },
+                    'run-features-interpretation' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-certificate',
+                            'title' => 'Запуск МИП (первый + второй уровень) по всем результатам МОП']);
+                        $url = ['/video-interview/run-features-interpretation/' . $model->id];
                         return Html::a($icon, $url);
                     },
                 ],

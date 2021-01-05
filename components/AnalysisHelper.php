@@ -3,8 +3,10 @@
 namespace app\components;
 
 use stdClass;
+use Exception;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
+use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\VideoProcessingModuleSettingForm;
@@ -771,20 +773,226 @@ class AnalysisHelper
         return $result;
     }
 
+    public static function convertPhrase($thePhrase)
+    {
+        if (is_array($thePhrase)) {
+            $curPhraseFact = new stdClass;
+            // Имя шаблона: Статистика средних величин интервью
+            $curPhraseFact -> {'NameOfTemplate'} = 'T2167';
+            // Имя слота: "Момент времени"
+            if (isset($thePhrase["time"])) $curPhraseFact -> {'s968'} = $thePhrase["time"];
+            // Имя слота: "Текст словосочетания"
+            if (isset($thePhrase["val"])) $curPhraseFact -> {'s969'} = $thePhrase["val"];
+            // Имя слота: "Номер кадра"
+            if (isset($thePhrase["frame"])) $curPhraseFact -> {'s970'} = $thePhrase["frame"];
+            // Имя слота: "Номер конечного кадра"
+            if (isset($thePhrase["endFrame"])) $curPhraseFact -> {'s971'} = $thePhrase["endFrame"];
+            // Имя слота: "Номер начального кадра"
+            if (isset($thePhrase["startFrame"])) $curPhraseFact -> {'s972'} = $thePhrase["startFrame"];
+
+            return $curPhraseFact;
+        }
+
+        return null;
+    }
+
+    public static function convertPhraseSequence($thePhraseSequence)
+    {
+        if (isset($thePhraseSequence) && is_array($thePhraseSequence) && count($thePhraseSequence) > 0) {
+            $result = array();
+            foreach ($thePhraseSequence as $k => $v) {
+                $curFact = self::convertPhrase($v);
+                if (isset($curFact))
+                    $result[]=$curFact;
+            }
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    public static function convertPhrases($thePhrases)
+    {
+        if (isset($thePhrases)) {
+            $result = array();
+            if (isset($thePhrases["YesPhrase"]) && is_array($thePhrases["YesPhrase"])) {
+                foreach ($thePhrases["YesPhrase"] as $k=>$v) {
+                    $curPhrases = self::convertPhraseSequence($v);
+                    if (isset($curPhrases) && count($curPhrases) > 0)
+                        $result = array_merge($result, $curPhrases);
+                }
+            }
+            if (isset($thePhrases["NoPhrase"])) {
+                foreach ($thePhrases["NoPhrase"] as $k=>$v) {
+                    $curPhrases = self::convertPhraseSequence($v);
+                    if (isset($curPhrases) && count($curPhrases) > 0)
+                        $result = array_merge($result, $curPhrases);
+                }
+            }
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    public static function convertSummarizedFeatureStatistics($theStatistics)
+    {
+        $result = array();
+        if (isset($theStatistics) && is_array($theStatistics)) {
+            $factAver = new stdClass;
+            // Имя шаблона: Статистика средних величин интервью
+            $factAver -> {'NameOfTemplate'} = 'T2171';
+
+            // Имя слота: "Средний темп речи"
+            if (isset($theStatistics["average_speech_frequency"]) &&
+                isset($theStatistics["average_speech_frequency"]["val"]))
+                $factAver -> {'s989'} = $theStatistics["average_speech_frequency"]["val"];
+
+            // Имя слота: "Среднее число морганий"
+            if (isset($theStatistics["average_eye_blinking_frequency"]) &&
+                isset($theStatistics["average_eye_blinking_frequency"]["val"]))
+                $factAver -> {'s991'} = $theStatistics["average_eye_blinking_frequency"]["val"];
+
+            // Имя слота: "Среднее число опускания уголков губ"
+            if (isset($theStatistics["average_lipcorners_lowering_frequency"]) &&
+                isset($theStatistics["average_lipcorners_lowering_frequency"]["val"]))
+                $factAver -> {'s992'} = $theStatistics["average_lipcorners_lowering_frequency"]["val"];
+
+            // Имя слота: "Среднее число поднятий бровей"
+            if (isset($theStatistics["average_eyebrow_lift_frequency"]) &&
+                isset($theStatistics["average_eyebrow_lift_frequency"]["val"]))
+                $factAver -> {'s993'} = $theStatistics["average_eyebrow_lift_frequency"]["val"];
+
+            // Имя слота: "Среднее число движений носом"
+            if (isset($theStatistics["average_nose_movement_frequency"]) &&
+                isset($theStatistics["average_nose_movement_frequency"]["val"]))
+                $factAver -> {'s994'} = $theStatistics["average_nose_movement_frequency"]["val"];
+
+            // Имя слота: "Среднее число нахмуриваний"
+            if (isset($theStatistics["average_frown_frequency"]) &&
+                isset($theStatistics["average_frown_frequency"]["val"]))
+                $factAver -> {'s996'} = $theStatistics["average_frown_frequency"]["val"];
+
+            // Имя слота: "Среднее время молчания перед ответом"
+            if (isset($theStatistics["average_silence_before_response"]) &&
+                isset($theStatistics["average_silence_before_response"]["val"]))
+                $factAver -> {'s1004'} = $theStatistics["average_silence_before_response"]["val"];
+
+            $result[] = $factAver;
+
+            $factDev = new stdClass;
+            // Имя шаблона: Статистика стандартных отклонений интервью
+            $factDev -> {'NameOfTemplate'} = 'T2173';
+
+            // Имя слота: "Стандартное отклонение темпа речи"
+            if (isset($theStatistics["deviation_speech_frequency"]) &&
+                isset($theStatistics["deviation_speech_frequency"]["val"]))
+                $factDev -> {'s1003'} = $theStatistics["deviation_speech_frequency"]["val"];
+
+            // Имя слота: "Стандартное отклонение числа морганий"
+            if (isset($theStatistics["deviation_eye_blinking_frequency"]) &&
+                isset($theStatistics["deviation_eye_blinking_frequency"]["val"]))
+                $factDev -> {'s1002'} = $theStatistics["deviation_eye_blinking_frequency"]["val"];
+
+            // Имя слота: "Стандартное отклонение числа опусканий уголков губ"
+            if (isset($theStatistics["deviation_lipcorners_lowering_frequency"]) &&
+                isset($theStatistics["deviation_lipcorners_lowering_frequency"]["val"]))
+                $factDev -> {'s997'} = $theStatistics["deviation_lipcorners_lowering_frequency"]["val"];
+
+            // Имя слота: "Стандартное отклонение числа поднятий бровей"
+            if (isset($theStatistics["deviation_eyebrow_lift_frequency"]) &&
+                isset($theStatistics["deviation_eyebrow_lift_frequency"]["val"]))
+                $factDev -> {'s1001'} = $theStatistics["deviation_eyebrow_lift_frequency"]["val"];
+
+            // Имя слота: "Стандартное отклонение числа движений носом"
+            if (isset($theStatistics["deviation_nose_movement_frequency"]) &&
+                isset($theStatistics["deviation_nose_movement_frequency"]["val"]))
+                $factDev -> {'s1000'} = $theStatistics["deviation_nose_movement_frequency"]["val"];
+
+            // Имя слота: "Стандартное отклонение числа нахмуриваний"
+            if (isset($theStatistics["deviation_frown_frequency"]) &&
+                isset($theStatistics["deviation_frown_frequency"]["val"]))
+                $factDev -> {'s998'} = $theStatistics["deviation_frown_frequency"]["val"];
+
+            // Имя слота: "Стандартное отклонение молчания перед ответом "
+            if (isset($theStatistics["deviation_silence_before_response"]) &&
+                isset($theStatistics["deviation_silence_before_response"]["val"]))
+                $factDev -> {'s1005'} = $theStatistics["deviation_silence_before_response"]["val"];
+
+            $result[] = $factDev;
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    public static function convertFeatureStatistics($theStatistics, $questionText)
+    {
+        if (isset($theStatistics) && is_array($theStatistics)) {
+            $fact = new stdClass;
+            // Имя шаблона: Статистика средних величин вопроса
+            $fact -> {'NameOfTemplate'} = 'T2172';
+
+            // Имя слота: "Средний темп речи"
+            if (isset($theStatistics["average_speech_frequency"]) &&
+                isset($theStatistics["average_speech_frequency"]["val"]))
+                $fact -> {'s989'} = $theStatistics["average_speech_frequency"]["val"];
+
+            //s990: String @NameOfSlot (Заданный вопрос) - текст вопроса
+            $fact -> {'s990'} = $questionText;
+
+            // Имя слота: "Среднее число морганий"
+            if (isset($theStatistics["average_eye_blinking_frequency"]) &&
+                isset($theStatistics["average_eye_blinking_frequency"]["val"]))
+                $fact -> {'s991'} = $theStatistics["average_eye_blinking_frequency"]["val"];
+
+            // Имя слота: "Среднее число опускания уголков губ"
+            if (isset($theStatistics["average_lipcorners_lowering_frequency"]) &&
+                isset($theStatistics["average_lipcorners_lowering_frequency"]["val"]))
+                $fact -> {'s992'} = $theStatistics["average_lipcorners_lowering_frequency"]["val"];
+
+            // Имя слота: "Среднее число поднятий бровей"
+            if (isset($theStatistics["average_eyebrow_lift_frequency"]) &&
+                isset($theStatistics["average_eyebrow_lift_frequency"]["val"]))
+                $fact -> {'s993'} = $theStatistics["average_eyebrow_lift_frequency"]["val"];
+
+            // Имя слота: "Среднее число движений носом"
+            if (isset($theStatistics["average_nose_movement_frequency"]) &&
+                isset($theStatistics["average_nose_movement_frequency"]["val"]))
+                $fact -> {'s994'} = $theStatistics["average_nose_movement_frequency"]["val"];
+
+            // Имя слота: "Среднее число нахмуриваний"
+            if (isset($theStatistics["average_frown_frequency"]) &&
+                isset($theStatistics["average_frown_frequency"]["val"]))
+                $fact -> {'s996'} = $theStatistics["average_frown_frequency"]["val"];
+
+            // Имя слота: "Среднее время молчания перед ответом"
+            if (isset($theStatistics["silence_before_response"]) &&
+                isset($theStatistics["silence_before_response"]["val"]))
+                $fact -> {'s1004'} = $theStatistics["silence_before_response"]["val"];
+
+            return $fact;
+        }
+
+        return null;
+    }
+
     /**
      * Преобразование массива с результатами определения признаков в массив фактов.
      *
      * @param $faceData - цифровая маска
      * @param $detectedFeatures - массив обнаруженных признаков
      * @param $questionTime - время на вопрос в миллисекундах
+     * @param $questionText - текст вопроса
      * @return array - массив наборов фактов для кадого кадра видеоинтервью
      */
-    public static function convertFeaturesToFacts($faceData, $detectedFeatures, $questionTime)
+    public static function convertFeaturesToFacts($faceData, $detectedFeatures, $questionTime, $questionText)
     {
         // Массив для наборов фактов, сформированных для каждого кадра
         $facts = array();
-        // Время на вопрос в кадрах
-        $questionTimeInFrames = 0;
         // Кол-во кадров
         $frameNumber = 0;
         if (isset($detectedFeatures['eye']['left_eye_upper_eyelid_movement']) &&
@@ -850,29 +1058,57 @@ class AnalysisHelper
             if ($i == 1 && $questionTime != null) {
                 // Декодирование цифровой маски из json-формата
                 $faceData = json_decode($faceData, true);
-                // Если существует ключ (индекс) - FPS
-                if (isset($faceData['fps'])) {
+                $fps = null;
+                // Определение FPS
+                if (isset($faceData['fps']))
+                    $fps = $faceData['fps'];
+                if (isset($faceData['FPS']))
+                    $fps = $faceData['FPS'];
+                // Если существует ключ (индекс) - fps или FPS
+                if (isset($faceData['fps']) || isset($faceData['FPS'])) {
                     // Определение времени на вопрос в кадрах
-                    $questionTimeInFrames = round(((float)$faceData['fps'] * ($questionTime / 1000)), 0);
+                    $questionTimeInFrames = round(((float)$fps * ($questionTime / 1000)), 0);
                     // Формирование факта одного признака для первого кадра
                     $videoParametersFact['NameOfTemplate'] = 'T2110';
-                    $videoParametersFact['s922'] = $faceData['fps'];
+                    $videoParametersFact['s922'] = $fps;
                     $videoParametersFact['s924'] = $questionTimeInFrames;
                     // Добавление факта параметра видео для первого кадра в набор фактов
                     array_push($frameFacts, $videoParametersFact);
                 }
             }
-            if ($i <= $questionTimeInFrames) {
-                // Формирование факта признака общего поведения (слушание) для текущего кадра
-                $generalBehaviorFeatureFact = array();
-                $generalBehaviorFeatureFact['NameOfTemplate'] = 'T2046';
-                $generalBehaviorFeatureFact['s908'] = 'Слушание';
-                $generalBehaviorFeatureFact['s909'] = $i;
-                $generalBehaviorFeatureFact['s910'] = $i; //$frameNumber;
-                $generalBehaviorFeatureFact['s911'] = $i;
-                // Добавление факта одного признака общего поведения (слушание) для текущего кадра в набор фактов
-                array_push($frameFacts, $generalBehaviorFeatureFact);
+            if ($i == 1) {
+                // Обход всех определенных лицевых признаков
+                foreach ($detectedFeatures as $key => $value) {
+                    if ($key == 'feature_statistics') {
+                        // Конвертация статистики по видео в факт
+                        $featureStatistics = self::convertFeatureStatistics($value, $questionText);
+                        // Если факт создан
+                        if (isset($featureStatistics))
+                            // Добавление факта по статистике для первого кадра в набор фактов
+                            array_push($frameFacts, $featureStatistics);
+                    }
+                    if ($key == 'text') {
+                        // Конвертация фраз текста в факт
+                        $phrases = self::convertPhrases($value);
+                        // Если создан массив с фактами
+                        if (isset($phrases) && is_array($phrases))
+                            foreach ($phrases as $phrase)
+                                // Добавление факта по фразам для первого кадра в набор фактов
+                                array_push($frameFacts, $phrase);
+                    }
+                }
             }
+//            if ($i <= $questionTimeInFrames) {
+//                // Формирование факта признака общего поведения (слушание) для текущего кадра
+//                $generalBehaviorFeatureFact = array();
+//                $generalBehaviorFeatureFact['NameOfTemplate'] = 'T2046';
+//                $generalBehaviorFeatureFact['s908'] = 'Слушание';
+//                $generalBehaviorFeatureFact['s909'] = $i;
+//                $generalBehaviorFeatureFact['s910'] = $i; //$frameNumber;
+//                $generalBehaviorFeatureFact['s911'] = $i;
+//                // Добавление факта одного признака общего поведения (слушание) для текущего кадра в набор фактов
+//                array_push($frameFacts, $generalBehaviorFeatureFact);
+//            }
             // Добавление в конец набора фактов факта с информацией по кадру
             $frameFacts[] = self::createFactWithFrameInformation($i);
             // Добавление набора фактов для текущего кадра в общий массив фактов
@@ -895,7 +1131,7 @@ class AnalysisHelper
             json_decode('["AU0 - Нейтральное лицо","AU1 - Подниматель внутренней части брови","AU2 - Подниматель внешней части брови","AU4 - Опускатель брови","AU5 - Подниматель верхнего века","AU6 - Подниматель щеки","AU7 - Натягиватель века","AU8 - Губы навстречу друг другу","AU9 - Сморщиватель носа","AU10 - Подниматель верхней губы","AU11 - Углубитель носогубной складки","AU12 - Подниматель уголка губы","AU13 - Острый подниматель уголка губы","AU14 - Ямочка","AU15 - Опускатель уголка губы","AU16 - Опускатель нижней губы","AU17 - Подниматель подбородка","AU18 - Сморщиватель губ","AU19 - Показ языка","AU20 - Растягиватель губ","AU21 - Натягиватель шеи","AU22 - Губы воронкой","AU23 - Натягиватель губ","AU24 - Сжиматель губ","AU25 - Губы разведены","AU26 - Челюсть опущена","AU27 - Рот широко открыт","AU28 - Втягивание губ","AU29 - Нижняя челюсть вперёд","AU30 - Челюсть в бок","AU31 - Сжиматель челюстей","AU32 - Покусывание губы","AU33 - Выдувание","AU34 - Раздувание щёк","AU35 - Втягивание щёк","AU36 - Язык высунут","AU37 - Облизывание губ","AU38 - Расширитель ноздрей","AU39 - Суживатель ноздрей","AU41 - Опускатель надпереносья","AU42 - Опускатель внутренней части брови","AU43 - Глаза закрыты","AU44 - Сведение бровей","AU45 - Моргание","AU46 - Подмигивание","AU51 - Поворот головы влево","AU52 - Поворот головы вправо","AU53 - Голова вверх","AU54 - Голова вниз","AU55 - Наклон головы влево","AU M55 - Наклон головы влево","AU56 - Наклон головы вправо","AU M56 - Наклон головы вправо","AU57 - Голова вперёд","AU M57 - Толчок головы вперёд","AU58 - Голова назад","AU M59 - Кивок головой","AU M60 - Голова из стороны в сторону","AU M83 - Голова вверх и в сторону","AU61 - Отведение глаз влево","AU M61 - Глаза влево","AU62 - Отведение глаз вправо","AU M62 - Глаза вправо","AU63 - Глаза вверх","AU64 - Глаза вниз","AU65 - Расходящееся косоглазие","AU66 - Сходящееся косоглазие","AU M68 - Закатывание глаз","AU69 - Глаза на другом человеке","AU M69 - Голова и/или глаза на другом человеке","AU70 - Брови и лоб не видны","AU71 - Глаза не видны","AU72 - Нижняя часть лица не видна","AU73 - Всё лицо не видно","AU74 - Оценивание невозможно","AU40 - Втягивание носом","AU50 - Речь","AU80 - Глотание","AU81 - Жевание","AU82 - Пожатие плечом","AU84 - Движение головой назад и вперёд","AU85 - Кивок головой вверх и вниз"]'));
         $result = array();
         foreach ($actionUnits as $name => $actionUnit) {
-            if ($actionUnit -> presence === 1) {
+            if ($actionUnit->presence === 1) {
                 $fact = new stdClass;
                 // Имя шаблона: Признаки эмоций (Action units)
                 $fact -> {'NameOfTemplate'} = 'T2045';
@@ -913,6 +1149,88 @@ class AnalysisHelper
         }
         // Добавление в конец набора фактов факта с информацией по кадру
         $result[] = self::createFactWithFrameInformation($frameIndex);
+
+        return $result;
+    }
+
+    /**
+     * Преобразование массива с направлениями взгляда в массив фактов.
+     *
+     * @param stdClass $gazeDirections - массив направлений взгляда
+     * @param $frameIndex - номер кадра
+     * @return array - массив факта
+     */
+    public static function convertGazeToFacts(stdClass $gazeDirections, $frameIndex)
+    {
+        $result = array();
+        foreach ($gazeDirections as $name => $gazeDirection) {
+            // Направления взгляда по горизонтали
+            if ($name === 'horz') {
+                // Формирование шаблона факта направления взгляда по горизонтали (левый зрачок) для текущего кадра
+                $fact = new stdClass;
+                $fact -> {'NameOfTemplate'} = 'T1986';
+                $fact -> {'s861'} = 'Левый зрачок';
+                $fact -> {'s862'} = 'Изменение положения по горизонтали';
+                if ($gazeDirection->direction === 'right')
+                    $fact -> {'s863'} = 'Вправо';
+                if ($gazeDirection->direction === 'left')
+                    $fact -> {'s863'} = 'Влево';
+                $fact -> {'s864'} = abs($gazeDirection->intensity);
+                $fact -> {'s869'} = $frameIndex;
+                $fact -> {'s870'} = $frameIndex;
+                $fact -> {'s871'} = $frameIndex;
+                $fact -> {'s874'} = $frameIndex;
+                $result[] = $fact;
+                // Формирование шаблона факта направления взгляда по горизонтали (правый зрачок) для текущего кадра
+                $fact = new stdClass;
+                $fact -> {'NameOfTemplate'} = 'T1986';
+                $fact -> {'s861'} = 'Правый зрачок';
+                $fact -> {'s862'} = 'Изменение положения по горизонтали';
+                if ($gazeDirection->direction === 'right')
+                    $fact -> {'s863'} = 'Вправо';
+                if ($gazeDirection->direction === 'left')
+                    $fact -> {'s863'} = 'Влево';
+                $fact -> {'s864'} = abs($gazeDirection->intensity);
+                $fact -> {'s869'} = $frameIndex;
+                $fact -> {'s870'} = $frameIndex;
+                $fact -> {'s871'} = $frameIndex;
+                $fact -> {'s874'} = $frameIndex;
+                $result[] = $fact;
+            };
+            // Направления взгляда по вертикали
+            if ($name === 'vert') {
+                // Формирование шаблона факта направления взгляда по вертикали (левый зрачок) для текущего кадра
+                $fact = new stdClass;
+                $fact -> {'NameOfTemplate'} = 'T1986';
+                $fact -> {'s861'} = 'Левый зрачок';
+                $fact -> {'s862'} = 'Изменение положения по вертикали';
+                if ($gazeDirection->direction === 'up')
+                    $fact -> {'s863'} = 'Вверх';
+                if ($gazeDirection->direction === 'down')
+                    $fact -> {'s863'} = 'Вниз';
+                $fact -> {'s864'} = abs($gazeDirection->intensity);
+                $fact -> {'s869'} = $frameIndex;
+                $fact -> {'s870'} = $frameIndex;
+                $fact -> {'s871'} = $frameIndex;
+                $fact -> {'s874'} = $frameIndex;
+                $result[] = $fact;
+                // Формирование шаблона факта направления взгляда по вертикали (правый зрачок) для текущего кадра
+                $fact = new stdClass;
+                $fact -> {'NameOfTemplate'} = 'T1986';
+                $fact -> {'s861'} = 'Правый зрачок';
+                $fact -> {'s862'} = 'Изменение положения по вертикали';
+                if ($gazeDirection->direction === 'up')
+                    $fact -> {'s863'} = 'Вверх';
+                if ($gazeDirection->direction === 'down')
+                    $fact -> {'s863'} = 'Вниз';
+                $fact -> {'s864'} = abs($gazeDirection->intensity);
+                $fact -> {'s869'} = $frameIndex;
+                $fact -> {'s870'} = $frameIndex;
+                $fact -> {'s871'} = $frameIndex;
+                $fact -> {'s874'} = $frameIndex;
+                $result[] = $fact;
+            };
+        }
 
         return $result;
     }
@@ -963,6 +1281,103 @@ class AnalysisHelper
     }
 
     /**
+     * Получение текста распознанной речи на основе анализа видео ответа на вопрос.
+     *
+     * @param $id - идентификатор видео ответа на вопрос
+     * @return bool|string
+     */
+    public static function getRecognizedSpeechText($id)
+    {
+        // Поиск видео ответа на вопрос по id
+        $question = Question::findOne($id);
+        // Если есть файл видео
+        if ($question->video_file_name != null) {
+            // Путь к программе обработки видео от Ивана
+            $mainPath = '/home/-Common/-ivan/';
+            // Путь к файлу видео
+            $videoPath = $mainPath . 'video/';
+            // Путь к json-файлу результатов обработки видео
+            $jsonResultPath = $mainPath . 'json/';
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Сохранение файла видео ответа на вопрос на сервер
+            $osConnector->saveFileToServer(
+                OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+                $question->id,
+                $question->video_file_name,
+                $videoPath
+            );
+            // Название json-файла с результатами обработки видео
+            $jsonResultFile = 'out_' . $question->id . '_audio.json';
+            // Формирование массива с параметрами запуска программы обработки видео
+            $parameters['nameVidFilesIn'] = 'video/' . $question->video_file_name;
+            $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
+            $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
+            $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
+            $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
+                [35, 47, 75], [27, 35, 42], [27, 31, 39]];
+            $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
+            $parameters['enableAutoRotate'] = VideoProcessingModuleSettingForm::AUTO_ROTATE_TRUE;
+            $parameters['Mirroring'] = VideoProcessingModuleSettingForm::MIRRORING_FALSE;
+            $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
+            $parameters['id'] = $question->id;
+            $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
+            $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_VIDEO_PARAMETERS;
+            // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
+            $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
+            // Открытие файла на запись для сохранения параметров запуска программы обработки видео
+            $jsonFile = fopen($mainPath . 'test' . $question->id . '.json', 'a');
+            // Запись в файл json-строки с параметрами запуска программы обработки видео
+            fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
+            // Закрытие файла
+            fclose($jsonFile);
+
+            // Сообщение об ошибке формирования текста распознанной речи
+            $errorMessage = null;
+            // json-текст распознанной речи
+            $jsonRecognizedSpeechText = null;
+
+            try {
+                // Запуск программы обработки видео Ивана
+                chdir($mainPath);
+                exec('./venv/bin/python ./main_audio.py ./test' . $question->id . '.json');
+            } catch (Exception $e) {
+                // Сохранение сообщения об ошибке МОВ Ивана
+                $errorMessage = 'Ошибка модуля обработки видео Ивана (скрипт распознования речи)! ' . $e->getMessage();
+            }
+
+            // Проверка существования json-файл с результатами обработки видео
+            if (file_exists($jsonResultPath . $jsonResultFile)) {
+                // Получение json-файла с результатами обработки видео в виде текста распознанной речи
+                $jsonRecognizedSpeechFile = file_get_contents($jsonResultPath . $jsonResultFile,
+                    true);
+                // Декодирование json-файла с результатами обработки видео в виде текста распознанной речи
+                $recognizedSpeechFile = json_decode($jsonRecognizedSpeechFile, true);
+                // Запоминание массива с распознанным текстом в формате json
+                foreach ($recognizedSpeechFile as $key => $value)
+                    if ($key == 'TEXT' && $value != null)
+                        $jsonRecognizedSpeechText = $value;
+            }
+
+            // Удаление файла с видеоинтервью
+            if (file_exists($videoPath . $question->video_file_name))
+                unlink($videoPath . $question->video_file_name);
+            // Удаление файла с параметрами запуска программы обработки видео
+            if (file_exists($mainPath . 'test' . $question->id . '.json'))
+                unlink($mainPath . 'test' . $question->id . '.json');
+            // Удаление json-файла с результатами обработки видео программой Ивана
+            if (file_exists($jsonResultPath . $jsonResultFile))
+                unlink($jsonResultPath . $jsonResultFile);
+
+            // Если нет ошибок при обработке видео и сформирован текст с распознанной черью
+            if ($errorMessage == null && $jsonRecognizedSpeechText != null)
+                return $jsonRecognizedSpeechText;
+        }
+
+        return false;
+    }
+
+    /**
      * Получение базового нулевого кадра (нейтрального состояния лица).
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
@@ -974,10 +1389,12 @@ class AnalysisHelper
         $questions = Question::find()->where(['video_interview_id' => $videoInterviewId])->all();
         // Обход по всем найденным видео ответов на вопросы
         foreach ($questions as $question) {
+            // Поиск темы для вопроса - 27 (калибровочный для камеры)
+            $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
             // Если есть видео ответ на калибровочный вопрос (27 - посмотрите в камеру)
-            if ($question->test_question_id == 27) {
+            if ($topicQuestion->topic_id == 27) {
                 // Поиск цифровой маски, полученной на основе анализа видео ответа на калибровочный вопрос
-                $landmark = Landmark::find()->where(['question_id' => $question->id])->one();
+                $landmark = Landmark::find()->where(['question_id' => $question->id])->orderBy('id DESC')->one();
                 // Если цифровая маска существует
                 if (!empty($landmark)) {
                     // Создание объекта коннектора с Yandex.Cloud Object Storage
@@ -1036,6 +1453,7 @@ class AnalysisHelper
         $facialFeatureDetector = new FacialFeatureDetector();
         // Если вызывается модуль обработки видео Ивана
         if ($landmark->type == Landmark::TYPE_LANDMARK_IVAN_MODULE) {
+            $facialFeatures = null;
             // Если явно указан режим запуска нового МОП
             if ($processingType == 2) {
                 $processingType = 1;
@@ -1044,6 +1462,50 @@ class AnalysisHelper
                     $faceData,
                     $processingType
                 );
+                // Получение текста распознанной речи на основе анализа видео ответа на вопрос
+                $recognizedSpeechText = self::getRecognizedSpeechText($landmark->question_id);
+                // Формирование дополнительных параметров
+                $options = [
+                    'pointsFlag' => $processingType,
+                    'voiceActingTime' => $landmark->question->testQuestion->time,
+                    'skipIrisDetection' => true
+                ];
+                // Выявление признаков для лица по новому методу МОП
+                $facialFeatures = $facialFeatureDetector->detectFeaturesV3($faceData, $basicFrame,
+                    $recognizedSpeechText, $options);
+
+                //
+                if ($landmark->question_id != null) {
+                    //
+                    $testQuestionId = $landmark->question->testQuestion->id;
+                    //
+                    $landmarks = Landmark::find()->where(['video_interview_id' => $landmark->video_interview_id])->all();
+                    //
+                    foreach ($landmarks as $currentLandmark)
+                        if ($currentLandmark->question_id)
+                            if ($currentLandmark->question->testQuestion->id == $testQuestionId)
+                                if ($currentLandmark->type == Landmark::TYPE_LANDMARK_ANDREW_MODULE) {
+                                    // Получение содержимого json-файла с лицевыми точками из Object Storage
+                                    $andreyFaceData = $osConnector->getFileContentFromObjectStorage(
+                                        OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                        $currentLandmark->id,
+                                        $currentLandmark->landmark_file_name
+                                    );
+                                    //
+                                    foreach ($facialFeatures as $key => $value)
+                                        if ($key == 'feature_statistics') {
+                                            //
+                                            $updatedFacialFeatures = $facialFeatureDetector->detectStatisticsA(
+                                                $andreyFaceData,
+                                                $value
+                                            );
+                                            //
+                                            if (isset($updatedFacialFeatures))
+                                                //
+                                                $facialFeatures['feature_statistics'] = $updatedFacialFeatures;
+                                        }
+                                }
+                }
             }
             // Если базовый кадр не определен
             if ($basicFrame == '')
@@ -1052,8 +1514,10 @@ class AnalysisHelper
                     $faceData,
                     $processingType
                 );
-            // Выявление признаков для лица
-            $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, $processingType, $basicFrame);
+            // Если лицевые признаки не определены
+            if ($facialFeatures == null)
+                // Выявление признаков для лица по старому методу МОП
+                $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, $processingType, $basicFrame);
             // Сохранение json-файла с результатами определения признаков на Object Storage
             $osConnector->saveFileToObjectStorage(
                 OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
@@ -1063,21 +1527,68 @@ class AnalysisHelper
             );
             // Время на вопрос
             $questionTime = null;
-            // Если к цифровой маски привязан вопрос, то запоминание времени на вопрос
-            if ($landmark->question_id != null)
+            // Текст вопроса
+            $questionText = null;
+            // Если к цифровой маски привязан вопрос, то запоминание времени на вопрос и текста вопроса
+            if ($landmark->question_id != null) {
                 $questionTime = $landmark->question->testQuestion->time;
+                $questionText = $landmark->question->testQuestion->text;
+            }
             // Преобразование массива с результатами определения признаков в массив фактов
             $facts = self::convertFeaturesToFacts(
                 $faceData,
                 $facialFeatures,
-                $questionTime
+                $questionTime,
+                $questionText
             );
-            // Обновление атрибута названия файла с результатами определения признаков в БД
-            $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
-            $analysisResultModel->updateAttributes(['detection_result_file_name']);
         }
         // Если в json-файле цифровой маски есть данные по Action Units
         if (strpos($faceData, 'AUs') !== false) {
+            // Поиск цифровых масок полученных модулем Ивана для текущего вопроса цифровой маски
+            $questionLandmarks = Landmark::find()
+                ->where(['question_id' => $landmark->question_id, 'type' => Landmark::TYPE_LANDMARK_IVAN_MODULE])
+                ->all();
+            // Если цифровые маски найдены
+            if (!empty($questionLandmarks)) {
+                foreach ($questionLandmarks as $questionLandmark) {
+                    // Если цифровая маска полученная не вторым скриптом Ивана
+                    if (strripos($questionLandmark->landmark_file_name, '_ext') === false) {
+                        // Время на вопрос
+                        $questionTime = null;
+                        // Если к цифровой маски привязан вопрос, то запоминание времени на вопрос
+                        if ($questionLandmark->question_id != null)
+                            $questionTime = $questionLandmark->question->testQuestion->time;
+                        // Если задано время на вопрос
+                        if ($questionTime != null) {
+                            // Получение содержимого json-файла с лицевыми точками полученных модулем Ивана из Object Storage
+                            $jsonFaceDataOnIvanModule = $osConnector->getFileContentFromObjectStorage(
+                                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                $questionLandmark->id,
+                                $questionLandmark->landmark_file_name
+                            );
+                            // Декодирование цифровой маски из json-формата
+                            $faceDataOnIvanModule = json_decode($jsonFaceDataOnIvanModule, true);
+                            $fps = null;
+                            // Определение FPS
+                            if (isset($faceDataOnIvanModule['fps']))
+                                $fps = $faceDataOnIvanModule['fps'];
+                            if (isset($faceDataOnIvanModule['FPS']))
+                                $fps = $faceDataOnIvanModule['FPS'];
+                            // Если существует ключ (индекс) - fps или FPS
+                            if (isset($faceDataOnIvanModule['fps']) || isset($faceDataOnIvanModule['FPS'])) {
+                                // Определение времени на вопрос в кадрах
+                                $questionTimeInFrames = round(((float)$fps * ($questionTime / 1000)), 0);
+                                // Формирование факта одного признака для первого кадра
+                                $videoParametersFact['NameOfTemplate'] = 'T2110';
+                                $videoParametersFact['s922'] = $fps;
+                                $videoParametersFact['s924'] = $questionTimeInFrames;
+                                // Добавление факта параметра видео для первого кадра в набор фактов
+                                $facts[0] = [$videoParametersFact];
+                            }
+                        }
+                    }
+                }
+            }
             // Формирование json-строки
             $faceData = str_replace('{"AUs"', ',{"AUs"', $faceData);
             $faceData = trim($faceData, ',');
@@ -1086,28 +1597,32 @@ class AnalysisHelper
             $initialData = json_decode($faceData);
             if (count($initialData) > 0) {
                 $frameData = $initialData[0];
+                // Анализ направления взгляда
+                $targetPropertyName = 'gaze';
+                if (property_exists($frameData, $targetPropertyName) === True)
+                    foreach ($initialData as $frameIndex => $frameData) {
+                        $gazeDirections = $frameData->{$targetPropertyName};
+                        // Формирование фактов по направлению взгляда
+                        $gazeDirectionsAsFacts = self::convertGazeToFacts($gazeDirections, $frameIndex);
+                        if (count($gazeDirectionsAsFacts) > 0)
+                            if ($frameIndex == 0)
+                                foreach ($gazeDirectionsAsFacts as $gazeDirectionsAsFact)
+                                    array_push($facts[0], $gazeDirectionsAsFact);
+                            else
+                                $facts[$frameIndex] = $gazeDirectionsAsFacts;
+                    }
+                // Анализ Action Units
                 $targetPropertyName = 'AUs';
                 if (property_exists($frameData, $targetPropertyName) === True)
                     foreach ($initialData as $frameIndex => $frameData) {
                         $actionUnits = $frameData->{$targetPropertyName};
-                        $actionUnitsAsFacts = self::convertActionUnitsToFacts($actionUnits,
-                            $frameIndex);
+                        // Формирование фактов на основе Action Units
+                        $actionUnitsAsFacts = self::convertActionUnitsToFacts($actionUnits, $frameIndex);
                         if (count($actionUnitsAsFacts) > 0)
-                            $facts[$frameIndex] = $actionUnitsAsFacts;
+                            foreach ($actionUnitsAsFacts as $actionUnitsAsFact)
+                                array_push($facts[$frameIndex], $actionUnitsAsFact);
                     }
             }
-//            if ((count($facts) > 0) && (count($initialData) > 0)) {
-//                $frameData = $initialData[0];
-//                $targetPropertyName = 'AUs';
-//                if (property_exists($frameData, $targetPropertyName) === True)
-//                    foreach ($initialData as $frameIndex => $frameData) {
-//                        $actionUnits = $frameData->{$targetPropertyName};
-//                        $actionUnitsAsFacts = self::convertActionUnitsToFacts($actionUnits,
-//                            $frameIndex);
-//                        if (isset($facts[$frameIndex]) && count($actionUnitsAsFacts) > 0)
-//                            $facts[$frameIndex] = array_merge($facts[$frameIndex], $actionUnitsAsFacts);
-//                    }
-//            }
         }
         // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
         $osConnector->saveFileToObjectStorage(
