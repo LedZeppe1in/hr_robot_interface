@@ -13,6 +13,9 @@ use yii\behaviors\TimestampBehavior;
  * @property string $name
  * @property string $knowledge_base_file_name
  * @property string $description
+ *
+ * @property ProfileKnowledgeBase[] $firstLevelProfileKnowledgeBases
+ * @property ProfileKnowledgeBase[] $secondLevelProfileKnowledgeBases
  */
 class KnowledgeBase extends \yii\db\ActiveRecord
 {
@@ -63,5 +66,25 @@ class KnowledgeBase extends \yii\db\ActiveRecord
         return [
             TimestampBehavior::className(),
         ];
+    }
+
+    /**
+     * Gets query for [[ProfileKnowledgeBase]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getFirstLevelProfileKnowledgeBases()
+    {
+        return $this->hasMany(ProfileKnowledgeBase::className(), ['first_level_knowledge_base_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[ProfileKnowledgeBase]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSecondLevelProfileKnowledgeBases()
+    {
+        return $this->hasMany(ProfileKnowledgeBase::className(), ['second_level_knowledge_base_id' => 'id']);
     }
 }

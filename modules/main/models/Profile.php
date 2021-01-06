@@ -15,6 +15,7 @@ use yii\behaviors\TimestampBehavior;
  *
  * @property ProfileSurvey[] $profileSurveys
  * @property Survey[] $surveys
+ * @property ProfileKnowledgeBase[] $profileKnowledgeBases
  */
 class Profile extends \yii\db\ActiveRecord
 {
@@ -78,5 +79,15 @@ class Profile extends \yii\db\ActiveRecord
     {
         return $this->hasMany(Survey::className(), ['id' => 'survey_id'])->viaTable('{{%profile_survey}}',
             ['profile_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[ProfileKnowledgeBase]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getProfileKnowledgeBases()
+    {
+        return $this->hasMany(ProfileKnowledgeBase::className(), ['profile_id' => 'id']);
     }
 }
