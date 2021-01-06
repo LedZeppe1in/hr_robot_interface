@@ -81,10 +81,17 @@ $this->params['breadcrumbs'][] = $this->title;
                 'options' => ['class' => 'btn btn-success']
             ]);
         } ?>
-        <?= Html::a('Запуск анализа видеоинтервью по всем вопросам',
-            ['run-analysis', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
-        <?= Html::a('Запуск МОП по всем вопросам видеоинтервью', ['run-features-detection', 'id' => $model->id],
-            ['class' => 'btn btn-success']) ?>
+        <?php echo ButtonDropdown::widget([
+            'label' => 'Запуск анализа видеоинтервью',
+            'dropdown' => [
+                'items' => [
+                    ['label' => 'МОВ Ивана и Андрея + МОП', 'url' => ['run-analysis', 'id' => $model->id]],
+                    ['label' => 'МОП на данных Ивана', 'url' => ['run-features-detection', 'id' => $model->id]],
+                    ['label' => 'МИП 1 и 2 уровня', 'url' => ['run-features-interpretation', 'id' => $model->id]],
+                ],
+            ],
+            'options' => ['class' => 'btn btn-success']
+        ]); ?>
         <?= Html::a('Распознать речь в видео', ['get-recognized-speech', 'id' => $model->id],
             ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>

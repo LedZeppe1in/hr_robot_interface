@@ -2,6 +2,9 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\FinalConclusion;
+use app\modules\main\models\FinalResult;
+use app\modules\main\models\ProfileKnowledgeBase;
 use Yii;
 use stdClass;
 use Exception;
@@ -21,6 +24,8 @@ use app\modules\main\models\Question;
 use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\ProfileSurvey;
+use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
@@ -939,63 +944,135 @@ class VideoInterviewController extends Controller
      */
     public function actionRunFeaturesInterpretation($id)
     {
-        // Массив идентификаторов результатов анализа
-        $analysisResultIds = '';
-        // Поиск всех цифровых масок для данного видеоинтервью
-        $Landmarks = Landmark::find()->where(['video_interview_id' => $id])->all();
-        // Обход всех найденных цифровых масок
-        foreach ($Landmarks as $Landmark) {
-            // Поиск всех результатов определения признаков для данной цифровой маски
-            $analysisResults = AnalysisResult::find()->where(['landmark_id' => $Landmark->id])->all();
-            // Обход всех результатов определения признаков
-            foreach ($analysisResults as $analysisResult)
-                if ($analysisResultIds == '')
-                    $analysisResultIds .= $analysisResult->id;
-                else
-                    $analysisResultIds .= ',' . $analysisResult->id;
+        // Поиск всех видео ответов на вопросы для данного видеоинтервью
+        $questions = Question::find()->where(['video_interview_id' => $id])->all();
+        // Если есть видео ответы на вопросы
+        if (!empty($questions)) {
+            // Обход всех видео ответов на вопросы
+            foreach ($questions as $question) {
+                // Поиск темы для вопроса
+                $topicQuestion = TopicQuestion::find()
+                    ->where(['test_question_id' => $question->test_question_id])
+                    ->one();
+                // Если тема для вопроса найдена
+                if (!empty($topicQuestion)) {
+                    // Если вопрос не калибровочный (темы 24, 25 и 27)
+                    if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 &&
+                        $topicQuestion->topic_id != 27) {
+                        // Поиск связанной базы знаний с заданным профилем интервью
+                        $surveyQuestion = SurveyQuestion::find()
+                            ->where(['test_question_id' => $question->test_question_id])
+                            ->one();
+                        if (!empty($surveyQuestion)) {
+                            $profileSurvey = ProfileSurvey::find()
+                                ->where(['survey_id' => $surveyQuestion->survey_id])
+                                ->one();
+                            if (!empty($profileSurvey)) {
+                                $profileKnowledgeBase = ProfileKnowledgeBase::find()
+                                    ->where(['profile_id' => $profileSurvey->profile_id])
+                                    ->one();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Если существует связь профиля с базами знаний по данному видеоинтервью
+        if (!empty($profileKnowledgeBase)) {
+            // Если задана база знаний для интерпретации первого уровня
+            if ($profileKnowledgeBase->first_level_knowledge_base_id != null) {
+                // Массив идентификаторов результатов анализа
+                $analysisResultIds = '';
+                // Поиск всех цифровых масок для данного видеоинтервью
+                $Landmarks = Landmark::find()->where(['video_interview_id' => $id])->all();
+                // Обход всех найденных цифровых масок
+                foreach ($Landmarks as $Landmark) {
+                    // Поиск всех результатов определения признаков для данной цифровой маски
+                    $analysisResults = AnalysisResult::find()->where(['landmark_id' => $Landmark->id])->all();
+                    // Обход всех результатов определения признаков
+                    foreach ($analysisResults as $analysisResult)
+                        if ($analysisResultIds == '')
+                            $analysisResultIds .= $analysisResult->id;
+                        else
+                            $analysisResultIds .= ',' . $analysisResult->id;
+                }
+                // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
+                ini_set('default_socket_timeout', 60 * 30);
+                $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
+                    $profileKnowledgeBase->first_level_knowledge_base_id;
+                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
+                $idsOfInitialConditions = '[' . $analysisResultIds . ']';
+                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+                $additionalDataToSend = new stdClass;
+                $additionalDataToSend->{'IDOfFile'} = Null;
+                $client->LaunchReasoningProcessForSetOfInitialConditions(array(
+                    'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                    'arg1' => $addressForInitialConditionsRetrieval,
+                    'arg2' => $idsOfInitialConditions,
+                    'arg3' => $addressToSendResults,
+                    'arg4' => 'ResultsOfReasoningProcess',
+                    'arg5' => 'IDOfFile',
+                    'arg6' => json_encode($additionalDataToSend)))->return;
+                $client = Null;
+            }
+            // Если задана база знаний для интерпретации второго уровня
+            if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
+                // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
+                ini_set('default_socket_timeout', 60 * 30);
+                $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
+                    $profileKnowledgeBase->second_level_knowledge_base_id;
+                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $id;
+                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+                $additionalDataToSend = new stdClass;
+                $additionalDataToSend->{'IDOfFile'} = $id;
+                $additionalDataToSend->{'Type'} = 'Interpretation Level II';
+                $client->LaunchReasoningProcessAndSendResultsToURL(array(
+                    'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                    'arg1' => $addressForInitialConditionsRetrieval,
+                    'arg2' => $addressToSendResults,
+                    'arg3' => 'ResultsOfReasoningProcess',
+                    'arg4' => json_encode($additionalDataToSend)))->return;
+                $client = Null;
+            }
+
+            // Если задана только база знаний для интерпретации первого уровня
+            if ($profileKnowledgeBase->first_level_knowledge_base_id != null &&
+                $profileKnowledgeBase->second_level_knowledge_base_id == null) {
+                // Формирование массива идентификаторов из строки
+                $analysisResultIdArray = explode(',', $analysisResultIds);
+                // Вывод сообщения об успешной интерпретации 1 уровня
+                Yii::$app->getSession()->setFlash('warning',
+                    'Результаты МИП 1 увроня успешно получены для: ' . $analysisResultIds .
+                    '. Результаты МИП 2 увроня сформировать не удалось, так как не задана база знаний!');
+
+                return $this->redirect(['/interpretation-result/view/' . $analysisResultIdArray[0]]);
+            }
+
+            // Если заданы базы знаний для интерпретации первого и второго уровня
+            if ($profileKnowledgeBase->first_level_knowledge_base_id != null &&
+                $profileKnowledgeBase->second_level_knowledge_base_id != null) {
+                // Поиск финального заключения для данного видеоинтервью
+                $finalResult = FinalResult::find()->where(['video_interview_id' => $id])->one();
+                // Если финальное заключение по данному видеоинтервью сформированно
+                if (!empty($finalResult)) {
+                    // Вывод сообщения об успешной интерпретации 1 и 2 уровня
+                    Yii::$app->getSession()->setFlash('success',
+                        'Результаты МИП 1 и 2 увроня успешно получены для: ' . $analysisResultIds .
+                        '. База знаний: ' . $profileKnowledgeBase->secondLevelKnowledgeBase->name);
+
+                    return $this->redirect(['/final-conclusion/view/' . $finalResult->id]);
+                }
+            }
         }
 
-        // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
-        ini_set('default_socket_timeout', 60 * 30);
-        $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-        $client = new SoapClient($addressOfRBRWebServiceDefinition);
-        $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=1';
-        $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
-        $idsOfInitialConditions = '[' . $analysisResultIds . ']';
-        $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
-        $additionalDataToSend = new stdClass;
-        $additionalDataToSend->{'IDOfFile'} = Null;
-        $client->LaunchReasoningProcessForSetOfInitialConditions(array(
-            'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-            'arg1' => $addressForInitialConditionsRetrieval,
-            'arg2' => $idsOfInitialConditions,
-            'arg3' => $addressToSendResults,
-            'arg4' => 'ResultsOfReasoningProcess',
-            'arg5' => 'IDOfFile',
-            'arg6' => json_encode($additionalDataToSend)))->return;
-        $client = Null;
-
-//        // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
-//        ini_set('default_socket_timeout', 60 * 30);
-//        $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-//        $client = new SoapClient($addressOfRBRWebServiceDefinition);
-//        $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=2';
-//        $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $finalConclusionModel->id;
-//        $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
-//        $additionalDataToSend = new stdClass;
-//        $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
-//        $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
-//        $client->LaunchReasoningProcessAndSendResultsToURL(array(
-//            'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-//            'arg1' => $addressForInitialConditionsRetrieval,
-//            'arg2' => $addressToSendResults,
-//            'arg3' => 'ResultsOfReasoningProcess',
-//            'arg4' => json_encode($additionalDataToSend)))->return;
-//        $client = Null;
-
-        // Вывод сообщения об успешной интерпретации
-        Yii::$app->getSession()->setFlash('success', 'Результаты МИП 1 и 2 увроня успешно получены для: ' .
-            $analysisResultIds);
+        // Вывод сообщения о неуспешной интерпретации
+        Yii::$app->getSession()->setFlash('warning',
+            'Интерпретация невозможна, так как не заданы базы знаний!');
 
         return $this->redirect(['/video-interview/view/' . $id]);
     }
