@@ -150,7 +150,7 @@ class AnalysisResultController extends Controller
      * Страница с результатами определения лицивых признаков.
      *
      * @param $id - идентификатор цифровой маски
-     * @param $processingType - тип обработки точек (сырые или нормализованные)
+     * @param $processingType - тип обработки точек (сырые или нормализованные) и "2" - как запуск нового метода МОП
      * @return string
      * @throws NotFoundHttpException
      */
@@ -158,13 +158,16 @@ class AnalysisResultController extends Controller
     {
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);
-        // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+        // Создание объекта AnalysisHelper
         $analysisHelper = new AnalysisHelper();
+        // Определение базового кадра для видеоинтервью
         $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id);
+        // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
         $analysisResultId = $analysisHelper->getAnalysisResult(
             $landmark,
             $processingType,
-            $baseFrame
+            $baseFrame,
+            ($processingType == 2) ? AnalysisHelper::NEW_FDM : AnalysisHelper::OLD_FDM
         );
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');

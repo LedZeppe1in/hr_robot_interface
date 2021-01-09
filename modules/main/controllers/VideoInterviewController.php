@@ -808,6 +808,8 @@ class VideoInterviewController extends Controller
      */
     public function actionRunFeaturesDetection($id)
     {
+        // Установка времени выполнения скрипта в 1 час.
+        set_time_limit(60 * 60);
         $analysisResultIds = array();
         $errorMessages = '';
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
@@ -829,20 +831,17 @@ class VideoInterviewController extends Controller
                             // Если цифровая маска полученная не вторым скриптом Ивана
                             if (strripos($landmark->landmark_file_name, '_ext') === false) {
                                 try {
-                                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+                                    // Создание объекта AnalysisHelper
                                     $analysisHelper = new AnalysisHelper();
-                                    // Определение базового кадра
-                                    $baseFrame = $analysisHelper->getBaseFrame($id);
-                                    // Если базовый кадр сформирован
-                                    if ($baseFrame != '')
-                                        // Сохранение базового кадра на сервере в папке web
-                                        file_put_contents(Yii::$app->basePath .
-                                            '/web/base-frame-' . $id . '.json', $baseFrame);
-                                    // Определение лицевых признаков
+                                    // Получение базового кадра для видеоинтервью из json-файла на сервере
+                                    $baseFrame = file_get_contents(Yii::$app->basePath .
+                                        '/web/base-frame-' . $id . '.json', true);
+                                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
                                     $analysisResultId = $analysisHelper->getAnalysisResult(
                                         $landmark,
                                         2, // Задание определения признаков по новому МОП
-                                        $baseFrame
+                                        $baseFrame,
+                                        AnalysisHelper::NEW_FDM
                                     );
                                     // Сохранение id полученного результата определения признаков в массиве
                                     array_push($analysisResultIds, $analysisResultId);

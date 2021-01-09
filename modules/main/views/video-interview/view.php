@@ -85,9 +85,11 @@ $this->params['breadcrumbs'][] = $this->title;
             'label' => 'Запуск анализа видеоинтервью',
             'dropdown' => [
                 'items' => [
-                    ['label' => 'МОВ Ивана и Андрея + МОП', 'url' => ['run-analysis', 'id' => $model->id]],
-                    ['label' => 'МОП на данных Ивана', 'url' => ['run-features-detection', 'id' => $model->id]],
-                    ['label' => 'МИП 1 и 2 уровня', 'url' => ['run-features-interpretation', 'id' => $model->id]],
+                    ['label' => 'МОВ Ивана и Андрея', 'url' => ['run-analysis', 'id' => $model->id]],
+                    ['label' => 'МОП на полученных цифровых масках',
+                        'url' => ['run-features-detection', 'id' => $model->id]],
+                    ['label' => 'МИП 1 и 2 уровня на результатах МОП',
+                        'url' => ['run-features-interpretation', 'id' => $model->id]],
                 ],
             ],
             'options' => ['class' => 'btn btn-success']

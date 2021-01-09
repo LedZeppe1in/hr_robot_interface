@@ -123,13 +123,13 @@ $this->params['breadcrumbs'][] = $this->title;
                     },
                     'run-analysis' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-play-circle',
-                            'title' => 'Запуск анализа видеоинтервью по всем вопросам (МОВ + МОП)']);
+                            'title' => 'Запуск анализа видеоинтервью по всем вопросам (МОВ Ивана + МОВ Андрея)']);
                         $url = ['/video-interview/run-analysis/' . $model->id];
                         return Html::a($icon, $url);
                     },
                     'run-features-detection' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-cog',
-                            'title' => 'Запуск МОП по всем вопросам видеоинтервью']);
+                            'title' => 'Запуск МОП по всем сформированным цифровым маскам видеоинтервью']);
                         $url = ['/video-interview/run-features-detection/' . $model->id];
                         return Html::a($icon, $url);
                     },

@@ -2,6 +2,7 @@
 
 namespace app\components;
 
+use Yii;
 use stdClass;
 use Exception;
 use app\modules\main\models\Landmark;
@@ -16,6 +17,9 @@ use app\modules\main\models\VideoProcessingModuleSettingForm;
  */
 class AnalysisHelper
 {
+    const OLD_FDM = 0; // Старая версия МОП (Юрин)
+    const NEW_FDM = 1; // Новая версия МОП (Столбов)
+
     const TURN_RIGHT = 0; // Поворот вправо
     const TURN_LEFT  = 1; // Поворот влево
 
@@ -1381,10 +1385,12 @@ class AnalysisHelper
      * Получение базового нулевого кадра (нейтрального состояния лица).
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
-     * @return mixed|string|null
+     * @return mixed|null
      */
     public static function getBaseFrame($videoInterviewId)
     {
+        // Базовый (нудевой) кадр с нейтральным выражением лица
+        $baseFrame = null;
         // Поиск всех вопросов для конкретного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $videoInterviewId])->all();
         // Обход по всем найденным видео ответов на вопросы
@@ -1392,7 +1398,7 @@ class AnalysisHelper
             // Поиск темы для вопроса - 27 (калибровочный для камеры)
             $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
             // Если есть видео ответ на калибровочный вопрос (27 - посмотрите в камеру)
-            if ($topicQuestion->topic_id == 27) {
+            if (!empty($topicQuestion) && $topicQuestion->topic_id == 27) {
                 // Поиск цифровой маски, полученной на основе анализа видео ответа на калибровочный вопрос
                 $landmark = Landmark::find()->where(['question_id' => $question->id])->orderBy('id DESC')->one();
                 // Если цифровая маска существует
@@ -1407,36 +1413,40 @@ class AnalysisHelper
                     );
                     // Создание объекта обнаружения лицевых признаков
                     $facialFeatureDetector = new FacialFeatureDetector();
-                    // Определение нулевого кадра (нейтрального состояния лица)
-                    $basicFrame = $facialFeatureDetector->makeBasicFrameWithSmoothingAndRotating(
+                    // Определение нулевого кадра (нейтрального состояния лица) по новому методу МОП
+                    $baseFrame = $facialFeatureDetector->makeBasicFrameWithSmoothingAndRotating(
                         $faceData,
                         VideoInterview::TYPE_NORMALIZED_POINTS
                     );
-
-                    return $basicFrame;
+                    // Если базовый кадр определен
+                    if (isset($baseFrame))
+                        // Сохранение базового кадра в виде json-файла
+                        file_put_contents(Yii::$app->basePath . '/web/base-frame-' .
+                            $landmark->video_interview_id . '.json', $baseFrame);
                 }
             }
         }
 
-        return '';
+        return $baseFrame;
     }
 
     /**
      * Создание модели результатов анализа и запуск модуля определения признаков.
      *
      * @param $landmark - цифровая маска
-     * @param $processingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
-     * @param $basicFrame - базовый кадр
+     * @param $landmarkProcessingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
+     * @param $baseFrame - базовый кадр
+     * @param $FDMVersion - версия запускаемого МОП
      * @return int - id результатов анализа
      */
-    public static function getAnalysisResult($landmark, $processingType, $basicFrame)
+    public static function getAnalysisResult($landmark, $landmarkProcessingType, $baseFrame, $FDMVersion)
     {
         // Создание модели для результатов определения признаков
         $analysisResultModel = new AnalysisResult();
         $analysisResultModel->landmark_id = $landmark->id;
         $analysisResultModel->detection_result_file_name = 'feature-detection-result.json';
         $analysisResultModel->facts_file_name = 'facts.json';
-        $analysisResultModel->description = $landmark->description . ($processingType == 0 ?
+        $analysisResultModel->description = $landmark->description . ($landmarkProcessingType == 0 ?
             ' (обработка сырых точек)' : ' (обработка нормализованных точек)');
         $analysisResultModel->save();
         // Создание объекта коннектора с Yandex.Cloud Object Storage
@@ -1454,93 +1464,94 @@ class AnalysisHelper
         // Если вызывается модуль обработки видео Ивана
         if ($landmark->type == Landmark::TYPE_LANDMARK_IVAN_MODULE) {
             $facialFeatures = null;
-            // Если явно указан режим запуска нового МОП
-            if ($processingType == 2) {
-                $processingType = 1;
-                // Определение нулевого кадра (нейтрального состояния лица) по новому методу МОП
-                $basicFrame = $facialFeatureDetector->makeBasicFrameWithSmoothingAndRotating(
-                    $faceData,
-                    $processingType
-                );
+            // Если указан режим запуска нового МОП
+            if ($FDMVersion == self::NEW_FDM) {
+                $landmarkProcessingType = 1;
                 // Получение текста распознанной речи на основе анализа видео ответа на вопрос
                 $recognizedSpeechText = self::getRecognizedSpeechText($landmark->question_id);
                 // Формирование дополнительных параметров
                 $options = [
-                    'pointsFlag' => $processingType,
+                    'pointsFlag' => $landmarkProcessingType,
                     'voiceActingTime' => $landmark->question->testQuestion->time,
                     'skipIrisDetection' => true
                 ];
                 // Выявление признаков для лица по новому методу МОП
-                $facialFeatures = $facialFeatureDetector->detectFeaturesV3($faceData, $basicFrame,
+                $facialFeatures = $facialFeatureDetector->detectFeaturesV3($faceData, $baseFrame,
                     $recognizedSpeechText, $options);
-
-                //
+                // Если у данной цифровой маски есть вопрос
                 if ($landmark->question_id != null) {
-                    //
+                    // Запоминание идентификатора вопроса
                     $testQuestionId = $landmark->question->testQuestion->id;
-                    //
+                    // Поиск всех цифровых масок для данного интервью
                     $landmarks = Landmark::find()->where(['video_interview_id' => $landmark->video_interview_id])->all();
-                    //
+                    // Обход цифровых масок
                     foreach ($landmarks as $currentLandmark)
                         if ($currentLandmark->question_id)
                             if ($currentLandmark->question->testQuestion->id == $testQuestionId)
                                 if ($currentLandmark->type == Landmark::TYPE_LANDMARK_ANDREW_MODULE) {
-                                    // Получение содержимого json-файла с лицевыми точками из Object Storage
-                                    $andreyFaceData = $osConnector->getFileContentFromObjectStorage(
-                                        OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                                        $currentLandmark->id,
-                                        $currentLandmark->landmark_file_name
-                                    );
-                                    //
+                                    // Обход результатов МОП по цифровой маске, полученной МОВ Ивана
                                     foreach ($facialFeatures as $key => $value)
                                         if ($key == 'feature_statistics') {
-                                            //
+                                            // Получение содержимого json-файла с лицевыми точками,
+                                            // полученного МОВ Андрея из Object Storage
+                                            $andreyFaceData = $osConnector->getFileContentFromObjectStorage(
+                                                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                                                $currentLandmark->id,
+                                                $currentLandmark->landmark_file_name
+                                            );
+                                            // Получение статистики по данным Андрея
                                             $updatedFacialFeatures = $facialFeatureDetector->detectStatisticsA(
                                                 $andreyFaceData,
                                                 $value
                                             );
-                                            //
+                                            // Если статистика сформирована
                                             if (isset($updatedFacialFeatures))
-                                                //
+                                                // Обновление статистики в результате МОП по данным Ивана
                                                 $facialFeatures['feature_statistics'] = $updatedFacialFeatures;
                                         }
                                 }
                 }
             }
-            // Если базовый кадр не определен
-            if ($basicFrame == '')
+            // Если указан режим запуска старого МОП
+            if ($FDMVersion == self::OLD_FDM) {
                 // Определение нулевого кадра (нейтрального состояния лица) по старому методу МОП
-                $basicFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
+                $baseFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
                     $faceData,
-                    $processingType
+                    $landmarkProcessingType
                 );
-            // Если лицевые признаки не определены
-            if ($facialFeatures == null)
                 // Выявление признаков для лица по старому методу МОП
-                $facialFeatures = $facialFeatureDetector->detectFeaturesV2($faceData, $processingType, $basicFrame);
-            // Сохранение json-файла с результатами определения признаков на Object Storage
-            $osConnector->saveFileToObjectStorage(
-                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $analysisResultModel->id,
-                $analysisResultModel->detection_result_file_name,
-                $facialFeatures
-            );
-            // Время на вопрос
-            $questionTime = null;
-            // Текст вопроса
-            $questionText = null;
-            // Если к цифровой маски привязан вопрос, то запоминание времени на вопрос и текста вопроса
-            if ($landmark->question_id != null) {
-                $questionTime = $landmark->question->testQuestion->time;
-                $questionText = $landmark->question->testQuestion->text;
+                $facialFeatures = $facialFeatureDetector->detectFeaturesV2(
+                    $faceData,
+                    $landmarkProcessingType,
+                    $baseFrame
+                );
             }
-            // Преобразование массива с результатами определения признаков в массив фактов
-            $facts = self::convertFeaturesToFacts(
-                $faceData,
-                $facialFeatures,
-                $questionTime,
-                $questionText
-            );
+            // Если сформирован результат МОП
+            if (isset($facialFeatures)) {
+                // Сохранение json-файла с результатами определения признаков на Object Storage
+                $osConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                    $analysisResultModel->id,
+                    $analysisResultModel->detection_result_file_name,
+                    $facialFeatures
+                );
+                // Время на вопрос
+                $questionTime = null;
+                // Текст вопроса
+                $questionText = null;
+                // Если к цифровой маски привязан вопрос, то запоминание времени на вопрос и текста вопроса
+                if ($landmark->question_id != null) {
+                    $questionTime = $landmark->question->testQuestion->time;
+                    $questionText = $landmark->question->testQuestion->text;
+                }
+                // Преобразование массива с результатами определения признаков в массив фактов
+                $facts = self::convertFeaturesToFacts(
+                    $faceData,
+                    $facialFeatures,
+                    $questionTime,
+                    $questionText
+                );
+            }
         }
         // Если в json-файле цифровой маски есть данные по Action Units
         if (strpos($faceData, 'AUs') !== false) {
