@@ -445,7 +445,7 @@ class FacialFeatureDetector
                     $targetFaceData[$facePart]["left_eye_outer_movement"][$i]["val"] = 'none';
                 }
                 if ($rightEyeOuterCornerH < 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'up';
-                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
+                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
                 if ($rightEyeOuterCornerH == 0) {
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["force"] = 0;
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'none';
@@ -2319,7 +2319,8 @@ class FacialFeatureDetector
         $denominator = $point2['Y'] - $point1['Y'];
         if ($denominator == 0) $denominator = 1;
         // if abs((x_3 - x_1) / (x_2 - x_1) - (y_3 - y_1) / (y_2 - y_1)) <= Tol
-        if (abs(($point3['X'] - $point1['X']) / ($point2['X'] - $point1['X']) -
+        if (($point2['X'] != $point1['X']) &&
+            abs(($point3['X'] - $point1['X']) / ($point2['X'] - $point1['X']) -
                 ($point3['Y'] - $point1['Y']) / $denominator) <= $constr)
             return true;
         else
@@ -2486,6 +2487,7 @@ class FacialFeatureDetector
 
                 $targetFaceData[$facePart]["left_eyebrow_inner_movement_x"][$i]["val"] = $xMov;
                 $targetFaceData[$facePart]["left_eyebrow_inner_movement_y"][$i]["val"] = $yMov;
+
 
                 if ($leftEyebrowMovementHOut > 0) $targetFaceData[$facePart]["left_eyebrow_outer_movement"][$i]["val"] = 'down';
                 if ($leftEyebrowMovementHOut < 0) $targetFaceData[$facePart]["left_eyebrow_outer_movement"][$i]["val"] = 'up';
@@ -3786,6 +3788,45 @@ class FacialFeatureDetector
         return null;
     }
 
+    public function detectFrownCount($theData)
+    {
+
+        $frown_force_tocenter=new TrendOfQuantitativeValues("force",1);
+        $frown_force_tocenter->MaxDelta=0;
+        $frown_force_tocenter->ValueForDetectionStarted=1;
+
+        $frown_force_back=new TrendOfQuantitativeValues("force",2);
+        $frown_force_back->ValueForDetectionStarted=100;
+        $frown_force_back->SufficientLevelToEnd=1;
+
+        $frown_force_trend_sequence=new TrendSequence();
+        $frown_force_trend_sequence->trendSequence[]=$frown_force_tocenter;
+        $frown_force_trend_sequence->trendSequence[]=$frown_force_back;
+
+        $frown_tocenter=new TrendOfQualitativeValues("val",array("to center","none"));
+        $frown_tocenter->QuantitativeTrendDetector=$frown_force_trend_sequence;
+
+        $N=count($theData["eyebrow"]["right_eyebrow_inner_movement_x"]);
+        $prevData=null;
+        $numberOf_frown_tocenter=0;
+
+        for ($i=0;$i<$N;$i++)
+        {
+
+            $frown_tocenter->DetectTrend( $theData["eyebrow"]["right_eyebrow_inner_movement_x"][$i],$prevData,$i,null);
+            $prevData=$theData["eyebrow"]["right_eyebrow_inner_movement_x"][$i];
+
+            if($frown_tocenter->TrendEndedAt>0)
+            {
+                $numberOf_frown_tocenter++;
+                $frown_tocenter->ResetTrend();
+            }
+        }
+
+        return $numberOf_frown_tocenter;
+
+    }
+
     public function detectNoseExtCount($theData)
     {
         $nose_expansion_force_up=new TrendOfQuantitativeValues("force",1);
@@ -3893,7 +3934,9 @@ class FacialFeatureDetector
 
             $curCount=$this->detectNoseExtCount($sourceFaceData1);
             $sourceFaceData1["feature_statistics"]["average_nose_movement_frequency"]=array("val"=>$curCount/$onlyAnswerTime,"count"=>$curCount);
-           // $sourceFaceData1["feature_statistics"]["average_frown_frequency"]=array("val"=>0);
+
+            $curCount= $this->detectFrownCount($sourceFaceData1);
+            $sourceFaceData1["feature_statistics"]["average_frown_frequency"]=array("val"=>$curCount/$onlyAnswerTime,"count"=>$curCount);
 
             $sourceFaceData1["feature_statistics"]["parameters"]=array("FPS"=>$FPS,"FrameCount"=> $FrameCount,
                                                                         "TotalTime"=>$TotalTime,"voiceActingTime"=>$voiceActingTime,"AnswerTime"=>$onlyAnswerTime);
@@ -4464,13 +4507,15 @@ class FacialFeatureDetector
                 }
                 //чистим ложные срабатывания говорения
                 for ($i = 0; $i < count($sourceFaceData1[$k]["speaking"]); $i++) {
-                    if (($sourceFaceData1[$k]["speaking"][$i]['val'] == 'yes') && ($sourceFaceData1[$k]["audio_db_val"][$i]['val'] == 'no')) {
+                    if (isset($sourceFaceData1[$k]["speaking"][$i]['val']) && ($sourceFaceData1[$k]["speaking"][$i]['val'] == 'yes') &&
+                        isset($sourceFaceData1[$k]["audio_db_val"][$i]['val'] ) && ($sourceFaceData1[$k]["audio_db_val"][$i]['val'] == 'no') )
+                    {
                         //проверить звук дальше
-                        if ((((isset($sourceFaceData1[$k]["audio_db_val"][$i + 1])) && ($sourceFaceData1[$k]["audio_db_val"][$i + 1]['val'] == 'no')) &&
-                                ((isset($sourceFaceData1[$k]["audio_db_val"][$i + 2])) && ($sourceFaceData1[$k]["audio_db_val"][$i + 2]['val'] == 'no'))
+                        if ((((isset($sourceFaceData1[$k]["audio_db_val"][$i + 1])) && isset($sourceFaceData1[$k]["audio_db_val"][$i+1]['val'])  && ($sourceFaceData1[$k]["audio_db_val"][$i + 1]['val'] == 'no')) &&
+                                ((isset($sourceFaceData1[$k]["audio_db_val"][$i + 2])) && isset($sourceFaceData1[$k]["audio_db_val"][$i + 2]['val']) &&  ($sourceFaceData1[$k]["audio_db_val"][$i + 2]['val'] == 'no'))
                             ) &&
-                            (((isset($sourceFaceData1[$k]["audio_db_val"][$i - 1])) && ($sourceFaceData1[$k]["audio_db_val"][$i - 1]['val'] == 'no')) &&
-                                ((isset($sourceFaceData1[$k]["audio_db_val"][$i - 2])) && ($sourceFaceData1[$k]["audio_db_val"][$i - 2]['val'] == 'no'))
+                            (((isset($sourceFaceData1[$k]["audio_db_val"][$i - 1])) && isset($sourceFaceData1[$k]["audio_db_val"][$i - 1]['val']) && ($sourceFaceData1[$k]["audio_db_val"][$i - 1]['val'] == 'no')) &&
+                                ((isset($sourceFaceData1[$k]["audio_db_val"][$i - 2])) && isset($sourceFaceData1[$k]["audio_db_val"][$i - 2]['val']) && ($sourceFaceData1[$k]["audio_db_val"][$i - 2]['val'] == 'no'))
                             )
                         ) {
                             $sourceFaceData1[$k]["speaking"][$i]['val'] = 'no';
@@ -4570,6 +4615,152 @@ class FacialFeatureDetector
         }
         return $sourceFaceData1;
     }
+
+
+    public function isBadNormMaskAtFrame($theMaskQuality)
+    {
+
+        $curTestMeasure=array("brow_ratio"=>1.8,"nose_turned"=>25);
+
+    //boolean block
+        if ($theMaskQuality["brow_below_eyebrow"] ||
+            $theMaskQuality["left_eye_x_failed"] || $theMaskQuality["left_eye_x_failed"] ||
+            $theMaskQuality["left_eye_y_failed"] || $theMaskQuality["right_eye_y_failed"])
+        {
+            return true;
+        }
+
+    //non boolean block
+        if ($theMaskQuality["brow_ratio_right"]>$curTestMeasure["brow_ratio"] || $theMaskQuality["brow_ratio_left"]>$curTestMeasure["brow_ratio"] ||
+            $theMaskQuality["nose_turned_27_30"]>$curTestMeasure["nose_turned"] || $theMaskQuality["nose_turned_27_29"] > $curTestMeasure["nose_turned"])
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function detectBadNormMaskAtFrame($theNormMask)
+    {
+
+        $output=array("brow_below_eyebrow"=>false,
+                        "brow_ratio_right"=>1,"brow_ratio_left"=>1,
+                        "left_eye_x_failed"=>false,"right_eye_x_failed"=>false,
+                        "left_eye_y_failed"=>false,"right_eye_y_failed"=>false,
+                        "nose_turned_27_30"=>0,"nose_turned_27_29"=>0);
+
+
+
+        if (isset($theNormMask) && is_array($theNormMask))
+        {
+            //точки лба (69 - 73) ниже уровня бровей (17-21 и 22-25)
+            $max69_73=max($theNormMask[69]['Y'],$theNormMask[70]['Y'],$theNormMask[71]['Y'],$theNormMask[72]['Y'],$theNormMask[73]['Y']);
+            $min17_25=min($theNormMask[17]['Y'],$theNormMask[18]['Y'],$theNormMask[19]['Y'],$theNormMask[20]['Y'],$theNormMask[21]['Y'],$theNormMask[22]['Y'],$theNormMask[23]['Y'],$theNormMask[24]['Y'],$theNormMask[25]['Y']);
+            if ($max69_73>$min17_25) $output["brow_below_eyebrow"]=true;
+
+            //точки глаз x-смещены по неподвижным 43-47<42 или 36-40>39
+            $min43_47=min($theNormMask[43]['X'],$theNormMask[44]['X'],$theNormMask[45]['X'],$theNormMask[46]['X'],$theNormMask[47]['X']);
+            if ($min43_47<$theNormMask[42]['X']) return $output["right_eye_x_failed"]=true;;
+
+            //точки глаз x-смещены по неподвижным 36-40>39
+            $max36_40=max($theNormMask[36]['X'],$theNormMask[37]['X'],$theNormMask[38]['X'],$theNormMask[39]['X'],$theNormMask[40]['X']);
+            if ($max36_40>$theNormMask[39]['X']) return $output["left_eye_x_failed"]=true;;
+
+            //разница по y для 71-70 и 73-72 больше 50%
+            $x71_70=$theNormMask[71]['X']-$theNormMask[70]['X'];
+            $x73_72=$theNormMask[73]['X']-$theNormMask[72]['X'];
+
+        //   if ($x71_70<=0) return false;
+        //  if ($x73_72<=0) return false;
+
+            if ($x71_70!=0 && $x73_72/$x71_70>1.8)  $output["brow_ratio_left"]=round($x73_72/$x71_70,3);
+            if ($x73_72!=0 && $x71_70/$x73_72>1.8)  $output["brow_ratio_right"]==round($x71_70/$x73_72,3);
+
+            //крайний точки глаза: 42 и 45, 36 и 39 разница по y не больше половин длины глаза (базового кадра или "корректного кадра")
+            $x45_42=$theNormMask[45]['X']-$theNormMask[42]['X'];
+            $y45_42=$theNormMask[45]['Y']-$theNormMask[42]['Y'];
+            $y45_42=0.5*$y45_42;
+            if ($y45_42>$x45_42)  $output["left_eye_y_failed"]=true;
+
+            $x39_36=$theNormMask[39]['X']-$theNormMask[36]['X'];
+            $y39_36=$theNormMask[39]['Y']-$theNormMask[36]['Y'];
+            $x39_36=0.5*$x39_36;
+            if ($y39_36>$x45_42)  $output["right_eye_y_failed"]=true;
+
+            //повернут нос: 27  и 30 (29) угол
+
+return $output;
+
+        }
+
+        return null;
+    }
+
+    public function detectAbsentPointsFrames($theNormMask,$FrameCount)
+    {
+        $arrayOfAbsentPoints=array();
+
+        for ($i = 0; $i < $FrameCount; $i++)
+        {
+
+            if (!isset($theNormMask[$i])) //frames
+            {
+                $arrayOfAbsentPoints[]=$i;
+            }
+        }
+        return $arrayOfAbsentPoints;
+    }
+
+    public function repairNormMask($sourceFaceData1,$FrameCount)
+    {
+
+        $mask_data=array("mask_quality_statistics"=>array("bad_frames"=>array()));
+
+        //$mask_data["mask_quality_statistics"]["bad_frames"]=
+
+        if (isset($sourceFaceData1) && isset($FrameCount)) {
+            //1. если отсутвуют точки маски
+            $absentFrames = $this->detectAbsentPointsFrames($sourceFaceData1, $FrameCount);
+
+            //2. другие критерии
+            $badFrames = array();
+            for ($i = 0; $i < $FrameCount; $i++) {
+                if (isset($sourceFaceData1[$i])) //frames
+                {
+                    if (!in_array($i, $absentFrames)) {
+                        $output = $this->detectBadNormMaskAtFrame($sourceFaceData1[$i]);
+                        if ($this->isBadNormMaskAtFrame($output)) {
+                            $badFrames[$i] = $output;
+                        }
+                    }
+                }
+            }
+
+            //1. если отсутвуют точки маски
+            //2. точки лба (69 - 73) ниже уровня бровей (17-21 и 22-25)
+            //3. точки глаз x-смещены по неподвижным   43-47<42 или 36-40>39
+            //4. процент битых больще 10%,
+            //5. крайний точки глаза: 42 и 45, 36 и 39 разница по y не больше половин длины глаза (базового кадра или "корректного кадра")
+            //6. повернут нос: 27  и 30 (29) угол
+            //7. разница по х для 71-70 и 73-72 больше 50%
+
+            //if (bad ) paramters.badframes=$i
+            foreach ($sourceFaceData1[$i - 1] as $k1 => $v1) { //points
+                if (isset($sourceFaceData1[$i - 1][$k1])) {
+                    $sourceFaceData1[$i][$k1] = $v1;
+                }
+            }
+        }
+        else
+        {
+            $output=array("point_absent"=>true,"bad_frame#"=>-1);
+        }
+
+
+        $result_array=array("Data"=>$sourceFaceData1,"mask_quality_statistics"=>$mask_data);
+        return $result_array;
+    }
+
 
     //стабилизация точек маски относительно инварианта (неизменной точки)
     //вход - массив с точками; точки, относительно которых происходит определение инварианта
@@ -4916,6 +5107,7 @@ class FacialFeatureDetector
             $skipIrisDetection=$options["skipIrisDetection"];
         }
 
+        $mask_quality_statistics=null;
 
         //--------------- initilal loading of vars -------------------------------------
         $coefs = array(
@@ -4957,8 +5149,18 @@ class FacialFeatureDetector
 
 //            if(Trim($basicFrame) != '') array_unshift($FaceData['normmask'],$basicFrame);
 
+
             $detectedFeatures = $this->addPointsToResults('normmask',
                 'NORM_POINTS_ORIGIN', $FaceData, $detectedFeatures, '');
+
+
+
+
+           /* $repairNormMask_result= $this->repairNormMask($FaceData['normmask'],$FrameCount );
+
+            $mask_quality_statistics=$repairNormMask_result["mask_quality_statistics"];
+            $FaceData['normmask']=$repairNormMask_result["Data"];*/
+
 
             $FaceData['normmask'] = $this->stabilizating($FaceData['normmask'], 39, 42);
             $detectedFeatures = $this->addPointsToResults('normmask',
@@ -5084,6 +5286,8 @@ class FacialFeatureDetector
         $detectedFeaturesWithTrends = $this->detectTextStatistics($detectedFeaturesWithTrends,$textData,$Duration,$voiceActingTime);
 
         $detectedFeaturesWithTrends = $this->detectTextPhrases($detectedFeaturesWithTrends,$textData,$FPS,$voiceActingTime);
+
+        if (isset($mask_quality_statistics)) $detectedFeaturesWithTrends["mask_quality_statistics"]=$mask_quality_statistics;
 
         return $detectedFeaturesWithTrends;
 

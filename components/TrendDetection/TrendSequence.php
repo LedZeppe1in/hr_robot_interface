@@ -1,7 +1,9 @@
 <?php
 namespace app\components\TrendDetection;
 
-include_once('../IndexedTrend.php');
+//include_once('../IndexedTrend.php');
+
+use app\components\TrendDetection\IndexedTrend;
 
 class TrendSequence extends IndexedTrend
 {

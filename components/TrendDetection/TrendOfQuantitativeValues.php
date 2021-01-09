@@ -1,7 +1,9 @@
 <?php
 namespace app\components\TrendDetection;
 
-include_once('../IndexedTrend.php');
+//include_once('../IndexedTrend.php');
+
+use app\components\TrendDetection\IndexedTrend;
 
 class  TrendOfQuantitativeValues extends IndexedTrend
 {
@@ -78,7 +80,7 @@ class  TrendOfQuantitativeValues extends IndexedTrend
                         if ($theCurVal>=$this->ValueForDetectionStarted)
                         {
                             $this->TrendStartedAt=$theIndex;
-                            $this->TrendCount++;
+                            $this->TrendLength++;
                             $this->UpdateLevel($theCurVal,$theIndex);
                             if ($this->IsSufficientLevelToEnd($theCurVal)) $this->TrendEndedAt =$theIndex;
                         }
@@ -88,7 +90,7 @@ class  TrendOfQuantitativeValues extends IndexedTrend
                         if ($theCurVal<=$this->ValueForDetectionStarted)
                         {
                             $this->TrendStartedAt=$theIndex;
-                            $this->TrendCount++;
+                            $this->TrendLength++;
                             $this->UpdateLevel($theCurVal,$theIndex);
                             if ($this->IsSufficientLevelToEnd($theCurVal)) $this->TrendEndedAt =$theIndex;
                         }
@@ -97,7 +99,7 @@ class  TrendOfQuantitativeValues extends IndexedTrend
                         if ($theCurVal==$this->ValueForDetectionStarted)
                         {
                             $this->TrendStartedAt=$theIndex;
-                            $this->TrendCount++;
+                            $this->TrendLength++;
                             $this->UpdateLevel($theCurVal,$theIndex);
                         }
                         break;
@@ -193,7 +195,7 @@ class  TrendOfQuantitativeValues extends IndexedTrend
                 case 1:
                     if ($prevVal<=$curVal)//значения увеличиваются
                     {
-                        return true;
+                        return true;
                     }
                     else
                     {

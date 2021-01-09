@@ -2,6 +2,11 @@
 
 namespace app\components\TextDetection;
 
+use app\components\TextDetection\TextFrequencyDetector;
+
+
+//include_once('../TextDetection/TextFrequencyDetector.php');
+
 class PhraseDetector
 {
 
@@ -10,72 +15,124 @@ class PhraseDetector
     public static $SecInLetter=0.1;
 
     public static $YesPhraseSynonyms= array("да","разумеется", "безусловно", "конечно", "несомненно", "действительно", "само собой", "разумеется", "подлинно");
-    public static $NoPhraseSynonyms= array("нет","никогда", "увольте", "отсутствует", "никак нет", "нетушки", "нету", "нетути", "ничего подобного", "ни в коем случае", "ни под каким видом", "речи быть не может", "ни за что на свете", "ни за какие коврижки", "ни в коем разе", "ни за что", "не имеется", "не водится", "ни хрена", "ни в жизнь", "ни капли");
+    public static $NoPhraseSynonyms= array("нет","нет и нет","никогда", "увольте", "отсутствует", "никак нет", "нетушки", "нету", "нетути", "ничего подобного", "ни в коем случае", "ни под каким видом", "речи быть не может", "ни за что на свете", "ни за какие коврижки", "ни в коем разе", "ни за что", "не имеется", "не водится", "ни хрена", "ни в жизнь", "ни капли");
 
     public static function GetDumpResult()
     {
 
-        $result=array();
+$result=array();
 
-        $result[]=array("time"=>0.8,"val"=>"Да","text"=>"Some word","frame"=>0,"startFrame"=>0,"endFrame"=>0);
-        $result[]=array("time"=>0.4,"val"=>"Да","text"=>"one more word","frame"=>1,"startFrame"=>0,"endFrame"=>2);
-        $result[]=array("time"=>2.4,"val"=>"Да","text"=>"final word","frame"=>1,"startFrame"=>0,"endFrame"=>2);
+$result[]=array("time"=>0.8,"val"=>"Да","text"=>"Some word","frame"=>0,"startFrame"=>0,"endFrame"=>0);
+$result[]=array("time"=>0.4,"val"=>"Да","text"=>"one more word","frame"=>1,"startFrame"=>0,"endFrame"=>2);
+$result[]=array("time"=>2.4,"val"=>"Да","text"=>"final word","frame"=>1,"startFrame"=>0,"endFrame"=>2);
 
-        return result;
-    }
+return result;
+}
 
 
-    public static function GetWordEndTime($theTextData,$theIndex)
+    public static function GetPhraseEndTime($theTextData,$theStartIndex,$theEndIndex,$thePhrase)
     {
-        if (isset($theTextData) && is_array($theTextData) && isset($theTextData[$theIndex])
-            && is_array($theTextData[$theIndex]) && isset($theTextData[$theIndex][0]))
+        if (isset($theTextData) && is_array($theTextData) && isset($theStartIndex) && isset($theEndIndex) && isset($thePhrase) &&
+            isset($theTextData[$theStartIndex]) && isset($theTextData[$theEndIndex]) && is_array($theTextData[$theStartIndex]) && is_array($theTextData[$theEndIndex]) &&
+            isset($theTextData[$theStartIndex][0]) &&  isset($theTextData[$theStartIndex][1]) &&
+            isset($theTextData[$theEndIndex][0]) &&  isset($theTextData[$theEndIndex][1]))
         {
 
+            $lettersInWord=iconv_strlen($thePhrase);
+            $possibleWordTimeEnd=$theTextData[$theStartIndex][1]+$lettersInWord*PhraseDetector::$SecInLetter;
 
-            $lettersInWord=iconv_strlen($theTextData[$theIndex][0]);
-            $possibleWordTimeLength=$theTextData[$theIndex][1]+$lettersInWord*PhraseDetector::$SecInLetter;
 
-            if (isset($theTextData[$theIndex+1]) && is_array($theTextData[$theIndex+1]) &&
-                isset($theTextData[$theIndex+1][1]))
+
+            if (isset($theTextData[$theEndIndex+1]) && is_array($theTextData[$theEndIndex+1]) &&
+                isset($theTextData[$theEndIndex+1][1]))
             {
-
-                if ($possibleWordTimeLength>$theTextData[$theIndex+1][1])
+                //echo "<br> Indexes [$theStartIndex, $theEndIndex] Word ($thePhrase) ends at $possibleWordTimeEnd и ".$theTextData[$theEndIndex+1][1];
+                if ($possibleWordTimeEnd>$theTextData[$theEndIndex+1][1])
                 {
-                    return $theTextData[$theIndex+1][1];
+                    return $theTextData[$theEndIndex+1][1];
                 }
             }
 
-            return $possibleWordTimeLength;
+            return $possibleWordTimeEnd;
         }
 
         return null;
     }
 
 
-    public static function MakePhraseUnitSequence($theResult,$theFPS,$theTextElement,$endTime,$theTextType)
+    public static function MakePhraseUnitSequence($theFPS,$theText,$theStartTime,$theEndTime,$theTextType)
     {
-        if (isset($theResult) && is_array($theResult) &&
-            isset($theFPS) && $theFPS>0 &&
-            isset($endTime) &&
-            isset($theTextElement) && is_array($theTextElement) && isset($theTextElement[0]) && $theTextElement[1])
-        {
 
+
+        $curResult=array();
+        if (isset($theFPS) && $theFPS>0 &&
+            isset($theEndTime) && isset($theStartTime) &&
+            isset($theText) )
+        {
             if (!isset($theTextType))$theTextType="";
 
-            $startTime=$theTextElement[1];
-            $startFrameIndex=round($theTextElement[1]*$theFPS);
-            $endFrameIndex=round($endTime*$theFPS);
+          //  echo "Start at ($theStartTime) and End at ($theEndTime)";
+
+            $startFrameIndex=round($theStartTime*$theFPS);;
+            $endFrameIndex=round($theEndTime*$theFPS);
 
 
             for ($i=$startFrameIndex;$i<=$endFrameIndex;$i++)
             {
-                $theResult[]=array("time"=>round($startTime+$i/$theFPS,4),"val"=>$theTextType,"text"=>$theTextElement[0],"frame"=>$i,"startFrame"=>$startFrameIndex,"endFrame"=>$endFrameIndex);
+                $curResult[]=array("time"=>round($i/$theFPS,4),"val"=>$theTextType,"text"=>$theText,"frame"=>$i,"startFrame"=>$startFrameIndex,"endFrame"=>$endFrameIndex);
             }
         }
 
 
+
+        return $curResult;
+    }
+
+
+    public static function detectExactPhrase($theSource,$theIndex,$thePattern,$thePhrase,$theResult)
+    {
+       // echo "<br> detectExactPhrase вызвано для фразы ($thePhrase) и индекса текста ($theIndex): ";
+
+        if (isset($theIndex) &&  isset($thePattern) && is_array($thePattern) &&
+                isset($theSource) && is_array($theSource) && isset($theSource[$theIndex]) &&
+                    is_array($theSource[$theIndex]) && isset($theSource[$theIndex][0]))
+        {
+            $thePhrase.=$theSource[$theIndex][0];
+            $curFilteredPattern=array();
+
+            foreach ($thePattern as $curPattern)
+            {
+                if (strpos($curPattern,strtolower($thePhrase))===0)
+                {
+                    $curFilteredPattern[]=$curPattern;
+                    if (strlen($thePhrase)==strlen($curPattern))
+                    {
+                        $theResult=array("found"=>true,"phrase"=>$thePhrase,"endindex"=>$theIndex);
+                    }
+                }
+            }
+
+            if (count($curFilteredPattern)>0)
+            {
+                return PhraseDetector::detectExactPhrase($theSource,$theIndex+1,$curFilteredPattern,$thePhrase." ",$theResult);
+            }
+        }
+////////////////////////
+        if (isset($theIndex) && isset($theSource) && is_array($theSource) && !isset($theSource[$theIndex]) && isset($thePhrase))
+        {
+            $lastSpace=strrpos($thePhrase," ");
+            if ($lastSpace!==false) {
+                $thePhrase = substr($thePhrase, 0, $lastSpace);
+            }
+            return array("found"=>true,"phrase"=>$thePhrase,"endindex"=>$theIndex-1);
+        }
+///////////////////////////////
+
         return $theResult;
     }
+
+
+
 
     public static function GetPhrase($theTextData,$theFPS,$theCheckList,$theAliasWord,$startFromTime)
     {
@@ -89,36 +146,29 @@ class PhraseDetector
 
             if ($N>0)
             {
-
                 $startIndex = 0;
-                if (isset($startFromTime)) $startIndex = FrequencyDetector::ResponseStartIndexInWords($theTextData, $startFromTime);
+                if (isset($startFromTime)) $startIndex = TextFrequencyDetector::ResponseStartIndexInWords($theTextData, $startFromTime);
 
                 $result=array();
-
                 for ($i = $startIndex; $i < $N; $i++)
                 {
 
-                    if (isset($theTextData[$i]) && isset($theTextData[$i][0]) && isset($theTextData[$i][1]))
+                    $curOutput=PhraseDetector::detectExactPhrase($theTextData,$i,$theCheckList,"",array("found"=>false));
+
+                    if (isset($curOutput) && $curOutput["found"]==true &&
+                        isset($curOutput["endindex"]) && isset($curOutput["phrase"]) && isset($theTextData[$i][1]))
                     {
-                        $wordEndTime=PhraseDetector::GetWordEndTime($theTextData,$i);
+                        $wordEndTime=PhraseDetector::GetPhraseEndTime($theTextData,$i,$curOutput["endindex"],$curOutput["phrase"]);
 
+                        $curResult=PhraseDetector::MakePhraseUnitSequence($theFPS,$curOutput["phrase"],$theTextData[$i][1],$wordEndTime,$theAliasWord);
+                        if (count($curResult))$result[]=$curResult;
 
-                        if ( in_array(strtolower($theTextData[$i][0]), $theCheckList))
-                        {
-                            // echo "слово '{$theTextData[$i][0]}' начинается в {$theTextData[$i][1]} и заканчивается в $wordEndTime<br>";
-
-                            array_push($result,PhraseDetector::MakePhraseUnitSequence($result,$theFPS,$theTextData[$i],$wordEndTime,$theAliasWord));
-
-                        }
-
-
-
+                        $i=$curOutput["endindex"];
                     }
+
                 }
                 return $result;
             }
-
-
         }
 
         return null;

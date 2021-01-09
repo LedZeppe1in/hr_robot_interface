@@ -27,7 +27,7 @@ class IndexedTrend
     }
 
 
-    public function DetectTrend($theCurData,$thePrevData,$theCurIndex)
+    public function DetectTrend($theCurData,$thePrevData,$theCurIndex,$theConditions)
     {
 
     }
