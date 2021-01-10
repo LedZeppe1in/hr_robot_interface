@@ -991,7 +991,7 @@ class AnalysisHelper
      * @param $detectedFeatures - массив обнаруженных признаков
      * @param $questionTime - время на вопрос в миллисекундах
      * @param $questionText - текст вопроса
-     * @return array - массив наборов фактов для кадого кадра видеоинтервью
+     * @return array - массив наборов фактов для кадого кадра видео
      */
     public static function convertFeaturesToFacts($faceData, $detectedFeatures, $questionTime, $questionText)
     {
@@ -1151,8 +1151,6 @@ class AnalysisHelper
                 $result[] = $fact;
             };
         }
-        // Добавление в конец набора фактов факта с информацией по кадру
-        $result[] = self::createFactWithFrameInformation($frameIndex);
 
         return $result;
     }
@@ -1431,6 +1429,53 @@ class AnalysisHelper
     }
 
     /**
+     * Преобразование массива с результатами определения признаков по МОВ Андрея (массив AU и
+     * массив направлений взгляда) в массив фактов.
+     *
+     * @param $faceData - цифровая маска
+     * @return array - массив наборов фактов для кадого кадра видео
+     */
+    public static function convertActionUnitsAndGazesToFacts($faceData)
+    {
+        $facts = array();
+        // Если в json-файле цифровой маски есть данные по Action Units
+        if (strpos($faceData, 'AUs') !== false) {
+            // Формирование json-строки
+            $faceData = str_replace('{"AUs"', ',{"AUs"', $faceData);
+            $faceData = trim($faceData, ',');
+            $faceData = '[' . $faceData . ']';
+            // Конвертация данных по Action Units в набор фактов
+            $initialData = json_decode($faceData);
+            if (count($initialData) > 0) {
+                $frameData = $initialData[0];
+                // Анализ направления взгляда
+                $targetPropertyName = 'gaze';
+                if (property_exists($frameData, $targetPropertyName) === True)
+                    foreach ($initialData as $frameIndex => $frameData) {
+                        $gazeDirections = $frameData->{$targetPropertyName};
+                        // Формирование фактов по направлению взгляда
+                        $gazeDirectionsAsFacts = self::convertGazeToFacts($gazeDirections, $frameIndex);
+                        if (count($gazeDirectionsAsFacts) > 0)
+                            $facts[$frameIndex] = $gazeDirectionsAsFacts;
+                    }
+                // Анализ Action Units
+                $targetPropertyName = 'AUs';
+                if (property_exists($frameData, $targetPropertyName) === True)
+                    foreach ($initialData as $frameIndex => $frameData) {
+                        $actionUnits = $frameData->{$targetPropertyName};
+                        // Формирование фактов на основе Action Units
+                        $actionUnitsAsFacts = self::convertActionUnitsToFacts($actionUnits, $frameIndex);
+                        if (count($actionUnitsAsFacts) > 0)
+                            foreach ($actionUnitsAsFacts as $actionUnitsAsFact)
+                                array_push($facts[$frameIndex], $actionUnitsAsFact);
+                    }
+            }
+        }
+
+        return $facts;
+    }
+
+    /**
      * Создание модели результатов анализа и запуск модуля определения признаков.
      *
      * @param $landmark - цифровая маска
@@ -1457,6 +1502,8 @@ class AnalysisHelper
             $landmark->id,
             $landmark->landmark_file_name
         );
+        // Переменная для хранения цифровой маски, полученной от МОВ Андрея
+        $andreyFaceData = null;
         // Массив фактов
         $facts = array();
         // Создание объекта обнаружения лицевых признаков
@@ -1486,7 +1533,7 @@ class AnalysisHelper
                     $landmarks = Landmark::find()->where(['video_interview_id' => $landmark->video_interview_id])->all();
                     // Обход цифровых масок
                     foreach ($landmarks as $currentLandmark)
-                        if ($currentLandmark->question_id)
+                        if (isset($currentLandmark->question_id))
                             if ($currentLandmark->question->testQuestion->id == $testQuestionId)
                                 if ($currentLandmark->type == Landmark::TYPE_LANDMARK_ANDREW_MODULE) {
                                     // Обход результатов МОП по цифровой маске, полученной МОВ Ивана
@@ -1551,6 +1598,19 @@ class AnalysisHelper
                     $questionTime,
                     $questionText
                 );
+                // Если получены результаты обработки МОВ Андрея
+                if (isset($andreyFaceData)) {
+                    // Преобразование результаов обработки МОВ Андрея в набор фактов
+                    $andreyFacts = self::convertActionUnitsAndGazesToFacts($andreyFaceData);
+                    // Если наборы фактов, сформированных от МОВ Ивана и Андрея, не пустые
+                    if (!empty($facts) && !empty($andreyFacts))
+                        // Объединение набора фактов, полученных от МОВ Андрея с набором фактов, полученных от МОВ Ивана
+                        foreach ($facts as $iKey => $factsForFrame)
+                            foreach ($andreyFacts as $aKey => $andreyFactsForFrame)
+                                if ($iKey == $aKey)
+                                    foreach ($andreyFactsForFrame as $andreyFact)
+                                        array_push($facts[$iKey], $andreyFact);
+                }
             }
         }
         // Если в json-файле цифровой маски есть данные по Action Units
@@ -1571,6 +1631,8 @@ class AnalysisHelper
                             $questionTime = $questionLandmark->question->testQuestion->time;
                         // Если задано время на вопрос
                         if ($questionTime != null) {
+                            // Создание объекта коннектора с Yandex.Cloud Object Storage
+                            $osConnector = new OSConnector();
                             // Получение содержимого json-файла с лицевыми точками полученных модулем Ивана из Object Storage
                             $jsonFaceDataOnIvanModule = $osConnector->getFileContentFromObjectStorage(
                                 OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
@@ -1629,6 +1691,9 @@ class AnalysisHelper
                         $actionUnits = $frameData->{$targetPropertyName};
                         // Формирование фактов на основе Action Units
                         $actionUnitsAsFacts = self::convertActionUnitsToFacts($actionUnits, $frameIndex);
+                        // Добавление в конец набора фактов факта с информацией по кадру
+                        $actionUnitsAsFacts[] = self::createFactWithFrameInformation($frameIndex);
+                        // Добавление текущего набора фактов к общему набору фактов
                         if (count($actionUnitsAsFacts) > 0)
                             foreach ($actionUnitsAsFacts as $actionUnitsAsFact)
                                 array_push($facts[$frameIndex], $actionUnitsAsFact);

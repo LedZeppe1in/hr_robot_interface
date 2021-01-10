@@ -109,9 +109,10 @@ $this->params['breadcrumbs'][] = $this->title;
                         return Html::a($icon, $url);
                     },
                     'get-recognized-speech' => function ($url, $model, $key) {
-                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-comment',
-                            'title' => 'Распознать речь в видео']);
-                        $url = ['/video-interview/get-recognized-speech/' . $model->id];
+                        $icon = ($model->video_file_name != '') ? Html::tag('span', '',
+                            ['class' => 'glyphicon glyphicon-comment', 'title' => 'Распознать речь в видео']) : false;
+                        $url = ($model->video_file_name != '') ?
+                            ['/video-interview/get-recognized-speech/' . $model->id] : false;
                         return Html::a($icon, $url);
                     },
                     'get-andrey-landmarks' => function ($url, $model, $key) {

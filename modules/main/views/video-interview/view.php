@@ -81,6 +81,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'options' => ['class' => 'btn btn-success']
             ]);
         } ?>
+        <?= ($model->video_file_name != '') ? Html::a('Распознать речь в видео',
+            ['get-recognized-speech', 'id' => $model->id], ['class' => 'btn btn-success']) : false; ?>
         <?php echo ButtonDropdown::widget([
             'label' => 'Запуск анализа видеоинтервью',
             'dropdown' => [
@@ -94,8 +96,6 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             'options' => ['class' => 'btn btn-success']
         ]); ?>
-        <?= Html::a('Распознать речь в видео', ['get-recognized-speech', 'id' => $model->id],
-            ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Обновить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Удалить', ['delete', 'id' => $model->id], [
             'class' => 'btn btn-danger',
