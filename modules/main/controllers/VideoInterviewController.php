@@ -871,19 +871,15 @@ class VideoInterviewController extends Controller
                 $jsonAnalysisResultFile = $osConnector->getFileContentFromObjectStorage(
                     OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
                     $analysisResult->id,
-                    $analysisResult->facts_file_name
+                    $analysisResult->detection_result_file_name
                 );
                 // Декодирование json-файла с результатами определения признаков
                 $analysisResultFile = json_decode($jsonAnalysisResultFile, true);
                 // Обход содержимого результатов определения признаков
                 foreach ($analysisResultFile as $key => $value)
-                    if ($key == 'feature_statistics') {
-                        // Добавление в массив всех статистик текущей статистики по видео на вопрос
+                    if ($key == 'feature_statistics')
+                        // Добавление текущей статистики в массив всех статистик по видео на вопрос
                         array_push($featureStatistics, $value);
-                        // Удаление json-файла с результатами определения признаков
-                        if (file_exists($analysisResultPath . $analysisResult->detection_result_file_name))
-                            unlink($analysisResultPath . $analysisResult->detection_result_file_name);
-                    }
             }
             // Создание объекта обнаружения лицевых признаков
             $facialFeatureDetector = new FacialFeatureDetector();

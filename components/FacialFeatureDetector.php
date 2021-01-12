@@ -445,7 +445,7 @@ class FacialFeatureDetector
                     $targetFaceData[$facePart]["left_eye_outer_movement"][$i]["val"] = 'none';
                 }
                 if ($rightEyeOuterCornerH < 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'up';
-                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
+                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
                 if ($rightEyeOuterCornerH == 0) {
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["force"] = 0;
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'none';
@@ -1716,6 +1716,8 @@ class FacialFeatureDetector
 
         return $targetFaceData;
     }
+
+
 
     //Обработка звуковой информации
     public function processAudio($targetFaceData, $sourceFaceData0, $facePart, $coefs_)
@@ -4642,14 +4644,11 @@ class FacialFeatureDetector
 
     public function detectBadNormMaskAtFrame($theNormMask)
     {
-
         $output=array("brow_below_eyebrow"=>false,
                         "brow_ratio_right"=>1,"brow_ratio_left"=>1,
                         "left_eye_x_failed"=>false,"right_eye_x_failed"=>false,
                         "left_eye_y_failed"=>false,"right_eye_y_failed"=>false,
                         "nose_turned_27_30"=>0,"nose_turned_27_29"=>0);
-
-
 
         if (isset($theNormMask) && is_array($theNormMask))
         {
@@ -4689,6 +4688,20 @@ class FacialFeatureDetector
 
             //повернут нос: 27  и 30 (29) угол
 
+            $deltaX_27_29=abs($theNormMask[27]['X']-$theNormMask[29]['X']);
+            $deltaY_27_29=abs($theNormMask[29]['Y']-$theNormMask[27]['Y']);
+            $v27_29=$deltaY_27_29*sqrt($deltaX_27_29*$deltaX_27_29+$deltaY_27_29*$deltaY_27_29);
+            $v27_29=($deltaY_27_29*$deltaY_27_29)/$v27_29;
+            $ugol27_29=acos($v27_29);
+            $output["nose_turned_27_29"]=round($ugol27_29,3);
+
+            $deltaX_27_30=abs($theNormMask[27]['X']-$theNormMask[30]['X']);
+            $deltaY_27_30=abs($theNormMask[30]['Y']-$theNormMask[27]['Y']);
+            $v27_30=$deltaY_27_30*sqrt($deltaX_27_30*$deltaX_27_30+$deltaY_27_30*$deltaY_27_30);
+            $v27_30=($deltaY_27_30*$deltaY_27_30)/$v27_30;
+            $ugol27_30=acos($v27_30);
+            $output["nose_turned_27_30"]=round($ugol27_30,3);
+
 return $output;
 
         }
@@ -4702,13 +4715,46 @@ return $output;
 
         for ($i = 0; $i < $FrameCount; $i++)
         {
-
             if (!isset($theNormMask[$i])) //frames
             {
                 $arrayOfAbsentPoints[]=$i;
             }
+            if (isset($theNormMask[$i])) {
+
+               // count($theNormMask[$i])==???
+            }
         }
         return $arrayOfAbsentPoints;
+    }
+
+    public function getGoodFrame($theNormMask,$theFrameCount,$theInfo,$startFromIndex)
+    {
+        if (isset($theNormMask) && is_array($theNormMask) &&
+             isset($theInfo) && isset($theInfo["mask_quality_statistics"]) && isset($theInfo["mask_quality_statistics"]["bad_frames"]) &&
+                isset($theFrameCount) && isset($startFromIndex))
+        {
+            for ($i = $startFromIndex; $i < $theFrameCount; $i++)
+            {
+                if (!array_key_exists($i,$theInfo["mask_quality_statistics"]["bad_frames"])) {
+                    return $i;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function replaceFrameData($theNormMask,$theGoodIndex, $theBadIndex)
+    {
+
+        if (isset($theNormMask) && is_array($theNormMask) &&
+               isset($theGoodIndex) && isset($theBadIndex) &&
+                isset($theNormMask[$theGoodIndex])) {
+            $theNormMask[$theBadIndex]=$theGoodIndex;
+            return $theNormMask;
+        }
+
+        return $theNormMask;
     }
 
     public function repairNormMask($sourceFaceData1,$FrameCount)
@@ -4716,26 +4762,18 @@ return $output;
 
         $mask_data=array("mask_quality_statistics"=>array("bad_frames"=>array()));
 
-        //$mask_data["mask_quality_statistics"]["bad_frames"]=
-
+        //1. если отсутвуют точки маски
         if (isset($sourceFaceData1) && isset($FrameCount)) {
-            //1. если отсутвуют точки маски
             $absentFrames = $this->detectAbsentPointsFrames($sourceFaceData1, $FrameCount);
-
-            //2. другие критерии
-            $badFrames = array();
-            for ($i = 0; $i < $FrameCount; $i++) {
-                if (isset($sourceFaceData1[$i])) //frames
+            if (is_array($absentFrames) && count($absentFrames) > 0) {
+                foreach($absentFrames as $frameNumber)
                 {
-                    if (!in_array($i, $absentFrames)) {
-                        $output = $this->detectBadNormMaskAtFrame($sourceFaceData1[$i]);
-                        if ($this->isBadNormMaskAtFrame($output)) {
-                            $badFrames[$i] = $output;
-                        }
-                    }
+                    $mask_data["mask_quality_statistics"]["bad_frames"][$frameNumber]=array("bad_frame#"=>$frameNumber,"points_absent"=>true);
                 }
             }
+        }
 
+        //2. другие критерии
             //1. если отсутвуют точки маски
             //2. точки лба (69 - 73) ниже уровня бровей (17-21 и 22-25)
             //3. точки глаз x-смещены по неподвижным   43-47<42 или 36-40>39
@@ -4743,21 +4781,38 @@ return $output;
             //5. крайний точки глаза: 42 и 45, 36 и 39 разница по y не больше половин длины глаза (базового кадра или "корректного кадра")
             //6. повернут нос: 27  и 30 (29) угол
             //7. разница по х для 71-70 и 73-72 больше 50%
+        for ($i = 0; $i < $FrameCount; $i++) {
 
-            //if (bad ) paramters.badframes=$i
-            foreach ($sourceFaceData1[$i - 1] as $k1 => $v1) { //points
-                if (isset($sourceFaceData1[$i - 1][$k1])) {
-                    $sourceFaceData1[$i][$k1] = $v1;
+            if (!array_key_exists($i,$mask_data["mask_quality_statistics"]["bad_frames"]))
+            {
+                $output = $this->detectBadNormMaskAtFrame($sourceFaceData1[$i]);
+                if ($this->isBadNormMaskAtFrame($output))
+                {
+                    $mask_data["mask_quality_statistics"]["bad_frames"][$i] = $output;
                 }
             }
         }
-        else
+
+        //поиск хотя бы одного нормального фрейма
+        $last_good_frame_index=$this->getGoodFrame($sourceFaceData1,$FrameCount,$mask_data,0);
+        if (!isset($last_good_frame_index)) return $mask_data;
+
+        //замена
+        for ($i = 0; $i < $FrameCount; $i++)
         {
-            $output=array("point_absent"=>true,"bad_frame#"=>-1);
+            if (array_key_exists($i,$mask_data["mask_quality_statistics"]["bad_frames"])) {
+                $sourceFaceData1=$this->replaceFrameData($sourceFaceData1,$last_good_frame_index,$i);
+                $mask_data["mask_quality_statistics"]["bad_frames"][$i]["good_frame#"]=$last_good_frame_index;
+                $mask_data["mask_quality_statistics"]["bad_frames"][$i]["bad_frame#"]=$i;
+            }
+            else {
+                $last_good_frame_index=$this->getGoodFrame($sourceFaceData1,$FrameCount,$mask_data,$i);
+            }
+
         }
 
 
-        $result_array=array("Data"=>$sourceFaceData1,"mask_quality_statistics"=>$mask_data);
+        $result_array=array("Data"=>$sourceFaceData1,"mask_quality_statistics"=>$mask_data["mask_quality_statistics"]);
         return $result_array;
     }
 
@@ -5032,7 +5087,7 @@ return $output;
 
 
 
-    public function detectFeaturesV3($json,$basicFrame, $textData,$options)
+    public function detectFeaturesV3($json,$basicFrame, $jsonA,$options,$textData)
     {
 
        // file_put_contents('/var/www/hr-robot-interface.com/public_html/components/11.json', json_encode($textData));
@@ -5911,12 +5966,12 @@ return $output;
         return $indexOfFrame;
     }
 
-
-    public function makeBasicFrameWithSmoothingAndRotating($theFaceData,$thePointFlag)
+   // public function makeBasicFrameWithSmoothingAndRotating($theFaceData,$options)
+    public function makeBasicFrameWithSmoothingAndRotating($theFaceData,$theFaceDataA,$options,$text)
     {
         $configData=array();
 
-        $configData["pointsFlag"]=$thePointFlag;
+        $configData["pointsFlag"]=$options["pointsFlag"];
         $configData["IsCalibrationData"]=1;
 
 
