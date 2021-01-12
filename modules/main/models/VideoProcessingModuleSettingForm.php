@@ -6,7 +6,7 @@ use yii\base\Model;
 use yii\helpers\ArrayHelper;
 
 /**
- * VideoProcessingModuleSettingForm is the model behind the login form.
+ * VideoProcessingModuleSettingForm - класс формы для определения настроек модуля обработки видео Ивана и Андрея.
  */
 class VideoProcessingModuleSettingForm extends Model
 {

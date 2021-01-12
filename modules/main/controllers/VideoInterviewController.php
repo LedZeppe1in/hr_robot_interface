@@ -2,9 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\FinalConclusion;
-use app\modules\main\models\FinalResult;
-use app\modules\main\models\ProfileKnowledgeBase;
 use Yii;
 use stdClass;
 use Exception;
@@ -21,11 +18,13 @@ use app\components\AnalysisHelper;
 use app\components\FacialFeatureDetector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
+use app\modules\main\models\FinalResult;
 use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\SurveyQuestion;
+use app\modules\main\models\ProfileKnowledgeBase;
 use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
@@ -93,7 +92,7 @@ class VideoInterviewController extends Controller
      */
     public function actionView($id)
     {
-        // Создание формы настройки параметров запуска модуля обработки видео (Иван)
+        // Создание формы настройки параметров запуска модуля обработки видео Ивана и Андрея
         $videoProcessingModuleSettingForm = new VideoProcessingModuleSettingForm();
 
         return $this->render('view', [
@@ -662,8 +661,8 @@ class VideoInterviewController extends Controller
      * @throws \yii\db\StaleObjectException
      */
     public function actionGetAndreyLandmarks($id) {
-        // Установка времени выполнения скрипта в 1 час.
-        set_time_limit(60 * 60);
+        // Установка времени выполнения скрипта в 3 часа
+        set_time_limit(60 * 200);
         // Поиск полного видеоинтервью по id
         $videoInterview = VideoInterview::findOne($id);
         // Путь к программе обработки видео от Андрея
@@ -810,8 +809,8 @@ class VideoInterviewController extends Controller
      */
     public function actionRunFeaturesDetection($id)
     {
-        // Установка времени выполнения скрипта в 1 час.
-        set_time_limit(60 * 60);
+        // Установка времени выполнения скрипта в 3 часа
+        set_time_limit(60 * 200);
         $analysisResultIds = array();
         $errorMessages = '';
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
@@ -843,7 +842,8 @@ class VideoInterviewController extends Controller
                                         $landmark,
                                         2, // Задание определения признаков по новому МОП
                                         $baseFrame,
-                                        AnalysisHelper::NEW_FDM
+                                        AnalysisHelper::NEW_FDM,
+                                        null
                                     );
                                     // Сохранение id полученного результата определения признаков в массиве
                                     array_push($analysisResultIds, $analysisResultId);
@@ -941,6 +941,8 @@ class VideoInterviewController extends Controller
      */
     public function actionRunFeaturesInterpretation($id)
     {
+        // Установка времени выполнения скрипта в 3 часа
+        set_time_limit(60 * 200);
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $id])->all();
         // Если есть видео ответы на вопросы

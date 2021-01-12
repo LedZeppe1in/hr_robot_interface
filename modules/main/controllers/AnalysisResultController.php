@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\FeaturesDetectionModuleSettingForm;
 use Yii;
 use stdClass;
 use Exception;
@@ -156,18 +157,48 @@ class AnalysisResultController extends Controller
      */
     public function actionDetection($id, $processingType)
     {
+        // Переменная для хранения дополнительных параметров для запуска новой версии МОП
+        $additionalOptions = null;
+        // Если пришел POST-запрос
+        if (Yii::$app->request->isPost) {
+            // Массив дополнительных параметров для запуска новой версии МОП
+            $additionalOptions = array();
+            // Установка режима работы МОП
+            $additionalOptions['mode'] = 2;
+            // Определение режима (типа) для инвариантных точек
+            $invariantPointFlag = (int)Yii::$app->request->post('FeaturesDetectionModuleSettingForm')['invariantPointFlag'];
+            // Если заданы инвариантные точки для глаз
+            if ($invariantPointFlag == FeaturesDetectionModuleSettingForm::INVARIANT_POINT_FOR_EYES) {
+                // Определение номера первой и второй инвариантной точки
+                $additionalOptions['invariantPoint1'] = FeaturesDetectionModuleSettingForm::INVARIANT1_POINT1;
+                $additionalOptions['invariantPoint2'] = FeaturesDetectionModuleSettingForm::INVARIANT1_POINT2;
+            }
+            // Если заданы инвариантные точки для носа
+            if ($invariantPointFlag == FeaturesDetectionModuleSettingForm::INVARIANT_POINT_FOR_NOSE) {
+                // Определение номера первой и второй инвариантной точки
+                $additionalOptions['invariantPoint1'] = FeaturesDetectionModuleSettingForm::INVARIANT2_POINT1;
+                $additionalOptions['invariantPoint2'] = FeaturesDetectionModuleSettingForm::INVARIANT2_POINT2;
+            }
+            // Определение номеров точек для расчёта длины справа
+            $additionalOptions['invariantLength1Point1'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH1_POINT1;
+            $additionalOptions['invariantLength1Point2'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH1_POINT2;
+            // Определение номеров точек для расчёта длины слева
+            $additionalOptions['invariantLength2Point1'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH2_POINT1;
+            $additionalOptions['invariantLength2Point2'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH2_POINT2;
+        }
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);
         // Создание объекта AnalysisHelper
         $analysisHelper = new AnalysisHelper();
         // Определение базового кадра для видеоинтервью
-        $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id);
+        $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id, $additionalOptions);
         // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
         $analysisResultId = $analysisHelper->getAnalysisResult(
             $landmark,
             $processingType,
             $baseFrame,
-            ($processingType == 2) ? AnalysisHelper::NEW_FDM : AnalysisHelper::OLD_FDM
+            ($processingType == 2 || $processingType == 3) ? AnalysisHelper::NEW_FDM : AnalysisHelper::OLD_FDM,
+            $additionalOptions
         );
         // Вывод сообщения об успешном обнаружении признаков
         Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');

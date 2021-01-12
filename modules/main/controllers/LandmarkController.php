@@ -15,6 +15,7 @@ use app\components\OSConnector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\FeaturesDetectionModuleSettingForm;
 
 /**
  * LandmarkController implements the CRUD actions for AdvancedLandmark model.
@@ -60,9 +61,12 @@ class LandmarkController extends Controller
         $dataProvider = new ActiveDataProvider([
             'query' => Landmark::find(),
         ]);
+        // Создание формы настройки параметров запуска модуля определения признаков (МОП)
+        $featuresDetectionModuleSettingForm = new FeaturesDetectionModuleSettingForm();
 
         return $this->render('list', [
             'dataProvider' => $dataProvider,
+            'featuresDetectionModuleSettingForm' => $featuresDetectionModuleSettingForm
         ]);
     }
 
@@ -74,8 +78,12 @@ class LandmarkController extends Controller
      */
     public function actionView($id)
     {
+        // Создание формы настройки параметров запуска модуля определения признаков (МОП)
+        $featuresDetectionModuleSettingForm = new FeaturesDetectionModuleSettingForm();
+
         return $this->render('view', [
             'model' => $this->findModel($id),
+            'featuresDetectionModuleSettingForm' => $featuresDetectionModuleSettingForm
         ]);
     }
 

@@ -970,7 +970,7 @@ class VideoInterviewAnalysisController extends Controller
                         // Создание объекта AnalysisHelper
                         $analysisHelper = new AnalysisHelper();
                         // Определение базового кадра для видеоинтервью
-                        $baseFrame = $analysisHelper->getBaseFrame($videoInterview->id);
+                        $baseFrame = $analysisHelper->getBaseFrame($videoInterview->id, null);
                         // Если базовый кадр определен
                         if (isset($baseFrame)) {
                             // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
@@ -979,7 +979,8 @@ class VideoInterviewAnalysisController extends Controller
                                 $landmarkModel,
                                 2, // Задание определения признаков по новому МОП
                                 $baseFrame,
-                                AnalysisHelper::NEW_FDM
+                                AnalysisHelper::NEW_FDM,
+                                null
                             );
                             $fdmResultFileExists = true;
                         } else {

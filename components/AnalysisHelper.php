@@ -1383,9 +1383,10 @@ class AnalysisHelper
      * Получение базового нулевого кадра (нейтрального состояния лица).
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
+     * @param $additionalOptions - дополнительные параметры для запуска МОП
      * @return mixed|null
      */
-    public static function getBaseFrame($videoInterviewId)
+    public static function getBaseFrame($videoInterviewId, $additionalOptions)
     {
         // Базовый (нудевой) кадр с нейтральным выражением лица
         $baseFrame = null;
@@ -1398,7 +1399,10 @@ class AnalysisHelper
             // Если есть видео ответ на калибровочный вопрос (27 - посмотрите в камеру)
             if (!empty($topicQuestion) && $topicQuestion->topic_id == 27) {
                 // Поиск цифровой маски, полученной на основе анализа видео ответа на калибровочный вопрос
-                $landmark = Landmark::find()->where(['question_id' => $question->id])->orderBy('id DESC')->one();
+                $landmark = Landmark::find()
+                    ->where(['question_id' => $question->id, 'type' => Landmark::TYPE_LANDMARK_IVAN_MODULE])
+                    ->orderBy('id DESC')
+                    ->one();
                 // Если цифровая маска существует
                 if (!empty($landmark)) {
                     // Переменная для хранения цифровой маски, полученной от МОВ Андрея
@@ -1438,12 +1442,32 @@ class AnalysisHelper
                     }
                     // Формирование дополнительных параметров
                     $options = [
+                        'mode' => isset($additionalOptions) ? 2 : 1,
+                        'invariantPoint1' => null,
+                        'invariantPoint2' => null,
+                        'invariantLength1Point1' => null,
+                        'invariantLength1Point2' => null,
+                        'invariantLength2Point1' => null,
+                        'invariantLength2Point2' => null,
                         'pointsFlag' => VideoInterview::TYPE_NORMALIZED_POINTS,
                         'voiceActingTime' => $landmark->question->testQuestion->time,
                         'skipIrisDetection' => true
                     ];
-                    // Создание объекта обнаружения лицевых признаков
-                    $facialFeatureDetector = new FacialFeatureDetector();
+                    // Если заданы дополнительные параметры
+                    if (isset($additionalOptions)) {
+                        // Определение дополнительных параметров
+                        $options['mode'] = $additionalOptions['mode'];
+                        $options['invariantPoint1'] = $additionalOptions['invariantPoint1'];
+                        $options['invariantPoint2'] = $additionalOptions['invariantPoint2'];
+                        $options['invariantLength1Point1'] = $additionalOptions['invariantLength1Point1'];
+                        $options['invariantLength1Point2'] = $additionalOptions['invariantLength1Point2'];
+                        $options['invariantLength2Point1'] = $additionalOptions['invariantLength2Point1'];
+                        $options['invariantLength2Point2'] = $additionalOptions['invariantLength2Point2'];
+                        // Создание объекта обнаружения лицевых признаков (экспериментальная версия нового МОП)
+                        $facialFeatureDetector = new FacialFeatureDetectorExperiment();
+                    } else
+                        // Создание объекта обнаружения лицевых признаков (стабильная версия нового МОП)
+                        $facialFeatureDetector = new FacialFeatureDetector();
                     // Определение нулевого кадра (нейтрального состояния лица) по новому методу МОП
                     $baseFrame = $facialFeatureDetector->makeBasicFrameWithSmoothingAndRotating(
                         $faceData,
@@ -1517,9 +1541,11 @@ class AnalysisHelper
      * @param $landmarkProcessingType - тип обработки получаемых цифровых масок (нормализованные или сырые точки)
      * @param $baseFrame - базовый кадр
      * @param $FDMVersion - версия запускаемого МОП
+     * @param $additionalOptions - дополнительные параметры для запуска МОП
      * @return int - id результатов анализа
      */
-    public static function getAnalysisResult($landmark, $landmarkProcessingType, $baseFrame, $FDMVersion)
+    public static function getAnalysisResult($landmark, $landmarkProcessingType, $baseFrame,
+                                             $FDMVersion, $additionalOptions)
     {
         // Создание модели для результатов определения признаков
         $analysisResultModel = new AnalysisResult();
@@ -1541,13 +1567,18 @@ class AnalysisHelper
         $andreyFaceData = null;
         // Массив фактов
         $facts = array();
-        // Создание объекта обнаружения лицевых признаков
-        $facialFeatureDetector = new FacialFeatureDetector();
         // Если вызывается модуль обработки видео Ивана
         if ($landmark->type == Landmark::TYPE_LANDMARK_IVAN_MODULE) {
             $facialFeatures = null;
             // Если указан режим запуска нового МОП
             if ($FDMVersion == self::NEW_FDM) {
+                // Если запускается экспериментальная версия нового МОП
+                if ($landmarkProcessingType == 3)
+                    // Создание объекта обнаружения лицевых признаков (экспериментальная версия нового МОП)
+                    $facialFeatureDetector = new FacialFeatureDetectorExperiment();
+                else
+                    // Создание объекта обнаружения лицевых признаков (стабильная версия нового МОП)
+                    $facialFeatureDetector = new FacialFeatureDetector();
                 $landmarkProcessingType = 1;
                 // Если у данной цифровой маски есть вопрос
                 if ($landmark->question_id != null) {
@@ -1570,10 +1601,37 @@ class AnalysisHelper
                 }
                 // Формирование дополнительных параметров
                 $options = [
+                    'mode' => isset($additionalOptions) ? 2 : 1,
+                    'invariantPoint1' => null,
+                    'invariantPoint2' => null,
+                    'invariantLength1Point1' => null,
+                    'invariantLength1Point2' => null,
+                    'invariantLength2Point1' => null,
+                    'invariantLength2Point2' => null,
                     'pointsFlag' => $landmarkProcessingType,
                     'voiceActingTime' => $landmark->question->testQuestion->time,
                     'skipIrisDetection' => true
                 ];
+                // Если заданы дополнительные параметры
+                if (isset($additionalOptions)) {
+                    // Определение дополнительных параметров
+                    $options['mode'] = $additionalOptions['mode'];
+                    $options['invariantPoint1'] = $additionalOptions['invariantPoint1'];
+                    $options['invariantPoint2'] = $additionalOptions['invariantPoint2'];
+                    $options['invariantLength1Point1'] = $additionalOptions['invariantLength1Point1'];
+                    $options['invariantLength1Point2'] = $additionalOptions['invariantLength1Point2'];
+                    $options['invariantLength2Point1'] = $additionalOptions['invariantLength2Point1'];
+                    $options['invariantLength2Point2'] = $additionalOptions['invariantLength2Point2'];
+                    // Обновление описания для данного результата анализа
+                    $analysisResultModel->description .= ' Запущен экспериментальный МОП с параметрами: ' .
+                        '1) Номера первой и второй инвариантной точки: ' . $additionalOptions['invariantPoint1'] .
+                        ' и ' . $additionalOptions['invariantPoint2'] . '; Номера точек для расчёта длины справа: ' .
+                        $additionalOptions['invariantLength1Point1'] . ' и ' .
+                        $additionalOptions['invariantLength1Point2'] . '; Номера точек для расчёта длины слева: ' .
+                        $additionalOptions['invariantLength2Point1'] . ' и ' .
+                        $additionalOptions['invariantLength2Point2'] . '.';
+                    $analysisResultModel->updateAttributes(['description']);
+                }
                 // Получение текста распознанной речи на основе анализа видео ответа на вопрос
                 $recognizedSpeechText = self::getRecognizedSpeechText($landmark->question_id);
                 // Выявление признаков для лица по новому методу МОП
@@ -1597,6 +1655,8 @@ class AnalysisHelper
             }
             // Если указан режим запуска старого МОП
             if ($FDMVersion == self::OLD_FDM) {
+                // Создание объекта обнаружения лицевых признаков (старая версия МОП)
+                $facialFeatureDetector = new FacialFeatureDetector();
                 // Определение нулевого кадра (нейтрального состояния лица) по старому методу МОП
                 $baseFrame = $facialFeatureDetector->detectFeaturesForBasicFrameDetection(
                     $faceData,

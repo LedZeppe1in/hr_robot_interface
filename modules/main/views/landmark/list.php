@@ -3,13 +3,62 @@
 use yii\helpers\Html;
 use yii\grid\GridView;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\FeaturesDetectionModuleSettingForm;
 
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $featuresDetectionModuleSettingForm app\modules\main\models\FeaturesDetectionModuleSettingForm */
 
 $this->title = 'Цифровые маски';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
+
+<?= $this->render('_modal_form_features_detection_module_setting', [
+    'featuresDetectionModuleSettingForm' => $featuresDetectionModuleSettingForm
+]); ?>
+
+<script type="text/javascript">
+    let actionName = "";
+    // Выполнение скрипта при загрузке страницы
+    $(document).ready(function() {
+        // Обработка нажатия кнопки-иконки запуска МОП с параметрами
+        $(".run-features-detection-with-parameters").click(function(e) {
+            // Форма параметров настроек запуска МОП
+            var form = document.getElementById("facial-features-detection-form");
+            // Формирование названия URL-адреса для запроса
+            if (actionName === "")
+                actionName = form.action;
+            form.action = actionName + "/" + this.id + "/3";
+            // Открытие модального окна
+            $("#facialFeaturesDetectionModalForm").modal("show");
+        });
+        // Обработка нажатия кнопки подтверждения запуска МОП с выбранными параметрами
+        $("#facial-features-detection-button").click(function(e) {
+            // Скрывание модального окна
+            $("#facialFeaturesDetectionModalForm").modal("hide");
+        });
+        // Обработка выбора значения в откидном списке
+        $("#featuresdetectionmodulesettingform-invariantpointflag").change(function() {
+            if (this.value === '0') {
+                $("#featuresdetectionmodulesettingform-firstinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT1_POINT1 ?>"
+                );
+                $("#featuresdetectionmodulesettingform-secondinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT1_POINT2 ?>"
+                );
+            }
+            if (this.value === '1') {
+                $("#featuresdetectionmodulesettingform-firstinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT2_POINT1 ?>"
+                );
+                $("#featuresdetectionmodulesettingform-secondinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT2_POINT2 ?>"
+                );
+            }
+        });
+    });
+</script>
+
 <div class="landmark-list">
 
     <h1><?= Html::encode($this->title) ?></h1>
@@ -63,7 +112,8 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
-                'template' => '{view} {update} {mask-editor} {raw-detection} {norm-detection} {new-fdm} {delete}',
+                'template' => '{view} {update} {mask-editor} {raw-detection} {norm-detection} {new-fdm} ' .
+                    '{run-features-detection-with-parameters} {delete}',
                 'buttons' => [
                     'mask-editor' => function ($url, $model, $key) {
                         $icon = Html::tag('span', '',
@@ -90,6 +140,16 @@ $this->params['breadcrumbs'][] = $this->title;
                         $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-circle-arrow-down',
                             'title' => 'Определение признаков по нормализованным точкам новый МОП']);
                         $url = ['/analysis-result/detection/' . $model->id . '/' . 2];
+                        return ($model->landmark_file_name != '' &&
+                            $model->type != Landmark::TYPE_LANDMARK_ANDREW_MODULE) ? Html::a($icon, $url) : null;
+                    },
+                    'run-features-detection-with-parameters' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', [
+                            'class' => 'glyphicon glyphicon-wrench run-features-detection-with-parameters',
+                            'id' => $model->id,
+                            'title' => 'Запуск нового МОП с параметрами'
+                        ]);
+                        $url = '#';
                         return ($model->landmark_file_name != '' &&
                             $model->type != Landmark::TYPE_LANDMARK_ANDREW_MODULE) ? Html::a($icon, $url) : null;
                     },

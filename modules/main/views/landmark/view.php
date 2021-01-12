@@ -4,15 +4,63 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 use yii\bootstrap\ButtonDropdown;
 use app\modules\main\models\Landmark;
+use app\modules\main\models\FeaturesDetectionModuleSettingForm;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\main\models\Landmark */
+/* @var $featuresDetectionModuleSettingForm app\modules\main\models\FeaturesDetectionModuleSettingForm */
 
 $this->title = ($model->landmark_file_name != '') ? $model->landmark_file_name : 'не загружена';
 $this->params['breadcrumbs'][] = ['label' => 'Цифровые маски', 'url' => ['list']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
+
+<?= $this->render('_modal_form_features_detection_module_setting', [
+    'featuresDetectionModuleSettingForm' => $featuresDetectionModuleSettingForm
+]); ?>
+
+<script type="text/javascript">
+    let actionName = "";
+    // Выполнение скрипта при загрузке страницы
+    $(document).ready(function() {
+        // Обработка нажатия кнопки-иконки запуска МОП с параметрами
+        $(".run-features-detection-with-parameters").click(function(e) {
+            // Форма параметров настроек запуска МОП
+            var form = document.getElementById("facial-features-detection-form");
+            // Формирование названия URL-адреса для запроса
+            if (actionName === "")
+                actionName = form.action;
+            form.action = actionName + "/" + this.id + "/3";
+            // Открытие модального окна
+            $("#facialFeaturesDetectionModalForm").modal("show");
+        });
+        // Обработка нажатия кнопки подтверждения запуска МОП с выбранными параметрами
+        $("#facial-features-detection-button").click(function(e) {
+            // Скрывание модального окна
+            $("#facialFeaturesDetectionModalForm").modal("hide");
+        });
+        // Обработка выбора значения в откидном списке
+        $("#featuresdetectionmodulesettingform-invariantpointflag").change(function() {
+            if (this.value === '0') {
+                $("#featuresdetectionmodulesettingform-firstinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT1_POINT1 ?>"
+                );
+                $("#featuresdetectionmodulesettingform-secondinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT1_POINT2 ?>"
+                );
+            }
+            if (this.value === '1') {
+                $("#featuresdetectionmodulesettingform-firstinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT2_POINT1 ?>"
+                );
+                $("#featuresdetectionmodulesettingform-secondinvariantpoint").val(
+                    "<?= FeaturesDetectionModuleSettingForm::INVARIANT2_POINT2 ?>"
+                );
+            }
+        });
+    });
+</script>
 
 <div class="landmark-view">
 
@@ -31,6 +79,8 @@ $this->params['breadcrumbs'][] = $this->title;
                                 $model->id . '/' . 1],
                             ['label' => 'По нормализованным точкам новый МОП', 'url' => '/analysis-result/detection/' .
                                 $model->id . '/' . 2],
+                            ['label' => 'По нормализованным точкам экспериментальный МОП', 'url' => '#',
+                                'options' => ['class' => 'run-features-detection-with-parameters', 'id' => $model->id]],
                         ],
                     ],
                     'options' => ['class' => 'btn btn-success']
