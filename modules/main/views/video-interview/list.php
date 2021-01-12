@@ -99,7 +99,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'class' => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'action-column'],
                 'template' => '{view} {update} {get-ivan-landmarks} {get-recognized-speech} {get-andrey-landmarks} ' .
-                    '{run-analysis} {run-features-detection} {run-features-interpretation} {delete}',
+                    '{run-analysis} {run-features-detection} {run-features-interpretation} {delete} ' .
+                    '{delete-all-analysis-results}',
                 'buttons' => [
                     'get-ivan-landmarks' => function ($url, $model, $key) {
                         $icon = ($model->video_file_name != '') ? Html::tag('span', '',
@@ -139,6 +140,18 @@ $this->params['breadcrumbs'][] = $this->title;
                             'title' => 'Запуск МИП (первый + второй уровень) по всем результатам МОП']);
                         $url = ['/video-interview/run-features-interpretation/' . $model->id];
                         return Html::a($icon, $url);
+                    },
+                    'delete-all-analysis-results' => function ($url, $model, $key) {
+                        $icon = Html::tag('span', '', ['class' => 'glyphicon glyphicon-remove',
+                            'title' => 'Удалить все результаты МОП и МИП для данного видеоинтервью']);
+                        $url = ['/video-interview/delete-all-analysis-results/' . $model->id];
+                        $options = [
+                            'data' => [
+                                'confirm' => 'Вы уверены, что хотите удалить все результаты МОП и МИП для данному видеоинтеврью?',
+                                'method' => 'post',
+                            ]
+                        ];
+                        return Html::a($icon, $url, $options);
                     },
                 ],
             ],

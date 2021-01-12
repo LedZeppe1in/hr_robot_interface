@@ -45,13 +45,15 @@ class VideoInterviewController extends Controller
                 'class' => AccessControl::className(),
                 'only' => ['list', 'upload', 'view', 'update', 'delete', 'video-download',
                     'get-ivan-landmarks', 'get-andrey-landmarks', 'get-recognized-speech',
-                    'run-analysis', 'run-features-detection', 'run-features-interpretation'],
+                    'run-analysis', 'run-features-detection', 'run-features-interpretation',
+                    'delete-all-analysis-results'],
                 'rules' => [
                     [
                         'allow' => true,
                         'actions' => ['list', 'upload', 'view', 'update', 'delete', 'video-download',
                             'get-ivan-landmarks', 'get-andrey-landmarks', 'get-recognized-speech',
-                            'run-analysis', 'run-features-detection', 'run-features-interpretation'],
+                            'run-analysis', 'run-features-detection', 'run-features-interpretation',
+                            'delete-all-analysis-results'],
                         'roles' => ['@'],
                     ],
                 ],
@@ -1068,6 +1070,84 @@ class VideoInterviewController extends Controller
         // Вывод сообщения о неуспешной интерпретации
         Yii::$app->getSession()->setFlash('warning',
             'Интерпретация невозможна, так как не заданы базы знаний!');
+
+        return $this->redirect(['/video-interview/view/' . $id]);
+    }
+
+    /**
+     * Удаление всех результатов МОП и МИП из БД и Object Storage для данного видеоинтервью.
+     *
+     * @param $id - идентификатор видеоинтервью
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionDeleteAllAnalysisResults($id)
+    {
+        $analysisResultsExists = false;
+        // Поиск видеоинтервью по id
+        $model = $this->findModel($id);
+        // Поиск цифровых масок для данного видеоинтервью
+        $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Обход всех найденных цифровых масок
+        foreach ($landmarks as $landmark)
+            // Если цифровая маска полученна не для вопроса
+            if ($landmark->question_id != null) {
+                // Поиск темы для вопроса
+                $topicQuestion = TopicQuestion::find()
+                    ->where(['test_question_id' => $landmark->question->test_question_id])
+                    ->one();
+                // Если тема для вопроса найдена
+                if (!empty($topicQuestion))
+                    // Если вопрос не калибровочный (темы 24, 25 и 27)
+                    if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 &&
+                        $topicQuestion->topic_id != 27) {
+                        // Поиск результатов анализа, проведенных для данной цифровой маски
+                        $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmark->id])->all();
+                        // Если есть результаты анализа для данного видеоинтервью
+                        if (!empty($analysisResults)) {
+                            // Обход всех найденных результатов анализа
+                            foreach ($analysisResults as $analysisResult) {
+                                // Удаление файла с результатами определения признаков на Object Storage
+                                if ($analysisResult->detection_result_file_name != '')
+                                    $osConnector->removeFileFromObjectStorage(
+                                        OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                                        $analysisResult->id,
+                                        $analysisResult->detection_result_file_name
+                                    );
+                                // Удаление файла с набором фактов на Object Storage
+                                if ($analysisResult->facts_file_name != '')
+                                    $osConnector->removeFileFromObjectStorage(
+                                        OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                                        $analysisResult->id,
+                                        $analysisResult->facts_file_name
+                                    );
+                                // Удаление файла с результатами интерпретации признаков на Object Storage
+                                if ($analysisResult->interpretation_result_file_name != '')
+                                    $osConnector->removeFileFromObjectStorage(
+                                        OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                                        $analysisResult->id,
+                                        $analysisResult->interpretation_result_file_name
+                                    );
+                                // Удаление результата анализа из БД
+                                $analysisResult->delete();
+                            }
+                            $analysisResultsExists = true;
+                        }
+                    }
+            }
+        // Если были найдены результаты анализа видеоинтервью
+        if ($analysisResultsExists)
+            // Вывод сообщения об успешном удалении результатов МОП и МИП
+            Yii::$app->getSession()->setFlash('success',
+                'Вы успешно удалили все рузультаты МОП и МИП по данному видеоинтервью!');
+        else
+            // Вывод сообщения об успешном удалении результатов МОП и МИП
+            Yii::$app->getSession()->setFlash('warning',
+                'Для данного видеоинтервью нет рузультатов МОП и МИП!');
 
         return $this->redirect(['/video-interview/view/' . $id]);
     }
