@@ -21,6 +21,11 @@ $this->params['breadcrumbs'][] = $this->title;
     let actionName = "";
     // Выполнение скрипта при загрузке страницы
     $(document).ready(function() {
+        //
+        var invariantRightLengthFirstPoint = document.getElementById("featuresdetectionmodulesettingform-invariantrightlengthfirstpoint");
+        var invariantRightLengthSecondPoint = document.getElementById("featuresdetectionmodulesettingform-invariantrightlengthsecondpoint");
+        var invariantLeftLengthFirstPoint = document.getElementById("featuresdetectionmodulesettingform-invariantleftlengthfirstpoint");
+        var invariantLeftLengthSecondPoint = document.getElementById("featuresdetectionmodulesettingform-invariantleftlengthsecondpoint");
         // Обработка нажатия кнопки-иконки запуска МОП с параметрами
         $(".run-features-detection-with-parameters").click(function(e) {
             // Форма параметров настроек запуска МОП
@@ -37,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
             // Скрывание модального окна
             $("#facialFeaturesDetectionModalForm").modal("hide");
         });
-        // Обработка выбора значения в откидном списке
+        // Обработка выбора инвариантных точек в откидном списке
         $("#featuresdetectionmodulesettingform-invariantpointflag").change(function() {
             if (this.value === '0') {
                 $("#featuresdetectionmodulesettingform-firstinvariantpoint").val(
@@ -54,6 +59,29 @@ $this->params['breadcrumbs'][] = $this->title;
                 $("#featuresdetectionmodulesettingform-secondinvariantpoint").val(
                     "<?= FeaturesDetectionModuleSettingForm::INVARIANT2_POINT2 ?>"
                 );
+            }
+        });
+        // Обработка выбора использования длин в откидном списке
+        $("#featuresdetectionmodulesettingform-uselength").change(function() {
+            if (this.value === '0') {
+                invariantRightLengthFirstPoint.style.display = "none";
+                $("label[for='featuresdetectionmodulesettingform-invariantrightlengthfirstpoint']").hide();
+                invariantRightLengthSecondPoint.style.display = "none";
+                $("label[for='featuresdetectionmodulesettingform-invariantrightlengthsecondpoint']").hide();
+                invariantLeftLengthFirstPoint.style.display = "none";
+                $("label[for='featuresdetectionmodulesettingform-invariantleftlengthfirstpoint']").hide();
+                invariantLeftLengthSecondPoint.style.display = "none";
+                $("label[for='featuresdetectionmodulesettingform-invariantleftlengthsecondpoint']").hide();
+            }
+            if (this.value === '1') {
+                invariantRightLengthFirstPoint.style.display = "block";
+                $("label[for='featuresdetectionmodulesettingform-invariantrightlengthfirstpoint']").show();
+                invariantRightLengthSecondPoint.style.display = "block";
+                $("label[for='featuresdetectionmodulesettingform-invariantrightlengthsecondpoint']").show();
+                invariantLeftLengthFirstPoint.style.display = "block";
+                $("label[for='featuresdetectionmodulesettingform-invariantleftlengthfirstpoint']").show();
+                invariantLeftLengthSecondPoint.style.display = "block";
+                $("label[for='featuresdetectionmodulesettingform-invariantleftlengthsecondpoint']").show();
             }
         });
     });

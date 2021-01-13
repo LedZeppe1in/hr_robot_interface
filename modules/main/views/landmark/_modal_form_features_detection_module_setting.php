@@ -37,6 +37,9 @@ use app\modules\main\models\FeaturesDetectionModuleSettingForm;
             </div>
         </div>
 
+        <?= $form->field($featuresDetectionModuleSettingForm, 'useLength')
+            ->dropDownList(FeaturesDetectionModuleSettingForm::getUseLengthValues()) ?>
+
         <div class="row">
             <div class="col-lg-6">
                 <?= $form->field($featuresDetectionModuleSettingForm, 'invariantRightLengthFirstPoint')

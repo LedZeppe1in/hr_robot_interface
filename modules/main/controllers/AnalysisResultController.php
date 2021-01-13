@@ -179,12 +179,27 @@ class AnalysisResultController extends Controller
                 $additionalOptions['invariantPoint1'] = FeaturesDetectionModuleSettingForm::INVARIANT2_POINT1;
                 $additionalOptions['invariantPoint2'] = FeaturesDetectionModuleSettingForm::INVARIANT2_POINT2;
             }
-            // Определение номеров точек для расчёта длины справа
-            $additionalOptions['invariantLength1Point1'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH1_POINT1;
-            $additionalOptions['invariantLength1Point2'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH1_POINT2;
-            // Определение номеров точек для расчёта длины слева
-            $additionalOptions['invariantLength2Point1'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH2_POINT1;
-            $additionalOptions['invariantLength2Point2'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH2_POINT2;
+            // Определение режима использования длин
+            $useLength = (int)Yii::$app->request->post('FeaturesDetectionModuleSettingForm')['useLength'];
+            // Если задан режим использования длин
+            if ($useLength == FeaturesDetectionModuleSettingForm::USE_LENGTH_TRUE) {
+                $additionalOptions['useLength'] = true;
+                // Определение номеров точек для расчёта длины справа
+                $additionalOptions['invariantLength1Point1'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH1_POINT1;
+                $additionalOptions['invariantLength1Point2'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH1_POINT2;
+                // Определение номеров точек для расчёта длины слева
+                $additionalOptions['invariantLength2Point1'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH2_POINT1;
+                $additionalOptions['invariantLength2Point2'] = FeaturesDetectionModuleSettingForm::INVARIANT_LENGTH2_POINT2;
+            }
+            // Если не задан режим использования длин
+            if ($useLength == FeaturesDetectionModuleSettingForm::USE_LENGTH_FALSE) {
+                $additionalOptions['useLength'] = false;
+                // Обнуление номеров точек для расчёта длины справа и слева
+                $additionalOptions['invariantLength1Point1'] = null;
+                $additionalOptions['invariantLength1Point2'] = null;
+                $additionalOptions['invariantLength2Point1'] = null;
+                $additionalOptions['invariantLength2Point2'] = null;
+            }
         }
         // Поиск цифровой маски по id в БД
         $landmark = Landmark::findOne($id);

@@ -25,6 +25,10 @@ class FeaturesDetectionModuleSettingForm extends Model
     const INVARIANT2_POINT1 = 27; // Инвариантная точка по носу
     const INVARIANT2_POINT2 = 27; // Инвариантная точка по носу
 
+    // Режим выбора использования длин
+    const USE_LENGTH_FALSE = 0;
+    const USE_LENGTH_TRUE  = 1;
+
     // Номера точек для расчёта длины справа и слева
     const INVARIANT_LENGTH1_POINT1 = 42;
     const INVARIANT_LENGTH1_POINT2 = 45;
@@ -36,6 +40,8 @@ class FeaturesDetectionModuleSettingForm extends Model
     // Значения инвариантных точек
     public $firstInvariantPoint;
     public $secondInvariantPoint;
+    // Использование расчета длин
+    public $useLength;
     // Значения точек для расчёта длины справа
     public $invariantRightLengthFirstPoint;
     public $invariantRightLengthSecondPoint;
@@ -49,9 +55,9 @@ class FeaturesDetectionModuleSettingForm extends Model
     public function rules()
     {
         return [
-            [['invariantPointFlag', 'firstInvariantPoint', 'secondInvariantPoint', 'invariantRightLengthFirstPoint',
-                'invariantRightLengthSecondPoint', 'invariantLeftLengthFirstPoint', 'invariantLeftLengthSecondPoint'],
-                'safe'],
+            [['invariantPointFlag', 'firstInvariantPoint', 'secondInvariantPoint', 'useLength',
+                'invariantRightLengthFirstPoint', 'invariantRightLengthSecondPoint', 'invariantLeftLengthFirstPoint',
+                'invariantLeftLengthSecondPoint'], 'safe'],
         ];
     }
 
@@ -64,6 +70,7 @@ class FeaturesDetectionModuleSettingForm extends Model
             'invariantPointFlag' => 'Выбор инвариантных точек для:',
             'firstInvariantPoint' => 'Номер первой инвариантной точки',
             'secondInvariantPoint' => 'Номер второй инвариантной точки',
+            'useLength' => 'Использование длин',
             'invariantRightLengthFirstPoint' => 'Номер первой точки для расчёта длины справа',
             'invariantRightLengthSecondPoint' => 'Номер второй точки для расчёта длины справа',
             'invariantLeftLengthFirstPoint' => 'Номера первой точки для расчёта длины слева',
@@ -89,8 +96,31 @@ class FeaturesDetectionModuleSettingForm extends Model
      *
      * @return mixed
      */
-    public function getRotateMode()
+    public function getInvariantPoint()
     {
         return ArrayHelper::getValue(self::getInvariantPoints(), $this->invariantPointFlag);
+    }
+
+    /**
+     * Получение списка значений режимов использования длин.
+     *
+     * @return array - массив всех возможных значений режимов использования длин
+     */
+    public static function getUseLengthValues()
+    {
+        return [
+            self::USE_LENGTH_TRUE => 'да',
+            self::USE_LENGTH_FALSE => 'нет',
+        ];
+    }
+
+    /**
+     * Получение значения режима использования длин.
+     *
+     * @return mixed
+     */
+    public function getUseLengthValue()
+    {
+        return ArrayHelper::getValue(self::getUseLengthValues(), $this->useLength);
     }
 }

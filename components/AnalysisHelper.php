@@ -1445,6 +1445,7 @@ class AnalysisHelper
                         'mode' => isset($additionalOptions) ? 2 : 1,
                         'invariantPoint1' => null,
                         'invariantPoint2' => null,
+                        'useLength' => null,
                         'invariantLength1Point1' => null,
                         'invariantLength1Point2' => null,
                         'invariantLength2Point1' => null,
@@ -1459,6 +1460,7 @@ class AnalysisHelper
                         $options['mode'] = $additionalOptions['mode'];
                         $options['invariantPoint1'] = $additionalOptions['invariantPoint1'];
                         $options['invariantPoint2'] = $additionalOptions['invariantPoint2'];
+                        $options['useLength'] = $additionalOptions['useLength'];
                         $options['invariantLength1Point1'] = $additionalOptions['invariantLength1Point1'];
                         $options['invariantLength1Point2'] = $additionalOptions['invariantLength1Point2'];
                         $options['invariantLength2Point1'] = $additionalOptions['invariantLength2Point1'];
@@ -1604,6 +1606,7 @@ class AnalysisHelper
                     'mode' => isset($additionalOptions) ? 2 : 1,
                     'invariantPoint1' => null,
                     'invariantPoint2' => null,
+                    'useLength' => null,
                     'invariantLength1Point1' => null,
                     'invariantLength1Point2' => null,
                     'invariantLength2Point1' => null,
@@ -1618,18 +1621,24 @@ class AnalysisHelper
                     $options['mode'] = $additionalOptions['mode'];
                     $options['invariantPoint1'] = $additionalOptions['invariantPoint1'];
                     $options['invariantPoint2'] = $additionalOptions['invariantPoint2'];
+                    $options['useLength'] = $additionalOptions['useLength'];
                     $options['invariantLength1Point1'] = $additionalOptions['invariantLength1Point1'];
                     $options['invariantLength1Point2'] = $additionalOptions['invariantLength1Point2'];
                     $options['invariantLength2Point1'] = $additionalOptions['invariantLength2Point1'];
                     $options['invariantLength2Point2'] = $additionalOptions['invariantLength2Point2'];
                     // Обновление описания для данного результата анализа
-                    $analysisResultModel->description .= ' Запущен экспериментальный МОП с параметрами: ' .
-                        '1) Номера первой и второй инвариантной точки: ' . $additionalOptions['invariantPoint1'] .
-                        ' и ' . $additionalOptions['invariantPoint2'] . '; Номера точек для расчёта длины справа: ' .
-                        $additionalOptions['invariantLength1Point1'] . ' и ' .
-                        $additionalOptions['invariantLength1Point2'] . '; Номера точек для расчёта длины слева: ' .
-                        $additionalOptions['invariantLength2Point1'] . ' и ' .
-                        $additionalOptions['invariantLength2Point2'] . '.';
+                    if ($options['useLength'])
+                        $analysisResultModel->description .= ' Запущен экспериментальный МОП с параметрами: ' .
+                            '1) Номера первой и второй инвариантной точки: ' . $additionalOptions['invariantPoint1'] .
+                            ' и ' . $additionalOptions['invariantPoint2'] . '; Номера точек для расчёта длины справа: ' .
+                            $additionalOptions['invariantLength1Point1'] . ' и ' .
+                            $additionalOptions['invariantLength1Point2'] . '; Номера точек для расчёта длины слева: ' .
+                            $additionalOptions['invariantLength2Point1'] . ' и ' .
+                            $additionalOptions['invariantLength2Point2'] . '.';
+                    else
+                        $analysisResultModel->description .= ' Запущен экспериментальный МОП с параметрами: ' .
+                            '1) Номера первой и второй инвариантной точки: ' . $additionalOptions['invariantPoint1'] .
+                            ' и ' . $additionalOptions['invariantPoint2'] . '; Расчёт длин не используется.';
                     $analysisResultModel->updateAttributes(['description']);
                 }
                 // Получение текста распознанной речи на основе анализа видео ответа на вопрос
