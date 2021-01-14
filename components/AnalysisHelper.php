@@ -1240,7 +1240,7 @@ class AnalysisHelper
     /**
      * Определение поворота головы на основе анализа событий.
      *
-     * @param $landmark - цифровая маска
+     * @param $landmark - цифровая маска, полученная вторым скриптом МОВ Ивана
      * @return bool|int
      */
     public static function determineTurn($landmark)
@@ -1252,7 +1252,7 @@ class AnalysisHelper
             $turnLeftNumber = 0;
             // Создание объекта коннектора с Yandex.Cloud Object Storage
             $osConnector = new OSConnector();
-            // Получение содержимого json-файла с лицевыми точками из Object Storage
+            // Получение содержимого json-файла с результатами второго скрипта МОВ Ивана из Object Storage
             $jsonFaceData = $osConnector->getFileContentFromObjectStorage(
                 OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
                 $landmark->id,
@@ -1280,6 +1280,119 @@ class AnalysisHelper
         }
 
         return false;
+    }
+
+    /**
+     * Получение фактов для наклонов, поворотов и кивков головы, и их добавление в общий набор фактов.
+     *
+     * @param $landmark - цифровая маска, полученная вторым скриптом МОВ Ивана
+     * @param $facts - исходный общий набор фактов
+     * @return array|null
+     */
+    public static function getHeadPositionEventFacts($landmark, $facts)
+    {
+        // Переменная для хранения обновленного общего набора фактов
+        $updateFacts = null;
+        // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+        if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+            // Формирвоание обновленного общего набора фактов на основе исходного общего набора фактов
+            $updateFacts = $facts;
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Получение содержимого json-файла с результатами второго скрипта МОВ Ивана из Object Storage
+            $jsonFaceData = $osConnector->getFileContentFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id,
+                $landmark->landmark_file_name
+            );
+            // Замена в строке некорректных значений для правильного декодирования json-формата
+            $jsonFaceData = str_ireplace('NaN','99999', $jsonFaceData);
+            // Декодирование json-файла с цифровой маской
+            $faceData = json_decode($jsonFaceData, true);
+            // Обход фреймов в цифровой маске
+            foreach ($faceData as $key => $value)
+                if (strpos(Trim($key), 'frame_') !== false)
+                    if (isset($value['FRAMES']))
+                        // Обход подмассива с номерами кадров
+                        foreach ($value['FRAMES'] as $frame)
+                            // Обход общего набора фактов
+                            foreach ($updateFacts as $frameNumber => $factsForFrame)
+                                // Если номера кадров совпадают
+                                if ($frame == $frameNumber) {
+                                    if (isset($value['EVENTS'])) {
+                                        // Массив для хранения набора фактов признаков общего поведения
+                                        $generalBehaviorFeatureFacts = array();
+                                        // Обход событий
+                                        foreach ($value['EVENTS'] as $event) {
+                                            // Если есть событие наклона головы влево
+                                            if ($event == VideoProcessingModuleSettingForm::TILT_LEFT_EVENT) {
+                                                // Формирование факта о наклоне головы влево
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Наклон головы влево';
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                // Добавление факта о наклоне головы влево в массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
+                                            }
+                                            // Если есть событие наклона головы вправо
+                                            if ($event == VideoProcessingModuleSettingForm::TILT_RIGHT_EVENT) {
+                                                // Формирование факта о наклоне головы вправо
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Наклон головы вправо';
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                // Добавление факта о наклоне головы вправо в массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
+                                            }
+                                            // Если есть событие поворота головы влево
+                                            if ($event == VideoProcessingModuleSettingForm::TURN_LEFT_EVENT) {
+                                                // Формирование факта о повороте головы влево
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Поворот головы влево';
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                // Добавление факта о повороте головы влево в массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
+                                            }
+                                            // Если есть событие поворота головы вправо
+                                            if ($event == VideoProcessingModuleSettingForm::TURN_RIGHT_EVENT) {
+                                                // Формирование факта о повороте головы вправо
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Поворот головы вправо';
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                // Добавление факта о повороте головы вправо в массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
+                                            }
+                                            // Если есть событие опускания головы вниз
+                                            if ($event == VideoProcessingModuleSettingForm::HEAD_NOD_DOWN_EVENT) {
+                                                // Формирование факта об опускании головы вниз
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Опускание головы вниз';
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                // Добавление факта об опускании головы вниз в массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
+                                            }
+                                            // Если есть событие поднятия головы вверх
+                                            if ($event == VideoProcessingModuleSettingForm::HEAD_NOD_UP_EVENT) {
+                                                // Формирование факта о поднятии головы вверх
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Поднятие головы вверх';
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                // Добавление факта о поднятии головы вверх в массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
+                                            }
+                                        }
+                                        // Добавление фактов признаков общего поведения в общий набор фактов для текущего кадра
+                                        foreach ($generalBehaviorFeatureFacts as $generalBehaviorFeatureFact)
+                                            array_push($updateFacts[$frameNumber], $generalBehaviorFeatureFact);
+                                    }
+                                }
+        }
+
+        return $updateFacts;
     }
 
     /**
@@ -1691,8 +1804,9 @@ class AnalysisHelper
                 $questionTime = null;
                 // Текст вопроса
                 $questionText = null;
-                // Если к цифровой маски привязан вопрос, то запоминание времени на вопрос и текста вопроса
+                // Если к цифровой маски привязан вопрос
                 if ($landmark->question_id != null) {
+                    // Запоминание времени на вопрос и текста вопроса
                     $questionTime = $landmark->question->testQuestion->time;
                     $questionText = $landmark->question->testQuestion->text;
                 }
@@ -1703,6 +1817,31 @@ class AnalysisHelper
                     $questionTime,
                     $questionText
                 );
+                // Если к цифровой маски привязан вопрос
+                if ($landmark->question_id != null) {
+                    // Поиск темы вопроса
+                    $topicQuestion = TopicQuestion::find()
+                        ->where(['test_question_id' => $landmark->question->test_question_id])
+                        ->one();
+                    // Если тема для вопроса найдена
+                    if (!empty($topicQuestion)) {
+                        // Поиск цифровых масок полученных модулем Ивана для текущего вопроса видеоинтервью
+                        $landmarks = Landmark::find()->where([
+                            'question_id' => $landmark->question_id,
+                            'video_interview_id' => $landmark->video_interview_id,
+                            'type' => Landmark::TYPE_LANDMARK_IVAN_MODULE
+                        ])->all();
+                        // Если цифровые маски найдены
+                        if (!empty($landmarks))
+                            foreach ($landmarks as $currentLandmark) {
+                                // Получение обновленного набора фактов с фактами событий наклонов, поворотов и кивков головы
+                                $results = self::getHeadPositionEventFacts($currentLandmark, $facts);
+                                // Обновление общего набора фактов на основе полученного результата конвертации событий
+                                if (isset($results))
+                                    $facts = $results;
+                            }
+                    }
+                }
                 // Если получены результаты обработки МОВ Андрея
                 if (isset($andreyFaceData)) {
                     // Преобразование результаов обработки МОВ Андрея в набор фактов

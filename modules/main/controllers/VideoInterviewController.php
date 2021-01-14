@@ -817,7 +817,7 @@ class VideoInterviewController extends Controller
         $questions = Question::find()->where(['video_interview_id' => $id])->all();
         // Обход всех видео ответов на вопросы
         foreach ($questions as $question) {
-            // Поиск тему вопроса
+            // Поиск темы вопроса
             $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
             // Если тема для вопроса найдена
             if (!empty($topicQuestion)) {
@@ -861,8 +861,6 @@ class VideoInterviewController extends Controller
         if ($errorMessages == '') {
             // Массив всех статистик, сформированных по всем видео на вопросы
             $featureStatistics = array();
-            // Путь к папке web
-            $analysisResultPath = Yii::$app->basePath . '/web/';
             // Создание объекта коннектора с Yandex.Cloud Object Storage
             $osConnector = new OSConnector();
             // Обход всех идентификаторов результатов анализа
