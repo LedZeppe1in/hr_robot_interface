@@ -29,9 +29,10 @@ class VideoProcessingModuleSettingForm extends Model
     const ALIGN_MODE_BY_FOUR_FACIAL_POINTS  = 1; // По четырем точкам лица [39, 42, 11, 5]
 
     // Режим построения лэндмарков
-    const LANDMARK_MODE_FAST        = 0; // Быстрый 2D-режим
-    const LANDMARK_MODE_FIRST_SLOW  = 1; // Медленный 2D-режим
-    const LANDMARK_MODE_SECOND_SLOW = 2; // Медленный 3D-режим
+    const LANDMARK_MODE_FAST        = 0; // Быстрый 2D-режим (базовая нейронная сеть)
+    const LANDMARK_MODE_FIRST_SLOW  = 1; // Медленный 2D-режим (новая нейронная сеть)
+    const LANDMARK_MODE_SECOND_SLOW = 2; // Медленный 3D-режим (новая нейронная сеть)
+    const LANDMARK_MODE_EXPRESS     = 3; // Экспресс режим на основе быстрого режима (на выходе 4 fps)
 
     // Параметр работы основного модуля обработки видео
     const PARAMETER_NONE                   = 'None';                   // По-умолчанию (определение всех параметров видео и поиск лэндмарков)
@@ -197,6 +198,7 @@ class VideoProcessingModuleSettingForm extends Model
             self::LANDMARK_MODE_FAST => 'Быстрый 2D-режим',
             self::LANDMARK_MODE_FIRST_SLOW => 'Медленный 2D-режим',
             self::LANDMARK_MODE_SECOND_SLOW => 'Медленный 3D-режим',
+            self::LANDMARK_MODE_EXPRESS => 'Экспресс режим на основе быстрого режима',
         ];
     }
 

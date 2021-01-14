@@ -888,9 +888,9 @@ class DefaultController extends Controller
                     $response = Yii::$app->response;
                     $response->format = Response::FORMAT_JSON;
                     // Формирование массива возвращаемых значений
-                    $data['success'] = true;//$successfullyFormedLandmark;
-                    $data['turnRight'] = 0;//$turnRight;
-                    $data['turnLeft'] = 1;//$turnLeft;
+                    $data['success'] = $successfullyFormedLandmark;
+                    $data['turnRight'] = $turnRight;
+                    $data['turnLeft'] = $turnLeft;
                     // Возвращение данных
                     $response->data = $data;
 

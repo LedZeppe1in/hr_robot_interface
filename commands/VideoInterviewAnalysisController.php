@@ -91,7 +91,7 @@ class VideoInterviewAnalysisController extends Controller
         $parameters['Mirroring'] = VideoProcessingModuleSettingForm::MIRRORING_FALSE;
         $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
         $parameters['id'] = $question->id;
-        $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
+        $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_EXPRESS;
         if ($topicId == 27)
             $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_VIDEO_PARAMETERS;
         if ($topicId == 24 || $topicId == 25)
