@@ -445,7 +445,7 @@ class FacialFeatureDetector
                     $targetFaceData[$facePart]["left_eye_outer_movement"][$i]["val"] = 'none';
                 }
                 if ($rightEyeOuterCornerH < 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'up';
-                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
+                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
                 if ($rightEyeOuterCornerH == 0) {
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["force"] = 0;
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'none';
@@ -544,7 +544,9 @@ class FacialFeatureDetector
             $rightEyeWidthN2 = $yN46 - $yN44;
 
             $xN39 = $sourceFaceData[0][39]['X'] - $midNX3942;
+            $xN40 = $sourceFaceData[0][40]['X'] - $midNX3942;
             $xN42 = $sourceFaceData[0][42]['X'] - $midNX3942;
+            $xN47 = $sourceFaceData[0][47]['X'] - $midNX3942;
             $xN36 = $sourceFaceData[0][36]['X'] - $midNX3942;
             $yN39 = $sourceFaceData[0][39]['Y'] - $midNY3942;
             $yN42 = $sourceFaceData[0][42]['Y'] - $midNY3942;
@@ -613,10 +615,10 @@ class FacialFeatureDetector
                     $leftEyeLowerEyelidH = $sourceFaceData[$i][40]['Y'] - $yN40 - $midY3942;
                 if (isset($sourceFaceData[$i][47]))
                     $rightEyeLowerEyelidH = $sourceFaceData[$i][47]['Y'] - $yN47 - $midY3942;
-                if (isset($sourceFaceData[$i][39]))
-                    $leftEyeInnerCorner = $sourceFaceData[$i][39]['X'] - $xN39 - $midX3942;
-                if (isset($sourceFaceData[$i][42]))
-                    $rightEyeInnerCorner = $sourceFaceData[$i][42]['X'] - $xN42 - $midX3942;
+                if (isset($sourceFaceData[$i][40]))
+                    $leftEyeInnerCorner = $sourceFaceData[$i][40]['X'] - $xN40 - $midX3942;
+                if (isset($sourceFaceData[$i][47]))
+                    $rightEyeInnerCorner = $sourceFaceData[$i][47]['X'] - $xN47 - $midX3942;
 
                 $leftEyeInnerCornerForce = $this->getForce(round($leftEyeWidthMaxByCircle/4), abs($leftEyeInnerCorner));
                 $rightEyeInnerCornerForce = $this->getForce(round($rightEyeWidthMaxByCircle/4), abs($rightEyeInnerCorner));
@@ -661,11 +663,11 @@ class FacialFeatureDetector
                 $targetFaceData[$facePart]['VALUES_REL']["left_eye_lower_eyelid_movement_x"]["max"] = round($leftEyeWidthMaxByCircle/4);
                 $targetFaceData[$facePart]['VALUES_REL']["left_eye_lower_eyelid_movement_x"]["min"] = 0;
                 $targetFaceData[$facePart]['VALUES_REL']["left_eye_lower_eyelid_movement_x"][$i]["delta"] = $leftEyeInnerCorner;
-                $targetFaceData[$facePart]['VALUES_REL']["left_eye_lower_eyelid_movement_x"][$i]["val"] = $sourceFaceData[$i][39]['X'] - $midX3942;
+                $targetFaceData[$facePart]['VALUES_REL']["left_eye_lower_eyelid_movement_x"][$i]["val"] = $sourceFaceData[$i][40]['X'] - $midX3942;
                 $targetFaceData[$facePart]['VALUES_REL']["right_eye_lower_eyelid_movement_x"]["max"] = round($rightEyeWidthMaxByCircle/4);
                 $targetFaceData[$facePart]['VALUES_REL']["right_eye_lower_eyelid_movement_x"]["min"] = 0;
                 $targetFaceData[$facePart]['VALUES_REL']["right_eye_lower_eyelid_movement_x"][$i]["delta"] = $rightEyeInnerCorner;
-                $targetFaceData[$facePart]['VALUES_REL']["right_eye_lower_eyelid_movement_x"][$i]["val"] = $sourceFaceData[$i][42]['X'] - $midX3942;
+                $targetFaceData[$facePart]['VALUES_REL']["right_eye_lower_eyelid_movement_x"][$i]["val"] = $sourceFaceData[$i][47]['X'] - $midX3942;
 
                 //------------------------------------------------------------------------------------------------
                 //width, расстояние между 37 и 41 для левого глаза, для правого - 43 и 47
@@ -1193,7 +1195,9 @@ class FacialFeatureDetector
 
             $yN31 = $sourceFaceData[0][31]['Y'] - $midNY3942;
             $yN35 = $sourceFaceData[0][35]['Y'] - $midNY3942;
-            $xN33 = $sourceFaceData[0][33]['X'] - $midNY3942;
+            $xN33 = $sourceFaceData[0][33]['X'] - $midNX3942;
+            $yN33=$sourceFaceData[0][33]['Y'] - $midNY3942;
+
             $noseWidthN = $sourceFaceData[0][35]['X']  - $sourceFaceData[0][31]['X'];
 //            $maxNoseMov = $noseWidthN*0.3;
             $maxNoseMov = $noseWidthN*$coefs_['coefNoseMovMax'];
@@ -1236,7 +1240,7 @@ class FacialFeatureDetector
                 }
 
                 //nose movement
-                $noseCenterMovement = $sourceFaceData[$i][33]['X'] - $xN33 - $midY3942;
+                $noseCenterMovement = $sourceFaceData[$i][33]['Y'] - $yN33 - $midY3942;
                 $noseCenterMovementForce = $this->getForce($scaleNoseCenterMovement, abs($noseCenterMovement));
                 $targetFaceData[$facePart]["nose_movement"][$i]["force"] = $noseCenterMovementForce;
 //                $targetFaceData[$facePart]["nose_movement"][$i]["val"] = 'none';
@@ -1250,7 +1254,7 @@ class FacialFeatureDetector
                 $targetFaceData[$facePart]['VALUES_REL']["nose_movement"]["max"] = $maxNoseMov;
                 $targetFaceData[$facePart]['VALUES_REL']["nose_movement"]["min"] = $minNoseMov;
                 $targetFaceData[$facePart]['VALUES_REL']["nose_movement"][$i]["delta"] = $noseCenterMovement;
-                $targetFaceData[$facePart]['VALUES_REL']["nose_movement"][$i]["val"] = $sourceFaceData[$i][33]['X'] - $midY3942;
+                $targetFaceData[$facePart]['VALUES_REL']["nose_movement"][$i]["val"] = $sourceFaceData[$i][33]['Y'] - $midY3942;
 
                 //nose width
                 $curNoseWidth = $sourceFaceData[$i][35]['X'] - $sourceFaceData[$i][31]['X'];
@@ -1429,7 +1433,7 @@ class FacialFeatureDetector
 
             $maxX48 = $this->getFaceDataMaxOnPoints($sourceFaceData, 48, "X", $point1,$point2);
             $maxX54 = $this->getFaceDataMaxOnPoints($sourceFaceData, 54, "X",$point1,$point2);
-            $mouthLengthMax = $maxX54 + $maxX48;
+            $mouthLengthMax = $maxX54 - $maxX48;
 //            $scaleChin = ($sourceFaceData[0][54]['X'] - $sourceFaceData[0][48]['X'])/2;
 //            $scaleChin = $mouthLengthMax*0.65; //2020-05-27
             $scaleChin = $mouthLengthMax*$coef_['coefChinScale'];
@@ -1722,11 +1726,14 @@ class FacialFeatureDetector
     //Обработка звуковой информации
     public function processAudio($targetFaceData, $sourceFaceData0, $facePart, $coefs_)
     {
+        $baseNoiseLevel=$coefs_['coefVoiceDetection'];
+        if (isset($coefs_["BaseNoiseLevel"])) $baseNoiseLevel=$coefs_["BaseNoiseLevel"];
+
             for ($i = 0; $i < count($sourceFaceData0); $i++) {
                 // $FaceData_['audiodata'][$i]['db_val']
                 if (isset($sourceFaceData0[$i]['db_val'])) {
                     $targetFaceData[$facePart]['VALUES_REL']["audio_db_val"]["val"] = $sourceFaceData0[$i]['db_val'];
-                    if ($sourceFaceData0[$i]['db_val'] > $coefs_['coefVoiceDetection']) $isVoice = 'yes';
+                    if ($sourceFaceData0[$i]['db_val'] >$baseNoiseLevel) $isVoice = 'yes';
                     else $isVoice = 'no';
                     $targetFaceData[$facePart]["audio_db_val"][$i]["val"] = $isVoice;
                 }
@@ -3025,8 +3032,8 @@ class FacialFeatureDetector
                     $yMov = '';
                     if ($leftMouthCornerYMov < 0) $yMov = 'up';
                     if ($leftMouthCornerYMov > 0) $yMov = 'down';
-                    if ($leftMouthCornerXMov > 0) $xMov = 'from center';
-                    else $xMov = 'to center';
+                    if ($leftMouthCornerXMov > 0) $xMov = 'to center';
+                    else $xMov = 'from center';
 
                     $targetFaceData[$facePart]["left_corner_mouth_movement_x"][$i]["val"] = $xMov;
                     $targetFaceData[$facePart]["left_corner_mouth_movement_y"][$i]["val"] = $yMov;
@@ -3990,14 +3997,28 @@ class FacialFeatureDetector
                 if (!isset($sourceFaceData1["feature_statistics"]))    $sourceFaceData1["feature_statistics"]=array();
 
                 $averSpeech= TextFrequencyDetector::CountSpeechFrequencyByWords($textData,$onlyAnswerTime);
-                //if (isset($averSpeech))
-                    $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("val"=>round($averSpeech,4));
+                if (isset($averSpeech))
+                {
+                    $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("count"=>1,"val"=>round($averSpeech,4));
+                }
+                else
+                {
+                    $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("count"=>1,"val"=>0);
+                }
+
 
                 if (isset($voiceActingTime))
                 {
                     $startOfAnswer=TextFrequencyDetector::ResponseStartTimeByWords($textData,$voiceActingTime);
-                   // if (isset($startOfAnswer))
-                        $sourceFaceData1["feature_statistics"]["silence_before_response"]=array("val"=>round($startOfAnswer-$voiceActingTime,4));
+                    if (isset($startOfAnswer))
+                    {
+                        $sourceFaceData1["feature_statistics"]["silence_before_response"]=array("count"=>1,"val"=>round($startOfAnswer-$voiceActingTime,4));
+                    }
+                    else
+                    {
+                        $sourceFaceData1["feature_statistics"]["silence_before_response"]=array("count"=>1,"val"=>0);
+                    }
+
                 }
 
             }
@@ -4102,9 +4123,15 @@ class FacialFeatureDetector
                $result=$this->updateSummarizedFeatureStatisticsByUnit($result,$unitStatistic,"average_silence_before_response","silence_before_response");
            }
 
+
+           if ($result["average_speech_frequency"]["count"]!=0)
+                $result["average_speech_frequency"]["val"] = $result["average_speech_frequency"]["val"] / $result["average_speech_frequency"]["count"];
+
+           if ($result["average_silence_before_response"]["count"]!=0)
+                $result["average_silence_before_response"]["val"] = $result["average_silence_before_response"]["val"] / $result["average_silence_before_response"]["count"];
+
+
            if ($N!=0 ) {
-               $result["average_speech_frequency"]["val"] = $result["average_speech_frequency"]["val"] / $N;
-               $result["average_silence_before_response"]["val"] = $result["average_silence_before_response"]["val"] / $N;
 
                $result["average_eye_blinking_frequency"]["val"] = $result["average_eye_blinking_frequency"]["val"] / $N;
                $result["average_lipcorners_lowering_frequency"]["val"] = $result["average_lipcorners_lowering_frequency"]["val"] / $N;
@@ -5037,7 +5064,7 @@ return $output;
                  //add to the end of the array new values
                  for ($i1 = (count($sourceFaceData1[$k])  - $shiftCnt);
                       $i1 < (count($sourceFaceData1[$k])); $i1++) {
-                     if (is_array($resFaceData[$k]))
+                     if (is_array($resFaceData[$k]) && is_array($sourceFaceData1[$k]))
                          array_push($resFaceData[$k], $sourceFaceData1[$k][$i1]);
                  }
              } elseif (($v != null)  && ($k == 'audiodata')){
@@ -5090,7 +5117,8 @@ return $output;
     public function detectFeaturesV3($json,$basicFrame, $jsonA,$options,$textData)
     {
 
-       // file_put_contents('/var/www/hr-robot-interface.com/public_html/components/11.json', json_encode($textData));
+       file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectFeaturesV3_Andr.json', $jsonA);
+       file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectFeaturesV3_Opt.json', json_encode($options));
 
         // load data
             //patch for AJson
@@ -5198,6 +5226,24 @@ return $output;
             'coefVoiceDetection' => -31,
             'coefCntFramesForMouthOpenedWhenSpeaking' => 3
         );
+
+        if (isset($options) && isset($options["invariantPoint1"]) && isset($options["invariantPoint2"]))
+        {
+            $coefs["invariantPoint1"]=$options["invariantPoint1"];
+            $coefs["invariantPoint2"]=$options["invariantPoint2"];
+        }
+
+        if (isset($options) &&
+                isset($options["invariantLength1Point1"]) && isset($options["invariantLength1Point2"]) &&
+                isset($options["invariantLength2Point1"]) && isset($options["invariantLength2Point2"]) )
+        {
+            $coefs["rightPoint21"]=$options["invariantLength1Point1"];
+            $coefs["rightPoint2"]=$options["invariantLength1Point2"];
+            $coefs["leftPoint1"]=$options["invariantLength2Point1"];
+            $coefs["leftPoint2"]=$options["invariantLength2Point2"];
+        }
+
+
         //----------------------------------------------------------------------------
         //----------------- norm points processing -----------------------------------
         if ((isset($FaceData['normmask'])) && ($pointsFlag == 1)) {
@@ -5321,8 +5367,21 @@ return $output;
 
         //$FaceData_['audiodata'][$i]['db_val'] = $v['AUDIO_DATA'][2];
         if (isset($FaceData['audiodata']))
+        {
+            //coefVoiceDetection
+            if (isset($FaceData_["BaseNoiseLevel"]))
+            {
+                $coefs["BaseNoiseLevel"]=$FaceData_["BaseNoiseLevel"];
+            }
+            else
+            {
+                $coefs["BaseNoiseLevel"]=null;
+            }
+
             $detectedFeatures = $this->processAudio($detectedFeatures,
                 $FaceData["audiodata"], 'mouth',$coefs);
+        }
+
 
 
         //$options["Duration"]=$Duration;
@@ -5969,6 +6028,10 @@ return $output;
    // public function makeBasicFrameWithSmoothingAndRotating($theFaceData,$options)
     public function makeBasicFrameWithSmoothingAndRotating($theFaceData,$theFaceDataA,$options,$text)
     {
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Andr.json', $theFaceDataA);
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Opt.json', json_encode($options));
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Txt.json', json_encode($text));
+
         $configData=array();
 
         $configData["pointsFlag"]=$options["pointsFlag"];
