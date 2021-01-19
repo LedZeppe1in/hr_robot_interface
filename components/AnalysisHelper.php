@@ -1330,6 +1330,7 @@ class AnalysisHelper
                                                 $generalBehaviorFeatureFact = new stdClass;
                                                 $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
                                                 $generalBehaviorFeatureFact -> {'s908'} = 'Наклон головы влево';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
                                                 $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
                                                 // Добавление факта о наклоне головы влево в массив фактов признаков общего поведения
                                                 array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
@@ -1340,6 +1341,7 @@ class AnalysisHelper
                                                 $generalBehaviorFeatureFact = new stdClass;
                                                 $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
                                                 $generalBehaviorFeatureFact -> {'s908'} = 'Наклон головы вправо';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
                                                 $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
                                                 // Добавление факта о наклоне головы вправо в массив фактов признаков общего поведения
                                                 array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
@@ -1350,6 +1352,7 @@ class AnalysisHelper
                                                 $generalBehaviorFeatureFact = new stdClass;
                                                 $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
                                                 $generalBehaviorFeatureFact -> {'s908'} = 'Поворот головы влево';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
                                                 $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
                                                 // Добавление факта о повороте головы влево в массив фактов признаков общего поведения
                                                 array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
@@ -1360,6 +1363,7 @@ class AnalysisHelper
                                                 $generalBehaviorFeatureFact = new stdClass;
                                                 $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
                                                 $generalBehaviorFeatureFact -> {'s908'} = 'Поворот головы вправо';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
                                                 $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
                                                 // Добавление факта о повороте головы вправо в массив фактов признаков общего поведения
                                                 array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
@@ -1370,6 +1374,7 @@ class AnalysisHelper
                                                 $generalBehaviorFeatureFact = new stdClass;
                                                 $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
                                                 $generalBehaviorFeatureFact -> {'s908'} = 'Опускание головы вниз';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
                                                 $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
                                                 // Добавление факта об опускании головы вниз в массив фактов признаков общего поведения
                                                 array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
@@ -1380,6 +1385,7 @@ class AnalysisHelper
                                                 $generalBehaviorFeatureFact = new stdClass;
                                                 $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
                                                 $generalBehaviorFeatureFact -> {'s908'} = 'Поднятие головы вверх';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
                                                 $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
                                                 // Добавление факта о поднятии головы вверх в массив фактов признаков общего поведения
                                                 array_push($generalBehaviorFeatureFacts, $generalBehaviorFeatureFact);
@@ -1628,7 +1634,7 @@ class AnalysisHelper
                     foreach ($initialData as $frameIndex => $frameData) {
                         $gazeDirections = $frameData->{$targetPropertyName};
                         // Формирование фактов по направлению взгляда
-                        $gazeDirectionsAsFacts = self::convertGazeToFacts($gazeDirections, $frameIndex);
+                        $gazeDirectionsAsFacts = self::convertGazeToFacts($gazeDirections, $frameIndex + 1);
                         if (count($gazeDirectionsAsFacts) > 0)
                             $facts[$frameIndex] = $gazeDirectionsAsFacts;
                     }
@@ -1920,7 +1926,7 @@ class AnalysisHelper
                     foreach ($initialData as $frameIndex => $frameData) {
                         $gazeDirections = $frameData->{$targetPropertyName};
                         // Формирование фактов по направлению взгляда
-                        $gazeDirectionsAsFacts = self::convertGazeToFacts($gazeDirections, $frameIndex);
+                        $gazeDirectionsAsFacts = self::convertGazeToFacts($gazeDirections, $frameIndex + 1);
                         if (count($gazeDirectionsAsFacts) > 0)
                             if ($frameIndex == 0)
                                 foreach ($gazeDirectionsAsFacts as $gazeDirectionsAsFact)
