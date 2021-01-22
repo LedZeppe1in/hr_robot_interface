@@ -1320,7 +1320,7 @@ class AnalysisHelper
                         isset($videoQualityParameters[2]) && isset($videoQualityParameters[3]) &&
                         isset($videoQualityParameters[4])) {
                         if ($videoQualityParameters[0] > 15 && $videoQualityParameters[1] < 2 &&
-                            $videoQualityParameters[2] < 0.5 && $videoQualityParameters[3] < 2.5 &&
+                            $videoQualityParameters[2] < 0.5 && $videoQualityParameters[3] < 7 &&
                             $videoQualityParameters[4] > 2)
                             $qualityVideo = true;
                     }
@@ -2112,6 +2112,10 @@ class AnalysisHelper
                         // Параметры наличия поворота головы вправо и влево
                         $turnRight = false;
                         $turnLeft = false;
+                        // Показатель качества видео
+                        $qualityVideo = false;
+                        // Массив с коэффициентами качества видео
+                        $videoQualityParameters = array();
                         // Обход всех статусов обработки видео на вопрос
                         foreach ($questionProcessingStatuses as $questionProcessingStatus) {
                             // Поиск цифровых масок по определенному вопросу
@@ -2127,6 +2131,9 @@ class AnalysisHelper
                                     $topicQuestion = TopicQuestion::find()
                                         ->where(['test_question_id' => $question->test_question_id])
                                         ->one();
+                                    // Определение качества видео
+                                    if ($topicQuestion->topic_id == 27)
+                                        list($qualityVideo, $videoQualityParameters) = self::determineQuality($landmark);
                                     // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
                                     if ($topicQuestion->topic_id == 24)
                                         $turnRight = self::determineTurn($landmark);
@@ -2138,7 +2145,7 @@ class AnalysisHelper
                                 $successfullyFormedLandmark = false;
                         }
 
-                        return array($successfullyFormedLandmark, $turnRight, $turnLeft);
+                        return array($successfullyFormedLandmark, $turnRight, $turnLeft, $qualityVideo, $videoQualityParameters);
                     }
                 }
             }
