@@ -1,5 +1,7 @@
 <?php
 
+header('Access-Control-Allow-Origin: *');
+
 use yii\helpers\Html;
 
 require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
@@ -31,7 +33,14 @@ $this->params['breadcrumbs'][] = $this->title;
         var IDOfUser = '<?= $userId ?>';
         var CodeOfRespondentInterview = '<?= $model->name ?>';
         var AccessKey = '<?= TCommonData::InternalAccessKey() ?>';
-        var RetrieveDataURL = 'https://84.201.129.65:8880/Main.php';
+
+        <?php
+            if (mb_strpos($_SERVER['HTTP_HOST'], 'bribon') === False)
+                echo '		var RetrieveDataURL = \'https://84.201.129.65:8880/Main.php\';';
+            else
+                echo '		var RetrieveDataURL = \'https://bribon.ru:8880/Main.php\';';
+        ?>
+ 
         VideoAnalysisLibrary.Initialize(jQuery('#VideoAnalysisUIControl'), IDOfUser, CodeOfRespondentInterview,
             AccessKey, RetrieveDataURL);
     });
@@ -44,5 +53,13 @@ $this->params['breadcrumbs'][] = $this->title;
     <div id="VideoAnalysisUIControl" style="padding: 5px;"></div>
 
     <?php echo TConstructorOfVideoAnalysisPage::IncludeRequiredCode(); ?>
+
+    <?php
+        if (mb_strpos($_SERVER['HTTP_HOST'], 'bribon') === False)
+            $URL = 'https://84.201.129.65:8880/Main.php';
+        else
+            $URL = 'https://bribon.ru:8880/Main.php';
+        echo '<iframe src = "'.$URL.'" style = "display:none; width:500px; height:350;"></iframe>';
+    ?>
 
 </div>
