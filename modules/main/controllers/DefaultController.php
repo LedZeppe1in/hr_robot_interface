@@ -856,6 +856,10 @@ class DefaultController extends Controller
                     // Параметры наличия поворота головы вправо и влево
                     $turnRight = false;
                     $turnLeft = false;
+                    // Показатель качества видео
+                    $qualityVideo = false;
+                    // Массив с коэффициентами качества видео
+                    $videoQualityParameters = array();
                     // Обход всех статусов обработки видео на вопрос
                     foreach ($questionProcessingStatuses as $questionProcessingStatus) {
                         // Поиск цифровых масок по определенному вопросу
@@ -873,6 +877,9 @@ class DefaultController extends Controller
                                     ->one();
                                 // Создание объекта AnalysisHelper
                                 $analysisHelper = new AnalysisHelper();
+                                // Определение качества видео
+                                if ($topicQuestion->topic_id == 27)
+                                    list($qualityVideo, $videoQualityParameters) = $analysisHelper->determineQuality($landmark);
                                 // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
                                 if ($topicQuestion->topic_id == 24)
                                     $turnRight = $analysisHelper->determineTurn($landmark);
@@ -892,6 +899,8 @@ class DefaultController extends Controller
                     $data['success'] = $successfullyFormedLandmark;
                     $data['turnRight'] = $turnRight;
                     $data['turnLeft'] = $turnLeft;
+                    $data['qualityVideo'] = $qualityVideo;
+                    $data['videoQualityParameters'] = $videoQualityParameters;
                     // Возвращение данных
                     $response->data = $data;
 

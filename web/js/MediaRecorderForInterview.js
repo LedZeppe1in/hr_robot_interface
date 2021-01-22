@@ -289,13 +289,16 @@ function uploadCalibrationVideo() {
             console.log(response.success);
             console.log(response.turnRight);
             console.log(response.turnLeft);
+            console.log(response.qualityVideo);
+            console.log(response.videoQualityParameters);
 
             // Скрытие кнопки завершения настройки камеры
             finishCameraSetupButton.style.display = "none";
             // Слой с текстом информации о ходе видеоинтервью
             let answerTimeText = document.getElementById("answer-time");
             // Если проверка калибровочных вопросов прошла успешно
-            if (response.success === true && response.turnRight !== false && response.turnLeft !== false) {
+            if (response.success === true && response.turnRight !== false && response.turnLeft !== false &&
+                response.qualityVideo === true) {
                 // Отображение кнопки запуска новой записи видео
                 startRecordButton.style.display = "inline-block";
                 // Обновление текста информации о ходе видеоинтервью

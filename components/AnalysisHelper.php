@@ -1286,6 +1286,51 @@ class AnalysisHelper
     }
 
     /**
+     * Определение качества видео на основе коэффициентов.
+     *
+     * @param $landmark - цифровая маска, полученная первым скриптом МОВ Ивана
+     * @return array
+     */
+    public static function determineQuality($landmark)
+    {
+        // Показатель качества видео
+        $qualityVideo = false;
+        // Массив с коэффициентами качества видео
+        $videoQualityParameters = array();
+        // Если цифровая маска содержит получена первым скриптом МОВ Ивана
+        if (strripos($landmark->landmark_file_name, '_ext') === false) {
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Получение содержимого json-файла с результатами первого скрипта МОВ Ивана из Object Storage
+            $jsonFaceData = $osConnector->getFileContentFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id,
+                $landmark->landmark_file_name
+            );
+            // Замена в строке некорректных значений для правильного декодирования json-формата
+            $jsonFaceData = str_ireplace('NaN','99999', $jsonFaceData);
+            // Декодирование json-файла с цифровой маской
+            $faceData = json_decode($jsonFaceData, true);
+            // Определение качества видео по коэффициентам
+            foreach ($faceData as $key => $value)
+                if ($key == 'COEF_QUALITY') {
+                    foreach ($value as $coefficient)
+                        array_push($videoQualityParameters, $coefficient);
+                    if (isset($videoQualityParameters[0]) && isset($videoQualityParameters[1]) &&
+                        isset($videoQualityParameters[2]) && isset($videoQualityParameters[3]) &&
+                        isset($videoQualityParameters[4])) {
+                        if ($videoQualityParameters[0] > 15 && $videoQualityParameters[1] < 2 &&
+                            $videoQualityParameters[2] < 0.5 && $videoQualityParameters[3] < 2.5 &&
+                            $videoQualityParameters[4] > 2)
+                            $qualityVideo = true;
+                    }
+                }
+        }
+
+        return array($qualityVideo, $videoQualityParameters);
+    }
+
+    /**
      * Получение фактов для наклонов, поворотов и кивков головы, и их добавление в общий набор фактов.
      *
      * @param $landmark - цифровая маска, полученная вторым скриптом МОВ Ивана
