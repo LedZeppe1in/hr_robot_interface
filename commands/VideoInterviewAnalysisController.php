@@ -2,11 +2,9 @@
 
 namespace app\commands;
 
-use Yii;
 use stdClass;
 use Exception;
 use SoapClient;
-use yii\helpers\ArrayHelper;
 use yii\helpers\Console;
 use yii\console\Controller;
 use vova07\console\ConsoleRunner;

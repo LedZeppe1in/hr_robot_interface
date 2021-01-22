@@ -12,7 +12,6 @@ use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\data\ActiveDataProvider;
-use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\components\FacialFeatureDetector;
@@ -766,38 +765,26 @@ class VideoInterviewController extends Controller
      */
     public function actionRunAnalysis($id)
     {
-        // Поиск всех видео ответов на вопросы для данного видеоинтервью
-        $questions = Question::find()->where(['video_interview_id' => $id])->all();
-        // Флаг существования калибровочного вопроса
-        $calibrationQuestionFlag = false;
-        // Обход всех видео ответов на вопросы
-        foreach ($questions as $question) {
-            // Поиск темы для вопроса - 27 (калибровочный для камеры)
-            $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
-            // Если тема для вопроса найдена
-            if (!empty($topicQuestion))
-                // Если текущий вопрос является калибровочным
-                if ($topicQuestion->topic_id == 27)
-                    $calibrationQuestionFlag = true;
-        }
-        // Если у данного видеоинтервью есть калибровочный вопрос
-        if ($calibrationQuestionFlag) {
-            // Создание объекта запуска консольной команды
-            $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
-            // Выполнение команды определения базового кадра в фоновом режиме
-            $consoleRunner->run('video-interview-analysis/start-base-frame-detection ' . $id);
-
+        // Создание объекта AnalysisHelper
+        $analysisHelper = new AnalysisHelper();
+        // Запуск обработки видеоинтервью
+        list($videoInterviewInProgress, $calibrationQuestionExist) = $analysisHelper->runVideoInterviewProcessing($id);
+        // Если данное видеоинтервью не находится в обработке и у него есть калибровочный вопрос
+        if ($videoInterviewInProgress == false && $calibrationQuestionExist)
             // Вывод сообщения об успешном запуске анализа видеоинтервью
             Yii::$app->getSession()->setFlash('success', 'Процесс анализа видеоинтервью успешно запущен!');
-
-            return $this->redirect(['/video-interview/view/' . $id]);
-        } else {
+        // Если данное видеоинтервью находится в обработке
+        if ($videoInterviewInProgress)
+            // Вывод сообщения о том, что процесс обработки видеоинтервью уже запущен
+            Yii::$app->getSession()->setFlash('warning',
+                'Процесс анализа видеоинтервью уже запущен! Пожалуйста дождитесь его обработки.');
+        // Если данное видеоинтервью не находится в обработке и у него нет калибровочного вопроса
+        if ($videoInterviewInProgress == false && $calibrationQuestionExist == false)
             // Вывод сообщения об отсутствии калибровочного вопроса
             Yii::$app->getSession()->setFlash('warning',
                 'Процесс анализа видеоинтервью невозможен! В данном видеоинтервью отсутствует калибровочный вопрос.');
 
-            return $this->redirect(['/video-interview/view/' . $id]);
-        }
+        return $this->redirect(['/video-interview/view/' . $id]);
     }
 
     /**

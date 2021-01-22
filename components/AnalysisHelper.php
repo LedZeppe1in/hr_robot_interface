@@ -5,11 +5,14 @@ namespace app\components;
 use Yii;
 use stdClass;
 use Exception;
+use vova07\console\ConsoleRunner;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\QuestionProcessingStatus;
+use app\modules\main\models\VideoInterviewProcessingStatus;
 use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
@@ -1959,5 +1962,142 @@ class AnalysisHelper
         );
 
         return $analysisResultModel->id;
+    }
+
+    /**
+     * Запуск обработки видеоинтервью (обработка всех не калибровочных вопросов средствами МОВ +
+     * определение базового кадра на основе первого калибровочного вопроса).
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     * @return array - существование калибровочного вопроса
+     */
+    public static function runVideoInterviewProcessing($videoInterviewId)
+    {
+        // Флаг статуса процесса обработки видеоинтеврью
+        $videoInterviewInProgress = true;
+        // Флаг существования калибровочного вопроса
+        $calibrationQuestionExist = false;
+        // Поиск всех видео ответов на вопросы для данного видеоинтервью
+        $questions = Question::find()->where(['video_interview_id' => $videoInterviewId])->all();
+        // Обход всех видео ответов на вопросы
+        foreach ($questions as $question) {
+            // Поиск темы для вопроса - 27 (калибровочный для камеры)
+            $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
+            // Если тема для вопроса найдена
+            if (!empty($topicQuestion))
+                // Если текущий вопрос является калибровочным
+                if ($topicQuestion->topic_id == 27)
+                    $calibrationQuestionExist = true;
+        }
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => $videoInterviewId])
+            ->one();
+        // Если данное видеоинтервью не находится в обработке
+        if ($videoInterviewProcessingStatus->status != VideoInterviewProcessingStatus::STATUS_IN_PROGRESS) {
+            $videoInterviewInProgress = false;
+            // Если у данного видеоинтервью есть калибровочный вопрос
+            if ($calibrationQuestionExist) {
+                // Создание объекта запуска консольной команды
+                $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                // Выполнение команды определения базового кадра в фоновом режиме
+                $consoleRunner->run('video-interview-analysis/start-base-frame-detection ' . $videoInterviewId);
+            }
+        }
+
+        return array($videoInterviewInProgress, $calibrationQuestionExist);
+    }
+
+    /**
+     * Запуск обработки калибровочных вопросов для выбранного видеоинтервью.
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     * @return array|null - результат анализа калибровочных вопросов
+     */
+    public static function runCalibrationQuestionProcessing($videoInterviewId)
+    {
+        // Поиск всех видео ответов на вопросы для данного видеоинтервью
+        $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+        // Если есть видео ответов на вопросы для данного видеоинтервью
+        if (!empty($questions))
+            // Обход всех видео ответов на вопросы для данного видеоинтервью
+            foreach ($questions as $question) {
+                // Поиск темы для вопроса - Topic 24 (поворот вправо), 25 (поворот влево), 27 (калибровочный для камеры)
+                $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
+                // Если тема для вопроса найдена
+                if (!empty($topicQuestion)) {
+                    // Если вопросы калибровочные (темы 24, 25 и 27)
+                    if ($topicQuestion->topic_id == 24 || $topicQuestion->topic_id == 25 || $topicQuestion->topic_id == 27) {
+                        // Создание цифровой маски в БД
+                        $landmarkModel = new Landmark();
+                        $landmarkModel->start_time = '00:00:00:000';
+                        $landmarkModel->finish_time = '12:00:00:000';
+                        $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                        $landmarkModel->rotation = Landmark::TYPE_ZERO;
+                        $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+                        $landmarkModel->question_id = $question->id;
+                        $landmarkModel->video_interview_id = $question->video_interview_id;
+                        $landmarkModel->save();
+                        // Создание объекта запуска консольной команды
+                        $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                        // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
+                        $consoleRunner->run('video-interview-analysis/preparation ' . $question->id . ' ' .
+                            $landmarkModel->id . ' ' . $topicQuestion->topic_id);
+                    }
+                    // Если текущий вопрос является калибровочным и он последний
+                    if ($topicQuestion->topic_id == 25) {
+                        // Поиск полного видеоинтервью по id
+                        $videoInterview = VideoInterview::findOne($question->video_interview_id);
+                        // Ожидание завершения анализа видео по калибровочным вопросам
+                        do {
+                            // Задержка выполнения скрипта в 1 секунду
+                            sleep(1);
+                            // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                            $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                                ->where(['video_interview_id' => $videoInterview->id])
+                                ->one();
+                        } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
+                        // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
+                        $questionProcessingStatuses = QuestionProcessingStatus::find()
+                            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                            ->orderBy(['question_id' => SORT_ASC])
+                            ->all();
+                        // Параметр успешности получения цифровых масок МОВ Ивана
+                        $successfullyFormedLandmark = true;
+                        // Параметры наличия поворота головы вправо и влево
+                        $turnRight = false;
+                        $turnLeft = false;
+                        // Обход всех статусов обработки видео на вопрос
+                        foreach ($questionProcessingStatuses as $questionProcessingStatus) {
+                            // Поиск цифровых масок по определенному вопросу
+                            $landmarks = Landmark::find()
+                                ->where(['question_id' => $questionProcessingStatus->question_id])
+                                ->all();
+                            // Если цифровые маски по данному вопросу сформированы
+                            if (!empty($landmarks)) {
+                                foreach ($landmarks as $landmark) {
+                                    // Поиск видео ответа на вопрос по id
+                                    $question = Question::findOne($landmark->question_id);
+                                    // Поиск темы вопроса по id вопроса
+                                    $topicQuestion = TopicQuestion::find()
+                                        ->where(['test_question_id' => $question->test_question_id])
+                                        ->one();
+                                    // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                                    if ($topicQuestion->topic_id == 24)
+                                        $turnRight = self::determineTurn($landmark);
+                                    // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                                    if ($topicQuestion->topic_id == 25)
+                                        $turnLeft = self::determineTurn($landmark);
+                                }
+                            } else
+                                $successfullyFormedLandmark = false;
+                        }
+
+                        return array($successfullyFormedLandmark, $turnRight, $turnLeft);
+                    }
+                }
+            }
+
+        return null;
     }
 }

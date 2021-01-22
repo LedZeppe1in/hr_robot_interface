@@ -620,6 +620,7 @@ class DefaultController extends Controller
         // Создание нового респондента (уникальной записи прохождения интервью респондентом)
         $respondent = new Respondent();
         $respondent->name = 'test' . mt_rand(5, 15);
+        $respondent->main_respondent_id = 1; // id респондента
         $respondent->save();
         // Создание модели видеоинтервью
         $videoInterviewModel = new VideoInterview();
