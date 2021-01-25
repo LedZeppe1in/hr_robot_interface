@@ -51,7 +51,7 @@ class OSConnector
      * @param $bucketName - название бакета
      * @param $path - название папки в бакете (соответствует id записи из БД)
      * @param $fileName - имя файла с расширением без пути
-     * @param $file - файл
+     * @param $file - содержимое файла
      */
     public function saveFileToObjectStorage($bucketName, $path, $fileName, $file)
     {

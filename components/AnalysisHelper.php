@@ -767,7 +767,7 @@ class AnalysisHelper
      * Формирование факта с информацией по кадру.
      *
      * @param $frameIndex - номер кадра
-     * @return stdClass
+     * @return stdClass - факт с информацией по кадру
      */
     public static function createFactWithFrameInformation($frameIndex)
     {
@@ -780,22 +780,28 @@ class AnalysisHelper
         return $result;
     }
 
-    public static function convertPhrase($thePhrase)
+    /**
+     * Конвертация фразы из текста в факт статистики средних величин интервью.
+     *
+     * @param $phrase - фраза из текста
+     * @return stdClass|null - факт фразы
+     */
+    public static function convertPhrase($phrase)
     {
-        if (is_array($thePhrase)) {
+        if (is_array($phrase)) {
             $curPhraseFact = new stdClass;
             // Имя шаблона: Статистика средних величин интервью
             $curPhraseFact -> {'NameOfTemplate'} = 'T2167';
             // Имя слота: "Момент времени"
-            if (isset($thePhrase["time"])) $curPhraseFact -> {'s968'} = $thePhrase["time"];
+            if (isset($phrase["time"])) $curPhraseFact -> {'s968'} = $phrase["time"];
             // Имя слота: "Текст словосочетания"
-            if (isset($thePhrase["val"])) $curPhraseFact -> {'s969'} = $thePhrase["val"];
+            if (isset($phrase["val"])) $curPhraseFact -> {'s969'} = $phrase["val"];
             // Имя слота: "Номер кадра"
-            if (isset($thePhrase["frame"])) $curPhraseFact -> {'s970'} = $thePhrase["frame"];
+            if (isset($phrase["frame"])) $curPhraseFact -> {'s970'} = $phrase["frame"];
             // Имя слота: "Номер конечного кадра"
-            if (isset($thePhrase["endFrame"])) $curPhraseFact -> {'s971'} = $thePhrase["endFrame"];
+            if (isset($phrase["endFrame"])) $curPhraseFact -> {'s971'} = $phrase["endFrame"];
             // Имя слота: "Номер начального кадра"
-            if (isset($thePhrase["startFrame"])) $curPhraseFact -> {'s972'} = $thePhrase["startFrame"];
+            if (isset($phrase["startFrame"])) $curPhraseFact -> {'s972'} = $phrase["startFrame"];
 
             return $curPhraseFact;
         }
@@ -803,14 +809,20 @@ class AnalysisHelper
         return null;
     }
 
-    public static function convertPhraseSequence($thePhraseSequence)
+    /**
+     * Конвертация последовательности фраз из текста распознанной речи.
+     *
+     * @param $phraseSequence - последовательность фраз из текста распознанной речи
+     * @return array|null - массив фактов фраз
+     */
+    public static function convertPhraseSequence($phraseSequence)
     {
-        if (isset($thePhraseSequence) && is_array($thePhraseSequence) && count($thePhraseSequence) > 0) {
+        if (isset($phraseSequence) && is_array($phraseSequence) && count($phraseSequence) > 0) {
             $result = array();
-            foreach ($thePhraseSequence as $k => $v) {
+            foreach ($phraseSequence as $k => $v) {
                 $curFact = self::convertPhrase($v);
                 if (isset($curFact))
-                    $result[]=$curFact;
+                    $result[] = $curFact;
             }
 
             return $result;
@@ -819,19 +831,25 @@ class AnalysisHelper
         return null;
     }
 
-    public static function convertPhrases($thePhrases)
+    /**
+     * Конвертация фраз из текста распознанной речи в набор фактов.
+     *
+     * @param $phrases - массив фраз текста распознанной речи
+     * @return array|null - массив фактов с фразами
+     */
+    public static function convertPhrases($phrases)
     {
-        if (isset($thePhrases)) {
+        if (isset($phrases)) {
             $result = array();
-            if (isset($thePhrases["YesPhrase"]) && is_array($thePhrases["YesPhrase"])) {
-                foreach ($thePhrases["YesPhrase"] as $k=>$v) {
+            if (isset($phrases["YesPhrase"]) && is_array($phrases["YesPhrase"])) {
+                foreach ($phrases["YesPhrase"] as $k => $v) {
                     $curPhrases = self::convertPhraseSequence($v);
                     if (isset($curPhrases) && count($curPhrases) > 0)
                         $result = array_merge($result, $curPhrases);
                 }
             }
-            if (isset($thePhrases["NoPhrase"])) {
-                foreach ($thePhrases["NoPhrase"] as $k=>$v) {
+            if (isset($phrases["NoPhrase"])) {
+                foreach ($phrases["NoPhrase"] as $k=>$v) {
                     $curPhrases = self::convertPhraseSequence($v);
                     if (isset($curPhrases) && count($curPhrases) > 0)
                         $result = array_merge($result, $curPhrases);
@@ -844,48 +862,55 @@ class AnalysisHelper
         return null;
     }
 
-    public static function convertSummarizedFeatureStatistics($theStatistics)
+    /**
+     * Конвертация статистики по всему видеоинтервью в два факта: статистика средних величин интервью и
+     * статистика стандартных отклонений интервью.
+     *
+     * @param $statistics - массив со статистикой по всему видеоинтервью
+     * @return array|null - массив из двух фактов с общей статистикой по всему видеоинтервью
+     */
+    public static function convertSummarizedFeatureStatistics($statistics)
     {
         $result = array();
-        if (isset($theStatistics) && is_array($theStatistics)) {
+        if (isset($statistics) && is_array($statistics)) {
             $factAver = new stdClass;
             // Имя шаблона: Статистика средних величин интервью
             $factAver -> {'NameOfTemplate'} = 'T2171';
 
             // Имя слота: "Средний темп речи"
-            if (isset($theStatistics["average_speech_frequency"]) &&
-                isset($theStatistics["average_speech_frequency"]["val"]))
-                $factAver -> {'s989'} = $theStatistics["average_speech_frequency"]["val"];
+            if (isset($statistics["average_speech_frequency"]) &&
+                isset($statistics["average_speech_frequency"]["val"]))
+                $factAver -> {'s989'} = $statistics["average_speech_frequency"]["val"];
 
             // Имя слота: "Среднее число морганий"
-            if (isset($theStatistics["average_eye_blinking_frequency"]) &&
-                isset($theStatistics["average_eye_blinking_frequency"]["val"]))
-                $factAver -> {'s991'} = $theStatistics["average_eye_blinking_frequency"]["val"];
+            if (isset($statistics["average_eye_blinking_frequency"]) &&
+                isset($statistics["average_eye_blinking_frequency"]["val"]))
+                $factAver -> {'s991'} = $statistics["average_eye_blinking_frequency"]["val"];
 
             // Имя слота: "Среднее число опускания уголков губ"
-            if (isset($theStatistics["average_lipcorners_lowering_frequency"]) &&
-                isset($theStatistics["average_lipcorners_lowering_frequency"]["val"]))
-                $factAver -> {'s992'} = $theStatistics["average_lipcorners_lowering_frequency"]["val"];
+            if (isset($statistics["average_lipcorners_lowering_frequency"]) &&
+                isset($statistics["average_lipcorners_lowering_frequency"]["val"]))
+                $factAver -> {'s992'} = $statistics["average_lipcorners_lowering_frequency"]["val"];
 
             // Имя слота: "Среднее число поднятий бровей"
-            if (isset($theStatistics["average_eyebrow_lift_frequency"]) &&
-                isset($theStatistics["average_eyebrow_lift_frequency"]["val"]))
-                $factAver -> {'s993'} = $theStatistics["average_eyebrow_lift_frequency"]["val"];
+            if (isset($statistics["average_eyebrow_lift_frequency"]) &&
+                isset($statistics["average_eyebrow_lift_frequency"]["val"]))
+                $factAver -> {'s993'} = $statistics["average_eyebrow_lift_frequency"]["val"];
 
             // Имя слота: "Среднее число движений носом"
-            if (isset($theStatistics["average_nose_movement_frequency"]) &&
-                isset($theStatistics["average_nose_movement_frequency"]["val"]))
-                $factAver -> {'s994'} = $theStatistics["average_nose_movement_frequency"]["val"];
+            if (isset($statistics["average_nose_movement_frequency"]) &&
+                isset($statistics["average_nose_movement_frequency"]["val"]))
+                $factAver -> {'s994'} = $statistics["average_nose_movement_frequency"]["val"];
 
             // Имя слота: "Среднее число нахмуриваний"
-            if (isset($theStatistics["average_frown_frequency"]) &&
-                isset($theStatistics["average_frown_frequency"]["val"]))
-                $factAver -> {'s996'} = $theStatistics["average_frown_frequency"]["val"];
+            if (isset($statistics["average_frown_frequency"]) &&
+                isset($statistics["average_frown_frequency"]["val"]))
+                $factAver -> {'s996'} = $statistics["average_frown_frequency"]["val"];
 
             // Имя слота: "Среднее время молчания перед ответом"
-            if (isset($theStatistics["average_silence_before_response"]) &&
-                isset($theStatistics["average_silence_before_response"]["val"]))
-                $factAver -> {'s1004'} = $theStatistics["average_silence_before_response"]["val"];
+            if (isset($statistics["average_silence_before_response"]) &&
+                isset($statistics["average_silence_before_response"]["val"]))
+                $factAver -> {'s1004'} = $statistics["average_silence_before_response"]["val"];
 
             $result[] = $factAver;
 
@@ -894,39 +919,39 @@ class AnalysisHelper
             $factDev -> {'NameOfTemplate'} = 'T2173';
 
             // Имя слота: "Стандартное отклонение темпа речи"
-            if (isset($theStatistics["deviation_speech_frequency"]) &&
-                isset($theStatistics["deviation_speech_frequency"]["val"]))
-                $factDev -> {'s1003'} = $theStatistics["deviation_speech_frequency"]["val"];
+            if (isset($statistics["deviation_speech_frequency"]) &&
+                isset($statistics["deviation_speech_frequency"]["val"]))
+                $factDev -> {'s1003'} = $statistics["deviation_speech_frequency"]["val"];
 
             // Имя слота: "Стандартное отклонение числа морганий"
-            if (isset($theStatistics["deviation_eye_blinking_frequency"]) &&
-                isset($theStatistics["deviation_eye_blinking_frequency"]["val"]))
-                $factDev -> {'s1002'} = $theStatistics["deviation_eye_blinking_frequency"]["val"];
+            if (isset($statistics["deviation_eye_blinking_frequency"]) &&
+                isset($statistics["deviation_eye_blinking_frequency"]["val"]))
+                $factDev -> {'s1002'} = $statistics["deviation_eye_blinking_frequency"]["val"];
 
             // Имя слота: "Стандартное отклонение числа опусканий уголков губ"
-            if (isset($theStatistics["deviation_lipcorners_lowering_frequency"]) &&
-                isset($theStatistics["deviation_lipcorners_lowering_frequency"]["val"]))
-                $factDev -> {'s997'} = $theStatistics["deviation_lipcorners_lowering_frequency"]["val"];
+            if (isset($statistics["deviation_lipcorners_lowering_frequency"]) &&
+                isset($statistics["deviation_lipcorners_lowering_frequency"]["val"]))
+                $factDev -> {'s997'} = $statistics["deviation_lipcorners_lowering_frequency"]["val"];
 
             // Имя слота: "Стандартное отклонение числа поднятий бровей"
-            if (isset($theStatistics["deviation_eyebrow_lift_frequency"]) &&
-                isset($theStatistics["deviation_eyebrow_lift_frequency"]["val"]))
-                $factDev -> {'s1001'} = $theStatistics["deviation_eyebrow_lift_frequency"]["val"];
+            if (isset($statistics["deviation_eyebrow_lift_frequency"]) &&
+                isset($statistics["deviation_eyebrow_lift_frequency"]["val"]))
+                $factDev -> {'s1001'} = $statistics["deviation_eyebrow_lift_frequency"]["val"];
 
             // Имя слота: "Стандартное отклонение числа движений носом"
-            if (isset($theStatistics["deviation_nose_movement_frequency"]) &&
-                isset($theStatistics["deviation_nose_movement_frequency"]["val"]))
-                $factDev -> {'s1000'} = $theStatistics["deviation_nose_movement_frequency"]["val"];
+            if (isset($statistics["deviation_nose_movement_frequency"]) &&
+                isset($statistics["deviation_nose_movement_frequency"]["val"]))
+                $factDev -> {'s1000'} = $statistics["deviation_nose_movement_frequency"]["val"];
 
             // Имя слота: "Стандартное отклонение числа нахмуриваний"
-            if (isset($theStatistics["deviation_frown_frequency"]) &&
-                isset($theStatistics["deviation_frown_frequency"]["val"]))
-                $factDev -> {'s998'} = $theStatistics["deviation_frown_frequency"]["val"];
+            if (isset($statistics["deviation_frown_frequency"]) &&
+                isset($statistics["deviation_frown_frequency"]["val"]))
+                $factDev -> {'s998'} = $statistics["deviation_frown_frequency"]["val"];
 
             // Имя слота: "Стандартное отклонение молчания перед ответом "
-            if (isset($theStatistics["deviation_silence_before_response"]) &&
-                isset($theStatistics["deviation_silence_before_response"]["val"]))
-                $factDev -> {'s1005'} = $theStatistics["deviation_silence_before_response"]["val"];
+            if (isset($statistics["deviation_silence_before_response"]) &&
+                isset($statistics["deviation_silence_before_response"]["val"]))
+                $factDev -> {'s1005'} = $statistics["deviation_silence_before_response"]["val"];
 
             $result[] = $factDev;
 
@@ -936,50 +961,57 @@ class AnalysisHelper
         return null;
     }
 
-    public static function convertFeatureStatistics($theStatistics, $questionText)
+    /**
+     * Конвертация статистики по определенным лицевым признакам в факт статистики средних величин вопроса.
+     *
+     * @param $statistics - статистика определенных лицевых признаков
+     * @param $questionText - текст вопроса
+     * @return stdClass|null - факт со статистикой по вопросу
+     */
+    public static function convertFeatureStatistics($statistics, $questionText)
     {
-        if (isset($theStatistics) && is_array($theStatistics)) {
+        if (isset($statistics) && is_array($statistics)) {
             $fact = new stdClass;
             // Имя шаблона: Статистика средних величин вопроса
             $fact -> {'NameOfTemplate'} = 'T2172';
 
             // Имя слота: "Средний темп речи"
-            if (isset($theStatistics["average_speech_frequency"]) &&
-                isset($theStatistics["average_speech_frequency"]["val"]))
-                $fact -> {'s989'} = $theStatistics["average_speech_frequency"]["val"];
+            if (isset($statistics["average_speech_frequency"]) &&
+                isset($statistics["average_speech_frequency"]["val"]))
+                $fact -> {'s989'} = $statistics["average_speech_frequency"]["val"];
 
             //s990: String @NameOfSlot (Заданный вопрос) - текст вопроса
             $fact -> {'s990'} = $questionText;
 
             // Имя слота: "Среднее число морганий"
-            if (isset($theStatistics["average_eye_blinking_frequency"]) &&
-                isset($theStatistics["average_eye_blinking_frequency"]["val"]))
-                $fact -> {'s991'} = $theStatistics["average_eye_blinking_frequency"]["val"];
+            if (isset($statistics["average_eye_blinking_frequency"]) &&
+                isset($statistics["average_eye_blinking_frequency"]["val"]))
+                $fact -> {'s991'} = $statistics["average_eye_blinking_frequency"]["val"];
 
             // Имя слота: "Среднее число опускания уголков губ"
-            if (isset($theStatistics["average_lipcorners_lowering_frequency"]) &&
-                isset($theStatistics["average_lipcorners_lowering_frequency"]["val"]))
-                $fact -> {'s992'} = $theStatistics["average_lipcorners_lowering_frequency"]["val"];
+            if (isset($statistics["average_lipcorners_lowering_frequency"]) &&
+                isset($statistics["average_lipcorners_lowering_frequency"]["val"]))
+                $fact -> {'s992'} = $statistics["average_lipcorners_lowering_frequency"]["val"];
 
             // Имя слота: "Среднее число поднятий бровей"
-            if (isset($theStatistics["average_eyebrow_lift_frequency"]) &&
-                isset($theStatistics["average_eyebrow_lift_frequency"]["val"]))
-                $fact -> {'s993'} = $theStatistics["average_eyebrow_lift_frequency"]["val"];
+            if (isset($statistics["average_eyebrow_lift_frequency"]) &&
+                isset($statistics["average_eyebrow_lift_frequency"]["val"]))
+                $fact -> {'s993'} = $statistics["average_eyebrow_lift_frequency"]["val"];
 
             // Имя слота: "Среднее число движений носом"
-            if (isset($theStatistics["average_nose_movement_frequency"]) &&
-                isset($theStatistics["average_nose_movement_frequency"]["val"]))
-                $fact -> {'s994'} = $theStatistics["average_nose_movement_frequency"]["val"];
+            if (isset($statistics["average_nose_movement_frequency"]) &&
+                isset($statistics["average_nose_movement_frequency"]["val"]))
+                $fact -> {'s994'} = $statistics["average_nose_movement_frequency"]["val"];
 
             // Имя слота: "Среднее число нахмуриваний"
-            if (isset($theStatistics["average_frown_frequency"]) &&
-                isset($theStatistics["average_frown_frequency"]["val"]))
-                $fact -> {'s996'} = $theStatistics["average_frown_frequency"]["val"];
+            if (isset($statistics["average_frown_frequency"]) &&
+                isset($statistics["average_frown_frequency"]["val"]))
+                $fact -> {'s996'} = $statistics["average_frown_frequency"]["val"];
 
             // Имя слота: "Среднее время молчания перед ответом"
-            if (isset($theStatistics["silence_before_response"]) &&
-                isset($theStatistics["silence_before_response"]["val"]))
-                $fact -> {'s1004'} = $theStatistics["silence_before_response"]["val"];
+            if (isset($statistics["silence_before_response"]) &&
+                isset($statistics["silence_before_response"]["val"]))
+                $fact -> {'s1004'} = $statistics["silence_before_response"]["val"];
 
             return $fact;
         }
@@ -994,7 +1026,7 @@ class AnalysisHelper
      * @param $detectedFeatures - массив обнаруженных признаков
      * @param $questionTime - время на вопрос в миллисекундах
      * @param $questionText - текст вопроса
-     * @return array - массив наборов фактов для кадого кадра видео
+     * @return array - массив наборов фактов для каждого кадра видео
      */
     public static function convertFeaturesToFacts($faceData, $detectedFeatures, $questionTime, $questionText)
     {
@@ -1130,7 +1162,7 @@ class AnalysisHelper
      *
      * @param stdClass $actionUnits - массив AUs (action units)
      * @param $frameIndex - номер кадра
-     * @return array - массив факта
+     * @return array - массив фактов по AUs
      */
     public static function convertActionUnitsToFacts(stdClass $actionUnits, $frameIndex)
     {
@@ -1163,7 +1195,7 @@ class AnalysisHelper
      *
      * @param stdClass $gazeDirections - массив направлений взгляда
      * @param $frameIndex - номер кадра
-     * @return array - массив факта
+     * @return array - массив фактов с направлением взгляда
      */
     public static function convertGazeToFacts(stdClass $gazeDirections, $frameIndex)
     {
@@ -1244,7 +1276,7 @@ class AnalysisHelper
      * Определение поворота головы на основе анализа событий.
      *
      * @param $landmark - цифровая маска, полученная вторым скриптом МОВ Ивана
-     * @return bool|int
+     * @return bool|int - числовое значение поворота головы (0 - поворот вправо, 1 - поворот влево)
      */
     public static function determineTurn($landmark)
     {
@@ -1289,7 +1321,7 @@ class AnalysisHelper
      * Определение качества видео на основе коэффициентов.
      *
      * @param $landmark - цифровая маска, полученная первым скриптом МОВ Ивана
-     * @return array
+     * @return array - массив с оценкой качества видео (true или false) и числовыми коэффициентами
      */
     public static function determineQuality($landmark)
     {
@@ -1335,7 +1367,7 @@ class AnalysisHelper
      *
      * @param $landmark - цифровая маска, полученная вторым скриптом МОВ Ивана
      * @param $facts - исходный общий набор фактов
-     * @return array|null
+     * @return array|null - обновленный набор фактов с фактами событий наклонов, поворотов и кивков головы
      */
     public static function getHeadPositionEventFacts($landmark, $facts)
     {
@@ -1453,7 +1485,7 @@ class AnalysisHelper
      * Получение текста распознанной речи на основе анализа видео ответа на вопрос.
      *
      * @param $id - идентификатор видео ответа на вопрос
-     * @return bool|string
+     * @return bool|string - текст распознанной речи в вопросе
      */
     public static function getRecognizedSpeechText($id)
     {
@@ -1551,7 +1583,7 @@ class AnalysisHelper
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
      * @param $additionalOptions - дополнительные параметры для запуска МОП
-     * @return mixed|null
+     * @return mixed|null - цифровая маска с определенным базовым кадром
      */
     public static function getBaseFrame($videoInterviewId, $additionalOptions)
     {
@@ -1661,7 +1693,7 @@ class AnalysisHelper
      * массив направлений взгляда) в массив фактов.
      *
      * @param $faceData - цифровая маска
-     * @return array - массив наборов фактов для кадого кадра видео
+     * @return array - массив наборов фактов для каждого кадра видео
      */
     public static function convertActionUnitsAndGazesToFacts($faceData)
     {
@@ -2014,7 +2046,8 @@ class AnalysisHelper
      * определение базового кадра на основе первого калибровочного вопроса).
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
-     * @return array - существование калибровочного вопроса
+     * @return array - массив из значений состояния процесса анализа видеоинтервью (true или false) и
+     * существования калибровочного вопроса (true или false)
      */
     public static function runVideoInterviewProcessing($videoInterviewId)
     {
@@ -2057,7 +2090,8 @@ class AnalysisHelper
      * Запуск обработки калибровочных вопросов для выбранного видеоинтервью.
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
-     * @return array|null - результат анализа калибровочных вопросов
+     * @return array|null - результат анализа калибровочных вопросов (успешность формирования цифровых масок,
+     * значение поворота головы вправо, значение поворота головы влево, качество видео, значения коэффициентов качества)
      */
     public static function runCalibrationQuestionProcessing($videoInterviewId)
     {
