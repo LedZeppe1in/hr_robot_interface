@@ -832,7 +832,20 @@ class VideoInterviewAnalysisController extends Controller
         // Обновление атрибута статуса и времени обработки видеоинтервью в БД
         $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
         $videoInterviewProcessingStatus->all_runtime = null;
-            $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
+        $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
+
+        // Поиск цифровых масок для данного видеоинтервью
+        $landmarks = Landmark::find()->where(['video_interview_id' => $videoInterview->id])->all();
+        // Если цифровые маски для данного видеоинтервью уже сформированы
+        if (!empty($landmarks)) {
+            // Создание объекта AnalysisHelper
+            $analysisHelper = new AnalysisHelper();
+            // Удаление всех цифровых масок и связанных с ними результатов анализа для данного видеоинтервью на Object Storage
+            $analysisHelper->deleteLandmarksInObjectStorage($videoInterview->id);
+            // Удаление всех цифровых масок для данного видеоинтервью в БД
+            foreach ($landmarks as $landmark)
+                $landmark->delete();
+        }
 
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $videoInterview->id])->all();

@@ -764,6 +764,20 @@ class VideoInterviewController extends Controller
                     // Если цифровые маски найдены
                     if (!empty($landmarks))
                         foreach ($landmarks as $landmark) {
+
+                            // Поиск результатов анализа для данной цифровой маски
+                            $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmark->id])->all();
+                            // Если результаты анализа для данной цифровой маски уже сформированы
+                            if (!empty($analysisResults)) {
+                                // Создание объекта AnalysisHelper
+                                $analysisHelper = new AnalysisHelper();
+                                // Удаление всех результатов анализа для данной цифровой маски на Object Storage
+                                $analysisHelper->deleteAnalysisResultsInObjectStorage($landmark->id);
+                                // Удаление всех результатов анализа для данной цифровой маски в БД
+                                foreach ($analysisResults as $analysisResult)
+                                    $analysisResult->delete();
+                            }
+
                             // Если цифровая маска полученная не вторым скриптом Ивана
                             if (strripos($landmark->landmark_file_name, '_ext') === false) {
                                 try {
