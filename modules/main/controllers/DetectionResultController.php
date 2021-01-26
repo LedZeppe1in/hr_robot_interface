@@ -10,6 +10,7 @@ use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
+use app\components\AnalysisHelper;
 use app\modules\main\models\KnowledgeBase;
 use app\modules\main\models\AnalysisResult;
 
@@ -138,22 +139,10 @@ class DetectionResultController extends Controller
     {
         // Поиск результатов анализа по id
         $model = $this->findModel($id);
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $osConnector = new OSConnector();
-        // Удаление файлов с результатами определения признаков и фактами на Object Storage
-        if ($model->detection_result_file_name != '' && $model->facts_file_name != '') {
-            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $model->id, $model->detection_result_file_name);
-            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                $model->id, $model->facts_file_name);
-        }
-        // Удаление файла с результатами интерпретации признаков на Object Storage
-        if ($model->interpretation_result_file_name != '')
-            $osConnector->removeFileFromObjectStorage(
-                OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
-                $model->id,
-                $model->interpretation_result_file_name
-            );
+        // Создание объекта AnalysisHelper
+        $analysisHelper = new AnalysisHelper();
+        // Удаление результата анализа (определения и интерпретации лицевых признаков) на Object Storage
+        $analysisHelper->deleteAnalysisResultInObjectStorage($model);
         // Удалние записи из БД
         $model->delete();
         // Вывод сообщения об успешном удалении

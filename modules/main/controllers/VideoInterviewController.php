@@ -206,66 +206,14 @@ class VideoInterviewController extends Controller
     {
         // Поиск видеоинтервью по id
         $model = $this->findModel($id);
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $osConnector = new OSConnector();
-        // Поиск цифровых масок для данного видеоинтервью
-        $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
-        // Обход всех найденных цифровых масок
-        foreach ($landmarks as $landmark) {
-            // Поиск результатов анализа, проведенных для данной цифровой маски
-            $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmark->id])->all();
-            // Обход всех найденных результатов анализа
-            foreach ($analysisResults as $analysisResult) {
-                // Удаление файла с результатами определения признаков и фактами на Object Storage
-                if ($analysisResult->detection_result_file_name != '')
-                    $osConnector->removeFileFromObjectStorage(
-                        OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                        $analysisResult->id,
-                        $analysisResult->detection_result_file_name
-                    );
-                // Удаление файла с набором фактов на Object Storage
-                if ($analysisResult->facts_file_name != '')
-                    $osConnector->removeFileFromObjectStorage(
-                        OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                        $analysisResult->id,
-                        $analysisResult->facts_file_name
-                    );
-                // Удаление файла с результатами интерпретации признаков на Object Storage
-                if ($analysisResult->interpretation_result_file_name != '')
-                    $osConnector->removeFileFromObjectStorage(
-                        OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
-                        $analysisResult->id,
-                        $analysisResult->interpretation_result_file_name
-                    );
-            }
-            // Удаление файла с лицевыми точками на Object Storage
-            if ($landmark->landmark_file_name != '')
-                $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                    $landmark->id, $landmark->landmark_file_name);
-            // Удаление файла видео с нанесенной цифровой маской на Object Storage
-            if ($landmark->processed_video_file_name != '')
-                $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                    $landmark->id, $landmark->processed_video_file_name);
-        }
-        // Поиск вопросов для данного видеоинтервью
-        $questions = Question::find()->where(['video_interview_id' => $model->id])->all();
-        // Обход всех найденных вопросов
-        foreach ($questions as $question) {
-            // Удаление файла видео с ответом на вопрос на Object Storage
-            if ($question->video_file_name != '')
-                $osConnector->removeFileFromObjectStorage(
-                    OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
-                    $question->id,
-                    $question->video_file_name
-                );
-        }
-        // Удаление файла видеоинтервью на Object Storage
-        if ($model->video_file_name != '')
-            $osConnector->removeFileFromObjectStorage(
-                OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
-                $model->id,
-                $model->video_file_name
-            );
+        // Создание объекта AnalysisHelper
+        $analysisHelper = new AnalysisHelper();
+        // Удаление всех цифровых масок и связанных с ними результатов анализа для данного видеоинтервью на Object Storage
+        $analysisHelper->deleteLandmarksInObjectStorage($model->id);
+        // Удаление всех видео ответов на вопросы для данного видеоинтервью на Object Storage
+        $analysisHelper->deleteQuestionsInObjectStorage($model->id);
+        // Удаление видеоинтервью на Object Storage.
+        $analysisHelper->deleteVideoInterviewInObjectStorage($model->id);
         // Удалние записи из БД
         $model->delete();
         // Вывод сообщения об успешном удалении
@@ -758,7 +706,7 @@ class VideoInterviewController extends Controller
     }
 
     /**
-     * Запуск анализа видеоинтервью по всем вопросам (МОВ + МОП).
+     * Запуск анализа видеоинтервью по всем основным вопросам (обработка МОВ).
      *
      * @param $id - идентификатор видеоинтервью
      * @return bool|\yii\web\Response

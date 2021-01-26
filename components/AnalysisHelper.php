@@ -2093,7 +2093,7 @@ class AnalysisHelper
      * @return array|null - результат анализа калибровочных вопросов (успешность формирования цифровых масок,
      * значение поворота головы вправо, значение поворота головы влево, качество видео, значения коэффициентов качества)
      */
-    public static function runCalibrationQuestionProcessing($videoInterviewId)
+    public static function runCalibrationQuestionsProcessing($videoInterviewId)
     {
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
@@ -2141,8 +2141,8 @@ class AnalysisHelper
                             ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
                             ->orderBy(['question_id' => SORT_ASC])
                             ->all();
-                        // Параметр успешности получения цифровых масок МОВ Ивана
-                        $successfullyFormedLandmark = true;
+                        // Массив сформированных цифровых масок МОВ Ивана
+                        $formedLandmarks = array();
                         // Параметры наличия поворота головы вправо и влево
                         $turnRight = false;
                         $turnLeft = false;
@@ -2152,38 +2152,225 @@ class AnalysisHelper
                         $videoQualityParameters = array();
                         // Обход всех статусов обработки видео на вопрос
                         foreach ($questionProcessingStatuses as $questionProcessingStatus) {
+                            // Поиск видео ответа на вопрос по id
+                            $question = Question::findOne($questionProcessingStatus->question_id);
+                            // Поиск темы вопроса по id вопроса
+                            $topicQuestion = TopicQuestion::find()
+                                ->where(['test_question_id' => $question->test_question_id])
+                                ->one();
                             // Поиск цифровых масок по определенному вопросу
                             $landmarks = Landmark::find()
                                 ->where(['question_id' => $questionProcessingStatus->question_id])
                                 ->all();
-                            // Если цифровые маски по данному вопросу сформированы
-                            if (!empty($landmarks)) {
-                                foreach ($landmarks as $landmark) {
-                                    // Поиск видео ответа на вопрос по id
-                                    $question = Question::findOne($landmark->question_id);
-                                    // Поиск темы вопроса по id вопроса
-                                    $topicQuestion = TopicQuestion::find()
-                                        ->where(['test_question_id' => $question->test_question_id])
-                                        ->one();
-                                    // Определение качества видео
-                                    if ($topicQuestion->topic_id == 27)
+                            // Переменная существования цифровой маски
+                            $landmarkExist = false;
+                            // Если вопрос калибровочный (сядьте прямо, посмотрите в камеру)
+                            if ($topicQuestion->topic_id == 27) {
+                                if (!empty($landmarks))
+                                    foreach ($landmarks as $landmark) {
+                                        $landmarkExist = true;
+                                        // Определение качества видео
                                         list($qualityVideo, $videoQualityParameters) = self::determineQuality($landmark);
-                                    // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
-                                    if ($topicQuestion->topic_id == 24)
-                                        $turnRight = self::determineTurn($landmark);
-                                    // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
-                                    if ($topicQuestion->topic_id == 25)
-                                        $turnLeft = self::determineTurn($landmark);
-                                }
-                            } else
-                                $successfullyFormedLandmark = false;
+                                    }
+
+                            }
+                            // Если вопрос калибровочный (поверните голову вправо)
+                            if ($topicQuestion->topic_id == 24) {
+                                if (!empty($landmarks))
+                                    foreach ($landmarks as $landmark)
+                                        // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+                                        if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+                                            $landmarkExist = true;
+                                            // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                                            $turnRight = self::determineTurn($landmark);
+                                        }
+                            }
+                            // Если вопрос калибровочный (поверните голову влево)
+                            if ($topicQuestion->topic_id == 25) {
+                                if (!empty($landmarks))
+                                    foreach ($landmarks as $landmark)
+                                        // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+                                        if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+                                            $landmarkExist = true;
+                                            // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                                            $turnLeft = self::determineTurn($landmark);
+                                        }
+                            }
+                            // Формирование массива получения цифровых масок
+                            array_push($formedLandmarks, [$question->test_question_id, $landmarkExist]);
                         }
 
-                        return array($successfullyFormedLandmark, $turnRight, $turnLeft, $qualityVideo, $videoQualityParameters);
+                        return array($formedLandmarks, $turnRight, $turnLeft, $qualityVideo, $videoQualityParameters);
                     }
                 }
             }
 
         return null;
+    }
+
+    /**
+     * Удаление видеоинтервью на облачном хранилище Yandex.Cloud Object Storage.
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     */
+    public static function deleteVideoInterviewInObjectStorage($videoInterviewId)
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Поиск видеоинтервью по id
+        $videoInterview = VideoInterview::findOne($videoInterviewId);
+        // Если у данного видеоинтервью задан видео-файл
+        if ($videoInterview->video_file_name != '')
+            // Удаление файла видеоинтервью на Object Storage
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_VIDEO_BUCKET,
+                $videoInterview->id,
+                $videoInterview->video_file_name
+            );
+    }
+
+    /**
+     * Удаление всех видео ответов на вопросы для данного видеоинтервью на облачном хранилище Yandex.Cloud Object Storage.
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     */
+    public static function deleteQuestionsInObjectStorage($videoInterviewId)
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Поиск вопросов для данного видеоинтервью
+        $questions = Question::find()->where(['video_interview_id' => $videoInterviewId])->all();
+        // Обход всех найденных вопросов для данного видеоинтервью
+        foreach ($questions as $question) {
+            // Если у данного вопроса задан видео-файл
+            if ($question->video_file_name != '') {
+                // Удаление файла видео с ответом на вопрос на Object Storage
+                $osConnector->removeFileFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+                    $question->id,
+                    $question->video_file_name
+                );
+            }
+        }
+    }
+
+    /**
+     * Удаление видео ответа на вопрос и всех связанных с ним цифровых масок и их результатов анализа на
+     * облачном хранилище Yandex.Cloud Object Storage.
+     *
+     * @param $question - идентификатор видео ответа на вопрос
+     */
+    public static function deleteQuestionInObjectStorage($question)
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Поиск цифровых масок для данного видео ответа на вопрос
+        $landmarks = Landmark::find()->where(['question_id' => $question->id])->all();
+        // Обход всех найденных цифровых масок
+        foreach ($landmarks as $landmark) {
+            // Удаление всех результатов анализа для данной цифровой маски на Object Storage
+            self::deleteAnalysisResultsInObjectStorage($landmark->id);
+            // Удаление цифровой маски на Object Storage
+            self::deleteLandmarkInObjectStorage($landmark);
+        }
+        // Если у данного вопроса задан видео-файл
+        if ($question->video_file_name != '')
+            // Удаление файла видео с ответом на вопрос на Object Storage
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+                $question->id,
+                $question->video_file_name
+            );
+    }
+
+    /**
+     * Удаление всех цифровых масок и связанных с ними результатов анализа для данного видеоинтервью на
+     * облачном хранилище Yandex.Cloud Object Storage.
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     */
+    public static function deleteLandmarksInObjectStorage($videoInterviewId)
+    {
+        // Поиск цифровых масок для данного видеоинтервью
+        $landmarks = Landmark::find()->where(['video_interview_id' => $videoInterviewId])->all();
+        // Обход всех найденных цифровых масок
+        foreach ($landmarks as $landmark) {
+            // Удаление всех результатов анализа для данной цифровой маски на Object Storage
+            self::deleteAnalysisResultsInObjectStorage($landmark->id);
+            // Удаление цифровой маски на Object Storage
+            self::deleteLandmarkInObjectStorage($landmark);
+        }
+    }
+
+    /**
+     * Удаление цифровой маски на облачном хранилище Yandex.Cloud Object Storage.
+     *
+     * @param $landmark - цифровая маска
+     */
+    public static function deleteLandmarkInObjectStorage($landmark)
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Если у данной цифровой маски задан json-файл с лэндмарками
+        if ($landmark->landmark_file_name != '')
+            // Удаление файла с лицевыми точками на Object Storage
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id, $landmark->landmark_file_name);
+        // Если у данной цифровой маски задан видео-файл с нанесенными лэндмарками
+        if ($landmark->processed_video_file_name != '')
+            // Удаление файла видео с нанесенной цифровой маской на Object Storage
+            $osConnector->removeFileFromObjectStorage(OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+                $landmark->id, $landmark->processed_video_file_name);
+    }
+
+    /**
+     * Удаление всех результатов анализа (определения и интерпретации лицевых признаков) для данной цифровой маски на
+     * облачном хранилище Yandex.Cloud Object Storage.
+     *
+     * @param $landmarkId - идентификатор цифровой маски
+     */
+    public static function deleteAnalysisResultsInObjectStorage($landmarkId)
+    {
+        // Поиск результатов анализа, проведенных для данной цифровой маски
+        $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmarkId])->all();
+        // Обход всех найденных результатов анализа
+        foreach ($analysisResults as $analysisResult)
+            self::deleteAnalysisResultInObjectStorage($analysisResult);
+    }
+
+    /**
+     * Удаление результата анализа (определения и интерпретации лицевых признаков) на облачном хранилище
+     * Yandex.Cloud Object Storage.
+     *
+     * @param $analysisResult - результат анализа цифровой маски
+     */
+    public static function deleteAnalysisResultInObjectStorage($analysisResult)
+    {
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Если у данного результата анализа задан json-файл с определенными признаками
+        if ($analysisResult->detection_result_file_name != '')
+            // Удаление файла с результатами определения признаков и фактами на Object Storage
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $analysisResult->id,
+                $analysisResult->detection_result_file_name
+            );
+        // Если у данного результата анализа задан json-файл с набором фактов
+        if ($analysisResult->facts_file_name != '')
+            // Удаление файла с набором фактов на Object Storage
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $analysisResult->id,
+                $analysisResult->facts_file_name
+            );
+        // Если у данного результата анализа задан json-файл с интерпретируемыми признаками
+        if ($analysisResult->interpretation_result_file_name != '')
+            // Удаление файла с набором фактов на Object Storage
+            $osConnector->removeFileFromObjectStorage(
+                OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
+                $analysisResult->id,
+                $analysisResult->interpretation_result_file_name
+            );
     }
 }
