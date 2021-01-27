@@ -1,7 +1,6 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
 use yii\bootstrap\ButtonDropdown;
 
 /* @var $this yii\web\View */
@@ -17,12 +16,6 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <div class="body-content">
         <p>
-            <?= Html::a('Пройти собеседование',
-                'https://84.201.129.65:8080/HRRMaskEditor/GenerateR1Test.php',
-                ['class' => 'btn btn-success', 'style' => 'width: 192px;']) ?>
-        </p>
-
-        <p>
             <?php
                 $items = array();
                 foreach ($surveys as $survey) {
@@ -34,7 +27,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     'dropdown' => [
                         'items' => $items,
                     ],
-                    'options' => ['class' => 'btn btn-primary', 'style' => 'width: 192px;']
+                    'options' => ['class' => 'btn btn-success', 'style' => 'width: 192px;']
                 ]);
             ?>
         </p>

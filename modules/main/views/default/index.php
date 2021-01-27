@@ -1,11 +1,13 @@
 <?php
 
+use yii\helpers\Html;
+use app\modules\main\models\User;
+use yii\bootstrap\ButtonDropdown;
+
 /* @var $this yii\web\View */
+/* @var $surveys app\modules\main\models\Survey */
 
 $this->title = 'HR Robot';
-
-use app\modules\main\models\User;
-use yii\helpers\Html;
 ?>
 
 <div class="main-default-index">
@@ -29,7 +31,42 @@ use yii\helpers\Html;
                 'https://84.201.129.65:8080/HRRMaskEditor/GenerateR1Test.php',
                 ['class' => 'btn btn-lg btn-success', 'style' => 'display:none']) ?>
             <?= (Yii::$app->user->isGuest || !Yii::$app->user->identity->role == User::ROLE_PSYCHOLOGIST) ?
-                Html::a('Пройти видео-интервью', 'interview/31', ['class' => 'btn btn-lg btn-success']) : null ?>
+                Html::a('Пройти видео-интервью', 'interview/31',
+                    ['class' => 'btn btn-lg btn-success', 'style' => 'display:none']) : null ?>
+
+            <?php
+                $items = array();
+                foreach ($surveys as $survey)
+                    if ($survey->id != 36) {
+                        $items[$survey->id]['label'] = $survey->name;
+                        $items[$survey->id]['url'] = 'interview/' . $survey->id;
+                    }
+                if (Yii::$app->user->isGuest || !Yii::$app->user->identity->role == User::ROLE_PSYCHOLOGIST)
+                    echo ButtonDropdown::widget([
+                        'label' => 'Пройти видеоинтервью',
+                        'dropdown' => [
+                            'items' => $items,
+                        ],
+                        'options' => ['class' => 'btn btn-lg btn-success']
+                    ]);
+            ?>
+
+            <?php
+                $items = array();
+                foreach ($surveys as $survey)
+                    if ($survey->id != 31 && $survey->id != 36 && $survey->id != 37) {
+                        $items[$survey->id]['label'] = $survey->name;
+                        $items[$survey->id]['url'] = 'motivation-test/' . $survey->id;
+                    }
+                if (Yii::$app->user->isGuest || !Yii::$app->user->identity->role == User::ROLE_PSYCHOLOGIST)
+                    echo ButtonDropdown::widget([
+                        'label' => 'Пройти тест мотивации к труду',
+                        'dropdown' => [
+                            'items' => $items,
+                        ],
+                        'options' => ['class' => 'btn btn-lg btn-success']
+                    ]);
+            ?>
         </p>
     </div>
 </div>

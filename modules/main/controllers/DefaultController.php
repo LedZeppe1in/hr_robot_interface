@@ -27,11 +27,17 @@ use app\modules\main\models\VideoInterview;
 use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\FinalResult;
+use app\modules\main\models\MainRespondent;
 use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\GerchikovTestConclusion;
 use app\modules\main\models\QuestionProcessingStatus;
 use app\modules\main\models\VideoInterviewProcessingStatus;
 
+/**
+ * Class DefaultController - реализует действия прохождения и анализа интервью, авторизации пользователей
+ *
+ * @package app\modules\main\controllers
+ */
 class DefaultController extends Controller
 {
     public $layout = 'main';
@@ -95,7 +101,40 @@ class DefaultController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        // Выборка всех опросов
+        $surveys = Survey::find()->all();
+
+        return $this->render('index', [
+            'surveys' => $surveys
+        ]);
+    }
+
+    /**
+     * Переход на страницу прохождения теста Герчикова.
+     *
+     * @param $id - идентификатор опроса
+     * @return Response
+     */
+    public function actionMotivationTest($id)
+    {
+        // Поиск респондента по id
+        $mainRespondent = MainRespondent::findOne(1); // id респондента
+        // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+        $respondent = new Respondent();
+        $respondent->name = 'test' . mt_rand(5, 15);
+        $respondent->main_respondent_id = $mainRespondent->id;
+        $respondent->save();
+        // Создание модели видеоинтервью
+        $videoInterviewModel = new VideoInterview();
+        $videoInterviewModel->respondent_id = $respondent->id;
+        $videoInterviewModel->save();
+        // Формирование и сохранение в БД уникального имени респондента
+        $respondent->name = 'Иван Иванович-' . $videoInterviewModel->id;
+        $respondent->updateAttributes(['name']);
+
+        return $this->redirect('https://84.201.129.65:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
+            '&IDOfRespondent=' . $mainRespondent->code . '&CodeOfRespondentInterview=' . $respondent->name .
+            '&IDOfInterview=' . $id);
     }
 
     /**
@@ -139,13 +178,10 @@ class DefaultController extends Controller
      */
     public function actionTest()
     {
-        // Создание модели теста Герчикова
-        $model = new GerchikovTestConclusion();
         // Выборка всех опросов
         $surveys = Survey::find()->all();
 
         return $this->render('test', [
-            'model' => $model,
             'surveys' => $surveys
         ]);
     }
@@ -617,10 +653,12 @@ class DefaultController extends Controller
         // Поиск профиля связанного с данным опросом
         $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
         $profile = Profile::findOne($profileSurvey->profile_id);
+        // Поиск респондента по id
+        $mainRespondent = MainRespondent::findOne(1); // id респондента
         // Создание нового респондента (уникальной записи прохождения интервью респондентом)
         $respondent = new Respondent();
         $respondent->name = 'test' . mt_rand(5, 15);
-        $respondent->main_respondent_id = 1; // id респондента
+        $respondent->main_respondent_id = $mainRespondent->id;
         $respondent->save();
         // Создание модели видеоинтервью
         $videoInterviewModel = new VideoInterview();
@@ -631,14 +669,14 @@ class DefaultController extends Controller
         $respondent->name = 'Иван Иванович-' . $videoInterviewModel->id;
         $respondent->updateAttributes(['name']);
         // Создание модели итогового результата
-        $FinalResultModel = new FinalResult();
-        $FinalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
-        $FinalResultModel->video_interview_id = $videoInterviewModel->id;
-        $FinalResultModel->save();
+        $finalResultModel = new FinalResult();
+        $finalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
+        $finalResultModel->video_interview_id = $videoInterviewModel->id;
+        $finalResultModel->save();
         // Создание модели заключения по тесту Герчикова
         $gerchikovTestConclusionModel = new GerchikovTestConclusion();
         // Установка первичного ключа с итогового результата
-        $gerchikovTestConclusionModel->id = $FinalResultModel->id;
+        $gerchikovTestConclusionModel->id = $finalResultModel->id;
         // Если пришел POST-запрос
         if (Yii::$app->request->isPost) {
             // Если пришли параметры с модуля опроса (теста Герчикова)
@@ -667,6 +705,41 @@ class DefaultController extends Controller
         }
         // Сохранение модели заключения по тесту Герчикова
         $gerchikovTestConclusionModel->save();
+
+//        //
+//        $videoInterview = VideoInterview::findOne($videoInterviewId);
+//        $videoInterview->description = 'Видео-интервью для профиля: ' . $profile->name;
+//        $videoInterview->updateAttributes(['description']);
+//        //
+//        $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
+//        //
+//        if (empty($finalResult)) {
+//            // Создание модели итогового результата
+//            $finalResult = new FinalResult();
+//            $finalResult->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
+//            $finalResult->video_interview_id = $videoInterview->id;
+//            $finalResult->save();
+//        } else {
+//            $gerchikovTestConclusion = GerchikovTestConclusion::find()->where(['id' => $finalResult->id])->one();
+//            //
+//            if (!empty($gerchikovTestConclusion)) {
+//                // Создание модели заключения по тесту Герчикова
+//                $gerchikovTestConclusion = new GerchikovTestConclusion();
+//                // Установка первичного ключа с итогового результата
+//                $gerchikovTestConclusion->id = $finalResult->id;
+//                //
+//                $gerchikovTestConclusion->accept_test = 1;
+//                $gerchikovTestConclusion->accept_level = 100;
+//                $gerchikovTestConclusion->instrumental_motivation = 1;
+//                $gerchikovTestConclusion->professional_motivation = 2;
+//                $gerchikovTestConclusion->patriot_motivation = 3;
+//                $gerchikovTestConclusion->master_motivation = 3;
+//                $gerchikovTestConclusion->avoid_motivation = 3;
+//                $gerchikovTestConclusion->description = 'Автоматически созданная запись';
+//                // Сохранение модели заключения по тесту Герчикова
+//                $gerchikovTestConclusion->save();
+//            }
+//        }
 
         // Если респондент прошел тест Герчикова
         if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED) {
@@ -854,8 +927,10 @@ class DefaultController extends Controller
                     // Параметр успешности получения цифровых масок МОВ Ивана
                     $successfullyFormedLandmark = true;
                     // Параметры наличия поворота головы вправо и влево
-                    $turnRight = false;
-                    $turnLeft = false;
+                    $turnRight = null;
+                    $turnLeft = null;
+                    // Значение FPS
+                    $fpsValue = 0;
                     // Показатель качества видео
                     $qualityVideo = false;
                     // Массив с коэффициентами качества видео
@@ -879,7 +954,7 @@ class DefaultController extends Controller
                                 $analysisHelper = new AnalysisHelper();
                                 // Определение качества видео
                                 if ($topicQuestion->topic_id == 27)
-                                    list($qualityVideo, $videoQualityParameters) = $analysisHelper->determineQuality($landmark);
+                                    list($fpsValue, $qualityVideo, $videoQualityParameters) = $analysisHelper->determineQuality($landmark);
                                 // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
                                 if ($topicQuestion->topic_id == 24)
                                     $turnRight = $analysisHelper->determineTurn($landmark);
@@ -899,6 +974,7 @@ class DefaultController extends Controller
                     $data['success'] = $successfullyFormedLandmark;
                     $data['turnRight'] = $turnRight;
                     $data['turnLeft'] = $turnLeft;
+                    $data['fpsValue'] = $fpsValue;
                     $data['qualityVideo'] = $qualityVideo;
                     $data['videoQualityParameters'] = $videoQualityParameters;
                     // Возвращение данных
