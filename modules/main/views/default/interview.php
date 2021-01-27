@@ -282,6 +282,20 @@ $this->params['breadcrumbs'][] = $this->title;
         <div id="final-text" class="col-md-11 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px; display: none">
             Пожалуйста подождите. Отправка Ваших ответов может занять некоторое время.
         </div>
+        <div id="main-recommendations" class="col-md-11 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px; display: none;">
+            <div id="fps-recommendation" style="display: none;">
+                &bull; Необходимо сменить оборудование для съемки видео-интервью. Оборудование должно обеспечивать частоту кадров в секунду более 20.
+            </div>
+            <div id="focusing-recommendation" style="display: none;">
+                &bull; Необходимо сменить оборудование для съемки видео-интервью. Оборудование должно обеспечивать четкое изображение (разрешение камеры должно быть 640х480 пикселей).
+            </div>
+            <div id="illumination-recommendation" style="display: none;">
+                &bull; Необходимо изменить освещение в помещении, должны отсутствовать узконаправленные на респондента источники света сзади, сверху, сбоку или снизу.
+            </div>
+            <div id="camera-movements-recommendation" style="display: none;">
+                &bull; Необходимо зафиксировать оборудование для съемки.
+            </div>
+        </div>
         <div class="col-md-2">
             <?= Button::widget([
                 'label' => Yii::t('app', 'Начать интервью'),

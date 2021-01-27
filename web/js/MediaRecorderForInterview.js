@@ -289,6 +289,7 @@ function uploadCalibrationVideo() {
             console.log(response.success);
             console.log(response.turnRight);
             console.log(response.turnLeft);
+            console.log(response.fpsValue);
             console.log(response.qualityVideo);
             console.log(response.videoQualityParameters);
 
@@ -296,8 +297,15 @@ function uploadCalibrationVideo() {
             finishCameraSetupButton.style.display = "none";
             // Слой с текстом информации о ходе видеоинтервью
             let answerTimeText = document.getElementById("answer-time");
+            // Слой с рекомендациями
+            let mainRecommendations = document.getElementById("main-recommendations");
+            // Слои с конкретными рекомендациями к видео
+            let fpsRecommendation = document.getElementById("fps-recommendation");
+            let focusingRecommendation = document.getElementById("focusing-recommendation");
+            let illuminationRecommendation = document.getElementById("illumination-recommendation");
+            let cameraMovementsRecommendation = document.getElementById("camera-movements-recommendation");
             // Если проверка калибровочных вопросов прошла успешно
-            if (response.success === true && response.turnRight !== false && response.turnLeft !== false &&
+            if (response.success === true && response.turnRight !== null && response.turnLeft !== null &&
                 response.qualityVideo === true) {
                 // Отображение кнопки запуска новой записи видео
                 startRecordButton.style.display = "inline-block";
@@ -317,8 +325,19 @@ function uploadCalibrationVideo() {
                 gumVideo.style.display = "none";
                 // Отображение слоя с текстом финальной фразы об ожидании результатов обработки
                 let finalText = document.getElementById("final-text");
-                finalText.textContent = "Спасибо за ожидание! К сожалению, Ваше видео плохого качества.";
+                finalText.textContent = "Спасибо за ожидание! К сожалению, Ваше видео плохого качества. Рекомендации к вашему видео:";
                 finalText.style.display = "inline-block";
+                // Отображение слоя с рекомендациями к видео
+                mainRecommendations.style.display = "inline-block";
+                // if (response.fpsValue < 20)
+                //     fpsRecommendation.style.display = "inline-block";
+                if (response.videoQualityParameters[4] < 2)
+                    focusingRecommendation.style.display = "inline-block";
+                if (response.videoQualityParameters[0] < 15 && response.videoQualityParameters[1] > 2 &&
+                    response.videoQualityParameters[2] > 0.5)
+                    illuminationRecommendation.style.display = "inline-block";
+                if (response.videoQualityParameters[3] > 7)
+                    cameraMovementsRecommendation.style.display = "inline-block";
             }
         }
         else
