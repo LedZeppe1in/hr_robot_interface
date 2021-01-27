@@ -40,6 +40,7 @@ $config = [
                 'sing-in' => 'main/default/sing-in',
                 'test' => 'main/default/test',
                 'interview/<id:\d+>' => 'main/default/interview',
+                'motivation-test/<id:\d+>' => 'main/default/motivation-test',
                 'gerchikov-test-conclusion-view/<id:\d+>' => 'main/default/gerchikov-test-conclusion-view',
                 'interview-analysis/<id:\d+>' => 'main/default/interview-analysis',
                 'upload' => 'main/default/upload',
@@ -56,7 +57,7 @@ $config = [
                 '/question/<_ques:(list)>' => 'main/question/<_ques>',
                 '/question/<_ques:(view|delete|video-file-download|get-ivan-landmarks|get-recognized-speech|get-andrey-landmarks)>/<id:\d+>' => 'main/question/<_ques>',
                 '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
-                '/video-interview/<_vi:(view|update|delete|video-download|get-ivan-landmarks|get-recognized-speech|get-andrey-landmarks|run-analysis|run-features-detection|run-features-interpretation|delete-all-analysis-results)>/<id:\d+>' =>
+                '/video-interview/<_vi:(view|update|delete|video-download|get-ivan-landmarks|get-recognized-speech|get-andrey-landmarks|run-analysis|run-features-detection|run-features-interpretation|delete-all-analysis-results|run-video-interview-processing|run-calibration-questions-processing)>/<id:\d+>' =>
                     'main/video-interview/<_vi>',
                 '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
                 '/landmark/<_lm:(view|update|delete|landmark-file-download|processed-video-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',

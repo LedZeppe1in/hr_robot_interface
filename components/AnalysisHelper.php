@@ -1276,7 +1276,7 @@ class AnalysisHelper
      * Определение поворота головы на основе анализа событий.
      *
      * @param $landmark - цифровая маска, полученная вторым скриптом МОВ Ивана
-     * @return bool|int - числовое значение поворота головы (0 - поворот вправо, 1 - поворот влево)
+     * @return int|null - числовое значение поворота головы (0 - поворот вправо, 1 - поворот влево)
      */
     public static function determineTurn($landmark)
     {
@@ -1314,7 +1314,7 @@ class AnalysisHelper
                 return self::TURN_LEFT;
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -1325,6 +1325,8 @@ class AnalysisHelper
      */
     public static function determineQuality($landmark)
     {
+        // Значение FPS
+        $fpsValue = 0;
         // Показатель качества видео
         $qualityVideo = false;
         // Массив с коэффициентами качества видео
@@ -1344,7 +1346,9 @@ class AnalysisHelper
             // Декодирование json-файла с цифровой маской
             $faceData = json_decode($jsonFaceData, true);
             // Определение качества видео по коэффициентам
-            foreach ($faceData as $key => $value)
+            foreach ($faceData as $key => $value) {
+                if ($key == 'FPS')
+                    $fpsValue = $value;
                 if ($key == 'COEF_QUALITY') {
                     foreach ($value as $coefficient)
                         array_push($videoQualityParameters, $coefficient);
@@ -1357,9 +1361,10 @@ class AnalysisHelper
                             $qualityVideo = true;
                     }
                 }
+            }
         }
 
-        return array($qualityVideo, $videoQualityParameters);
+        return array($fpsValue, $qualityVideo, $videoQualityParameters);
     }
 
     /**
@@ -2096,9 +2101,9 @@ class AnalysisHelper
     public static function runCalibrationQuestionsProcessing($videoInterviewId)
     {
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
-        $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+        $questions = Question::find()->where(['video_interview_id' => $videoInterviewId])->all();
         // Если есть видео ответов на вопросы для данного видеоинтервью
-        if (!empty($questions))
+        if (!empty($questions)) {
             // Обход всех видео ответов на вопросы для данного видеоинтервью
             foreach ($questions as $question) {
                 // Поиск темы для вопроса - Topic 24 (поворот вправо), 25 (поворот влево), 27 (калибровочный для камеры)
@@ -2122,88 +2127,88 @@ class AnalysisHelper
                         // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
                         $consoleRunner->run('video-interview-analysis/preparation ' . $question->id . ' ' .
                             $landmarkModel->id . ' ' . $topicQuestion->topic_id);
-                    }
-                    // Если текущий вопрос является калибровочным и он последний
-                    if ($topicQuestion->topic_id == 25) {
-                        // Поиск полного видеоинтервью по id
-                        $videoInterview = VideoInterview::findOne($question->video_interview_id);
-                        // Ожидание завершения анализа видео по калибровочным вопросам
-                        do {
-                            // Задержка выполнения скрипта в 1 секунду
-                            sleep(1);
-                            // Поиск статуса обработки видеоинтервью по id видеоинтервью
-                            $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
-                                ->where(['video_interview_id' => $videoInterview->id])
-                                ->one();
-                        } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
-                        // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
-                        $questionProcessingStatuses = QuestionProcessingStatus::find()
-                            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
-                            ->orderBy(['question_id' => SORT_ASC])
-                            ->all();
-                        // Массив сформированных цифровых масок МОВ Ивана
-                        $formedLandmarks = array();
-                        // Параметры наличия поворота головы вправо и влево
-                        $turnRight = false;
-                        $turnLeft = false;
-                        // Показатель качества видео
-                        $qualityVideo = false;
-                        // Массив с коэффициентами качества видео
-                        $videoQualityParameters = array();
-                        // Обход всех статусов обработки видео на вопрос
-                        foreach ($questionProcessingStatuses as $questionProcessingStatus) {
-                            // Поиск видео ответа на вопрос по id
-                            $question = Question::findOne($questionProcessingStatus->question_id);
-                            // Поиск темы вопроса по id вопроса
-                            $topicQuestion = TopicQuestion::find()
-                                ->where(['test_question_id' => $question->test_question_id])
-                                ->one();
-                            // Поиск цифровых масок по определенному вопросу
-                            $landmarks = Landmark::find()
-                                ->where(['question_id' => $questionProcessingStatus->question_id])
-                                ->all();
-                            // Переменная существования цифровой маски
-                            $landmarkExist = false;
-                            // Если вопрос калибровочный (сядьте прямо, посмотрите в камеру)
-                            if ($topicQuestion->topic_id == 27) {
-                                if (!empty($landmarks))
-                                    foreach ($landmarks as $landmark) {
-                                        $landmarkExist = true;
-                                        // Определение качества видео
-                                        list($qualityVideo, $videoQualityParameters) = self::determineQuality($landmark);
-                                    }
-
-                            }
-                            // Если вопрос калибровочный (поверните голову вправо)
-                            if ($topicQuestion->topic_id == 24) {
-                                if (!empty($landmarks))
-                                    foreach ($landmarks as $landmark)
-                                        // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
-                                        if (strripos($landmark->landmark_file_name, '_ext') !== false) {
-                                            $landmarkExist = true;
-                                            // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
-                                            $turnRight = self::determineTurn($landmark);
-                                        }
-                            }
-                            // Если вопрос калибровочный (поверните голову влево)
-                            if ($topicQuestion->topic_id == 25) {
-                                if (!empty($landmarks))
-                                    foreach ($landmarks as $landmark)
-                                        // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
-                                        if (strripos($landmark->landmark_file_name, '_ext') !== false) {
-                                            $landmarkExist = true;
-                                            // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
-                                            $turnLeft = self::determineTurn($landmark);
-                                        }
-                            }
-                            // Формирование массива получения цифровых масок
-                            array_push($formedLandmarks, [$question->test_question_id, $landmarkExist]);
-                        }
-
-                        return array($formedLandmarks, $turnRight, $turnLeft, $qualityVideo, $videoQualityParameters);
+                        // Задержка выполнения скрипта в 1 секунду
+                        sleep(1);
                     }
                 }
             }
+            // Ожидание завершения анализа видео по калибровочным вопросам
+            do {
+                // Задержка выполнения скрипта в 1 секунду
+                sleep(1);
+                // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                    ->where(['video_interview_id' => $videoInterviewId])
+                    ->one();
+            } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
+            // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
+            $questionProcessingStatuses = QuestionProcessingStatus::find()
+                ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                ->orderBy(['question_id' => SORT_ASC])
+                ->all();
+            // Массив сформированных цифровых масок МОВ Ивана
+            $formedLandmarks = array();
+            // Параметры наличия поворота головы вправо и влево
+            $turnRight = null;
+            $turnLeft = null;
+            // Значение FPS
+            $fpsValue = 0;
+            // Показатель качества видео
+            $qualityVideo = false;
+            // Массив с коэффициентами качества видео
+            $videoQualityParameters = array();
+            // Обход всех статусов обработки видео на вопрос
+            foreach ($questionProcessingStatuses as $questionProcessingStatus) {
+                // Поиск видео ответа на вопрос по id
+                $question = Question::findOne($questionProcessingStatus->question_id);
+                // Поиск темы вопроса по id вопроса
+                $topicQuestion = TopicQuestion::find()
+                    ->where(['test_question_id' => $question->test_question_id])
+                    ->one();
+                // Поиск цифровых масок по определенному вопросу
+                $landmarks = Landmark::find()
+                    ->where(['question_id' => $questionProcessingStatus->question_id])
+                    ->all();
+                // Переменная существования цифровой маски
+                $landmarkExist = false;
+                // Если вопрос калибровочный (сядьте прямо, посмотрите в камеру)
+                if ($topicQuestion->topic_id == 27) {
+                    if (!empty($landmarks))
+                        foreach ($landmarks as $landmark) {
+                            $landmarkExist = true;
+                            // Определение качества видео
+                            list($fpsValue, $qualityVideo, $videoQualityParameters) = self::determineQuality($landmark);
+                        }
+
+                }
+                // Если вопрос калибровочный (поверните голову вправо)
+                if ($topicQuestion->topic_id == 24) {
+                    if (!empty($landmarks))
+                        foreach ($landmarks as $landmark)
+                            // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+                            if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+                                $landmarkExist = true;
+                                // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                                $turnRight = self::determineTurn($landmark);
+                            }
+                }
+                // Если вопрос калибровочный (поверните голову влево)
+                if ($topicQuestion->topic_id == 25) {
+                    if (!empty($landmarks))
+                        foreach ($landmarks as $landmark)
+                            // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+                            if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+                                $landmarkExist = true;
+                                // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                                $turnLeft = self::determineTurn($landmark);
+                            }
+                }
+                // Формирование массива получения цифровых масок
+                array_push($formedLandmarks, [$question->test_question_id, $landmarkExist]);
+            }
+
+            return array($formedLandmarks, $turnRight, $turnLeft, $fpsValue, $qualityVideo, $videoQualityParameters);
+        }
 
         return null;
     }

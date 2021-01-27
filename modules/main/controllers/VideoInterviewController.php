@@ -7,6 +7,7 @@ use stdClass;
 use Exception;
 use SoapClient;
 use yii\web\Controller;
+use yii\web\Response;
 use yii\web\UploadedFile;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -1039,8 +1040,6 @@ class VideoInterviewController extends Controller
         $model = $this->findModel($id);
         // Поиск цифровых масок для данного видеоинтервью
         $landmarks = Landmark::find()->where(['video_interview_id' => $model->id])->all();
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $osConnector = new OSConnector();
         // Обход всех найденных цифровых масок
         foreach ($landmarks as $landmark)
             // Если цифровая маска полученна не для вопроса
@@ -1058,29 +1057,12 @@ class VideoInterviewController extends Controller
                         $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmark->id])->all();
                         // Если есть результаты анализа для данного видеоинтервью
                         if (!empty($analysisResults)) {
+                            // Создание объекта AnalysisHelper
+                            $analysisHelper = new AnalysisHelper();
                             // Обход всех найденных результатов анализа
                             foreach ($analysisResults as $analysisResult) {
-                                // Удаление файла с результатами определения признаков на Object Storage
-                                if ($analysisResult->detection_result_file_name != '')
-                                    $osConnector->removeFileFromObjectStorage(
-                                        OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                                        $analysisResult->id,
-                                        $analysisResult->detection_result_file_name
-                                    );
-                                // Удаление файла с набором фактов на Object Storage
-                                if ($analysisResult->facts_file_name != '')
-                                    $osConnector->removeFileFromObjectStorage(
-                                        OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-                                        $analysisResult->id,
-                                        $analysisResult->facts_file_name
-                                    );
-                                // Удаление файла с результатами интерпретации признаков на Object Storage
-                                if ($analysisResult->interpretation_result_file_name != '')
-                                    $osConnector->removeFileFromObjectStorage(
-                                        OSConnector::OBJECT_STORAGE_INTERPRETATION_RESULT_BUCKET,
-                                        $analysisResult->id,
-                                        $analysisResult->interpretation_result_file_name
-                                    );
+                                // Удаление результата анализа на Object Storage.
+                                $analysisHelper->deleteAnalysisResultInObjectStorage($analysisResult);
                                 // Удаление результата анализа из БД
                                 $analysisResult->delete();
                             }
@@ -1099,6 +1081,48 @@ class VideoInterviewController extends Controller
                 'Для данного видеоинтервью нет рузультатов МОП и МИП!');
 
         return $this->redirect(['/video-interview/view/' . $id]);
+    }
+
+    /**
+     * Запуск обработки калибровочных вопросов видеоинтервью (для API).
+     *
+     * @param $id - идентификатор видеоинтервью
+     * @return \yii\console\Response|Response
+     */
+    public function actionRunCalibrationQuestionsProcessing($id)
+    {
+        // Создание объекта AnalysisHelper
+        $analysisHelper = new AnalysisHelper();
+        // Запуск обработки видеоинтервью
+        $result = $analysisHelper->runCalibrationQuestionsProcessing($id);
+        // Установка формата JSON для возвращаемых данных
+        $response = Yii::$app->response;
+        $response->format = Response::FORMAT_JSON;
+        // Возвращение данных
+        $response->data = $result;
+
+        return $response;
+    }
+
+    /**
+     * Запуск обработки обычных вопросов видеоинтервью (для API).
+     *
+     * @param $id - идентификатор видеоинтервью
+     * @return \yii\console\Response|Response
+     */
+    public function actionRunVideoInterviewProcessing($id)
+    {
+        // Создание объекта AnalysisHelper
+        $analysisHelper = new AnalysisHelper();
+        // Запуск обработки видеоинтервью
+        list($videoInterviewInProgress, $calibrationQuestionExist) = $analysisHelper->runVideoInterviewProcessing($id);
+        // Установка формата JSON для возвращаемых данных
+        $response = Yii::$app->response;
+        $response->format = Response::FORMAT_JSON;
+        // Возвращение данных
+        $response->data = array($videoInterviewInProgress, $calibrationQuestionExist);
+
+        return $response;
     }
 
     /**

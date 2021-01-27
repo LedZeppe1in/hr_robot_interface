@@ -90,9 +90,9 @@ class VideoInterviewAnalysisController extends Controller
         $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
         $parameters['id'] = $question->id;
         $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_EXPRESS;
-        if ($topicId == 27)
+        if ((int)$topicId == 27)
             $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_VIDEO_PARAMETERS;
-        if ($topicId == 24 || $topicId == 25)
+        if ((int)$topicId == 24 || (int)$topicId == 25)
             $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
         // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
         $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
@@ -834,18 +834,18 @@ class VideoInterviewAnalysisController extends Controller
         $videoInterviewProcessingStatus->all_runtime = null;
         $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
 
-        // Поиск цифровых масок для данного видеоинтервью
-        $landmarks = Landmark::find()->where(['video_interview_id' => $videoInterview->id])->all();
-        // Если цифровые маски для данного видеоинтервью уже сформированы
-        if (!empty($landmarks)) {
-            // Создание объекта AnalysisHelper
-            $analysisHelper = new AnalysisHelper();
-            // Удаление всех цифровых масок и связанных с ними результатов анализа для данного видеоинтервью на Object Storage
-            $analysisHelper->deleteLandmarksInObjectStorage($videoInterview->id);
-            // Удаление всех цифровых масок для данного видеоинтервью в БД
-            foreach ($landmarks as $landmark)
-                $landmark->delete();
-        }
+//        // Поиск цифровых масок для данного видеоинтервью
+//        $landmarks = Landmark::find()->where(['video_interview_id' => $videoInterview->id])->all();
+//        // Если цифровые маски для данного видеоинтервью уже сформированы
+//        if (!empty($landmarks)) {
+//            // Создание объекта AnalysisHelper
+//            $analysisHelper = new AnalysisHelper();
+//            // Удаление всех цифровых масок и связанных с ними результатов анализа для данного видеоинтервью на Object Storage
+//            $analysisHelper->deleteLandmarksInObjectStorage($videoInterview->id);
+//            // Удаление всех цифровых масок для данного видеоинтервью в БД
+//            foreach ($landmarks as $landmark)
+//                $landmark->delete();
+//        }
 
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $videoInterview->id])->all();
