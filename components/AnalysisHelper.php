@@ -1209,9 +1209,9 @@ class AnalysisHelper
                 $fact -> {'s861'} = 'Левый зрачок';
                 $fact -> {'s862'} = 'Изменение положения по горизонтали';
                 if ($gazeDirection->direction === 'right')
-                    $fact -> {'s863'} = 'Вправо';
-                if ($gazeDirection->direction === 'left')
                     $fact -> {'s863'} = 'Влево';
+                if ($gazeDirection->direction === 'left')
+                    $fact -> {'s863'} = 'Вправо';
                 $fact -> {'s864'} = abs($gazeDirection->intensity);
                 $fact -> {'s869'} = $frameIndex;
                 $fact -> {'s870'} = $frameIndex;
@@ -1224,9 +1224,9 @@ class AnalysisHelper
                 $fact -> {'s861'} = 'Правый зрачок';
                 $fact -> {'s862'} = 'Изменение положения по горизонтали';
                 if ($gazeDirection->direction === 'right')
-                    $fact -> {'s863'} = 'Вправо';
-                if ($gazeDirection->direction === 'left')
                     $fact -> {'s863'} = 'Влево';
+                if ($gazeDirection->direction === 'left')
+                    $fact -> {'s863'} = 'Вправо';
                 $fact -> {'s864'} = abs($gazeDirection->intensity);
                 $fact -> {'s869'} = $frameIndex;
                 $fact -> {'s870'} = $frameIndex;
