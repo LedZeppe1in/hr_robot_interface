@@ -856,6 +856,16 @@ class FacialFeatureDetector
         foreach ($iFaceData as $k=>$v)
             if (strpos(Trim($k), 'frame_') !== false) {
                 if(isset($v)) {
+
+                    //FaceProcesing
+                 /*   if (isset($v['FACES']))
+                        //                       foreach ($v['AUDIO_DATA'] as $k1 => $v1)
+                    {
+                        $FaceData_['FACES'][$i]['amp'] =$v['AUDIO_DATA'][0];
+                        $FaceData_['FACES'][$i]['av_amp'] = $v['AUDIO_DATA'][1];
+                        $FaceData_['FACES'][$i]['db_val'] = $v['AUDIO_DATA'][2];
+                    }*/
+
                     //audio processing
                     if (isset($v['AUDIO_DATA']))
  //                       foreach ($v['AUDIO_DATA'] as $k1 => $v1)
@@ -1723,6 +1733,48 @@ class FacialFeatureDetector
 
 
 
+    public function detectBaseNoiseLevel($theSource,$theText,$theQuestionerVoiceTime,$theFPS)
+    {
+        $averNoiseLevel=-31;
+
+
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectBaseNoiseLevel(theSource).json', json_encode($theSource));
+
+        if (is_array($theSource))
+        {
+            $startFromFrameIndex=0;
+            if (isset($theQuestionerVoiceTime) && $theQuestionerVoiceTime>=0)$startFromFrameIndex=round($theQuestionerVoiceTime*$theFPS,0);
+
+            $N=count($theSource);
+            $curTextIndex=0;
+            $curNoiseSum=0;
+            $Counter=0;
+
+            for ($i = $startFromFrameIndex; $i < $N; $i++)
+            {
+                $curTime=round($i/$theFPS,4);
+                $curTextIndex=TextFrequencyDetector::IsTextInTime($curTime,$theText,$curTextIndex);
+
+                if (isset($curTextIndex) && $curTextIndex>=0)
+                {
+
+                }
+                else
+                {
+                    $curNoiseSum+=$theSource[$i]['db_val'];
+                    $Counter++;
+                }
+            }
+
+             file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectBaseNoiseLevel.json', json_encode(array("voice"=>$theQuestionerVoiceTime,"fps"=>$theFPS,"Counter"=>$Counter,"Sum"=>$curNoiseSum,"frames"=>count($theSource))));
+            if ($Counter!=0) $averNoiseLevel=$curNoiseSum/$Counter;
+        }
+
+
+        return round($averNoiseLevel);
+    }
+
+
     //Обработка звуковой информации
     public function processAudio($targetFaceData, $sourceFaceData0, $facePart, $coefs_)
     {
@@ -1738,6 +1790,33 @@ class FacialFeatureDetector
                     $targetFaceData[$facePart]["audio_db_val"][$i]["val"] = $isVoice;
                 }
             }
+        return $targetFaceData;
+    }
+
+    public function processAudioByText($targetFaceData, $sourceFaceData0, $facePart,$theText, $theFPS,$coefs_)
+    {
+        $curTextIndex=0;
+        $isVoice=null;
+
+
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/processAudioByText_Text.json', json_encode($theText));
+
+        for ($i = 0; $i < count($sourceFaceData0); $i++) {
+
+                $curTime=round($i/$theFPS,4);
+                $curTextIndex=TextFrequencyDetector::IsTextInTime($curTime,$theText,$curTextIndex);
+
+                if (isset($curTextIndex) && $curTextIndex>=0)
+                {
+                    $isVoice = 'yes';
+                }
+                else
+                {
+                    $isVoice = 'no';
+                }
+            $targetFaceData[$facePart]["audio_db_val"][$i]["val"] = $isVoice;
+            }
+
         return $targetFaceData;
     }
 
@@ -3992,18 +4071,21 @@ class FacialFeatureDetector
                 }
             }
 
-            if (isset($onlyAnswerTime))
+            if (isset($onlyAnswerTime) && $onlyAnswerTime>0)
             {
                 if (!isset($sourceFaceData1["feature_statistics"]))    $sourceFaceData1["feature_statistics"]=array();
 
-                $averSpeech= TextFrequencyDetector::CountSpeechFrequencyByWords($textData,$onlyAnswerTime);
+                $startFrom=0;
+                if (isset($voiceActingTime))$startFrom=TextFrequencyDetector::ResponseStartIndexInWords($textData,$voiceActingTime);
+
+                $averSpeech= TextFrequencyDetector::CountSpeechFrequencyByWords($textData,$onlyAnswerTime, $startFrom);
                 if (isset($averSpeech))
                 {
                     $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("count"=>1,"val"=>round($averSpeech,4));
                 }
                 else
                 {
-                    $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("count"=>1,"val"=>0);
+                    $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("count"=>0,"val"=>0);
                 }
 
 
@@ -4016,7 +4098,7 @@ class FacialFeatureDetector
                     }
                     else
                     {
-                        $sourceFaceData1["feature_statistics"]["silence_before_response"]=array("count"=>1,"val"=>0);
+                        $sourceFaceData1["feature_statistics"]["silence_before_response"]=array("count"=>0,"val"=>0);
                     }
 
                 }
@@ -4039,7 +4121,7 @@ class FacialFeatureDetector
         return $theSumStat;
     }
 
-    public function countDeviationInSummarizedFeatureStatistics($theUnitStatArray,$theKeyOfUnitStat,$theAverKey,$theAverVal)
+    public function countDeviationInSummarizedFeatureStatistics($theUnitStatArray,$theKeyOfUnitStat,$theAverKey,$theCountKey,$theAverVal)
     {
 
         if (isset($theUnitStatArray) && is_array($theUnitStatArray) && isset($theKeyOfUnitStat) && isset($theAverVal) && isset($theAverKey))
@@ -4051,13 +4133,26 @@ class FacialFeatureDetector
 
             foreach ($theUnitStatArray as $unitStatistic)
             {
-                if (isset($unitStatistic[$theKeyOfUnitStat]))
+                if (isset($unitStatistic[$theKeyOfUnitStat])  )
                 {
 
+                    if (isset($theCountKey) && isset($unitStatistic[$theCountKey]))
+                    {
+                        if ($unitStatistic[$theCountKey]>0)
+                        {
+                            $curItemVal=$unitStatistic[$theKeyOfUnitStat][$theAverKey]-$theAverVal;
+                            $curDeviationVal+=$curItemVal*$curItemVal;
+                            $N++;
+                        }
+                    }
+                    else
+                    {
+                        $curItemVal=$unitStatistic[$theKeyOfUnitStat][$theAverKey]-$theAverVal;
+                        $curDeviationVal+=$curItemVal*$curItemVal;
+                        $N++;
+                    }
                   //  $data_array[]=$unitStatistic[$theKeyOfUnitStat];
-                    $curItemVal=$unitStatistic[$theKeyOfUnitStat][$theAverKey]-$theAverVal;
-                    $curDeviationVal+=$curItemVal*$curItemVal;
-                    $N++;
+
                 }
             }
 
@@ -4114,6 +4209,7 @@ class FacialFeatureDetector
                    return null;
                }
 
+               //суммируем занчения val и count, записываем их в общую стуктуру:
                $result=$this->updateSummarizedFeatureStatisticsByUnit($result,$unitStatistic,"average_speech_frequency","average_speech_frequency");
                $result=$this->updateSummarizedFeatureStatisticsByUnit($result,$unitStatistic,"average_eye_blinking_frequency","average_eye_blinking_frequency");
                $result=$this->updateSummarizedFeatureStatisticsByUnit($result,$unitStatistic,"average_lipcorners_lowering_frequency","average_lipcorners_lowering_frequency");
@@ -4153,14 +4249,24 @@ class FacialFeatureDetector
 
 
            $curAverKey="val";
-           $result["deviation_speech_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_speech_frequency",$curAverKey,$result["average_speech_frequency"][$curAverKey]));
-           $result["deviation_eye_blinking_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eye_blinking_frequency",$curAverKey,$result["average_eye_blinking_frequency"][$curAverKey]));
-            $result["deviation_eyebrow_lift_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eyebrow_lift_frequency",$curAverKey,$result["average_eyebrow_lift_frequency"][$curAverKey]));
-           $result["deviation_nose_movement_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_nose_movement_frequency",$curAverKey,$result["average_nose_movement_frequency"][$curAverKey]));
-           $result["deviation_frown_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_frown_frequency",$curAverKey,$result["average_frown_frequency"][$curAverKey]));
-           $result["deviation_silence_before_response"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"silence_before_response",$curAverKey,$result["average_silence_before_response"][$curAverKey]));
+           $curCountKey="count";
+           $result["deviation_speech_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_speech_frequency",$curAverKey,$curCountKey,$result["average_speech_frequency"][$curAverKey]));
+           $result["deviation_eye_blinking_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eye_blinking_frequency",$curAverKey,$curCountKey,$result["average_eye_blinking_frequency"][$curAverKey]));
+           $result["deviation_eyebrow_lift_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eyebrow_lift_frequency",$curAverKey,$curCountKey,$result["average_eyebrow_lift_frequency"][$curAverKey]));
+           $result["deviation_nose_movement_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_nose_movement_frequency",$curAverKey,$curCountKey,$result["average_nose_movement_frequency"][$curAverKey]));
+           $result["deviation_frown_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_frown_frequency",$curAverKey,$curCountKey,$result["average_frown_frequency"][$curAverKey]));
+           $result["deviation_silence_before_response"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"silence_before_response",$curAverKey,$curCountKey,$result["average_silence_before_response"][$curAverKey]));
 
+        /*   $curAverKey="val2";
+         //  $result["deviation_speech_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_speech_frequency",$curAverKey,$curCountKey,$result["average_speech_frequency"][$curAverKey]);
+           $result["deviation_eye_blinking_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eye_blinking_frequency",$curAverKey,$curCountKey,$result["average_eye_blinking_frequency"][$curAverKey]);
+           $result["deviation_eyebrow_lift_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eyebrow_lift_frequency",$curAverKey,$curCountKey,$result["average_eyebrow_lift_frequency"][$curAverKey]);
+           $result["deviation_nose_movement_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_nose_movement_frequency",$curAverKey,$curCountKey,$result["average_nose_movement_frequency"][$curAverKey]);
+           $result["deviation_frown_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_frown_frequency",$curAverKey,$curCountKey,$result["average_frown_frequency"][$curAverKey]);
+     //      $result["deviation_silence_before_response"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"silence_before_response",$curAverKey,$curCountKey,$result["average_silence_before_response"][$curAverKey]);
+*/
 
+           file_put_contents('/var/www/hr-robot-interface.com/public_html/components/SummarizedFeatureStatistics_resut.json', json_encode($result));
 
            return array("summarized_feature_statistics"=>$result);
        }
@@ -4204,6 +4310,35 @@ class FacialFeatureDetector
         return $sourceFaceData1;
     }
 
+
+
+    public function detectAdditionalEyeFeaturesWithA($sourceFaceData1,$FaceData_,$coefs_)
+    {
+
+        //учёт морагний по AU45
+        if (isset($FaceData_) && is_array($FaceData_)) {
+
+            if (!isset($sourceFaceData1["eye"])) return $sourceFaceData1;
+            if (!isset($sourceFaceData1["eye"]["right_eye_blink"])) $sourceFaceData1["eye"]["right_eye_blink"]=array();
+            if (!isset($sourceFaceData1["eye"]["left_eye_blink"])) $sourceFaceData1["eye"]["left_eye_blink"]=array();
+
+
+            for ($iFrame = 0; $iFrame < count($FaceData_); $iFrame++) {
+                if (isset($FaceData_[$iFrame]) && isset($FaceData_[$iFrame]["AUs"]) && isset($FaceData_[$iFrame]["AUs"]["AU45"]) &&
+                    isset($FaceData_[$iFrame]["AUs"]["AU45"]["intensity"]) && isset($FaceData_[$iFrame]["AUs"]["AU45"]["presence"])) {
+                    if ($FaceData_[$iFrame]["AUs"]["AU45"]["presence"] > 0 && $FaceData_[$iFrame]["AUs"]["AU45"]["intensity"] > 0.1) {
+
+                     $sourceFaceData1["eye"]["right_eye_blink"][$iFrame]["val"]="yes";
+                     $sourceFaceData1["eye"]["right_eye_blink"][$iFrame]["val"]="yes";
+
+                    }
+                }
+            }
+        }
+
+        return $sourceFaceData1;
+
+    }
 
     /**
      * Определение дополнительных проявлений, в частности
@@ -4787,7 +4922,7 @@ return $output;
     public function repairNormMask($sourceFaceData1,$FrameCount)
     {
 
-        $mask_data=array("mask_quality_statistics"=>array("bad_frames"=>array()));
+        $mask_data=array("mask_quality_statistics"=>array("bad_frames"=>array(),"frames"=>$FrameCount));
 
         //1. если отсутвуют точки маски
         if (isset($sourceFaceData1) && isset($FrameCount)) {
@@ -5118,7 +5253,9 @@ return $output;
     {
 
        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectFeaturesV3_Andr.json', $jsonA);
-       file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectFeaturesV3_Opt.json', json_encode($options));
+
+       //преоюразование данных Андрея
+        //+ информация об эмоциях в признаки
 
         // load data
             //patch for AJson
@@ -5132,6 +5269,7 @@ return $output;
             $json = str_ireplace('Infinity','99999',$json);
             $basicFrame = str_ireplace('Infinity','99999',$basicFrame);
 
+
         $FaceData_ = json_decode($json, true);
         if(Trim($basicFrame) != '') {
             if (strpos($json, 'NORM_POINTS') !== false) {//I format
@@ -5140,6 +5278,7 @@ return $output;
                 $FaceData_ = array_merge($ar_basicFrame, $FaceData_);//базовый станет нулевым при преобразовании во внутренний формат
             }
             else
+
                 array_unshift($FaceData_, json_decode($basicFrame,true));
         }
 
@@ -5160,16 +5299,19 @@ return $output;
         if (isset($FaceData_["FPS"]))
         {
             $FPS=$FaceData_["FPS"];
+            $options["FPS"]=$FPS;
         }
         $FrameCount=null;
         if (isset($FaceData_["FrameCount"]))
         {
             $FrameCount=$FaceData_["FrameCount"];
+            $options["FrameCount"]=$FrameCount;
         }
         $Duration=null;
         if (isset($FaceData_["Duration"]))
         {
             $Duration=$FaceData_["Duration"];
+            $options["Duration"]=$Duration;
         }
 
         $voiceActingTime=null;
@@ -5256,11 +5398,12 @@ return $output;
 
 
 
-
-           /* $repairNormMask_result= $this->repairNormMask($FaceData['normmask'],$FrameCount );
+///восстановление битых масок
+            $repairNormMask_result= $this->repairNormMask($FaceData['normmask'],$FrameCount );
+            file_put_contents('/var/www/hr-robot-interface.com/public_html/components/$repairNormMask_result.json', json_encode($repairNormMask_result));
 
             $mask_quality_statistics=$repairNormMask_result["mask_quality_statistics"];
-            $FaceData['normmask']=$repairNormMask_result["Data"];*/
+            $FaceData['normmask']=$repairNormMask_result["Data"];
 
 
             $FaceData['normmask'] = $this->stabilizating($FaceData['normmask'], 39, 42);
@@ -5369,20 +5512,34 @@ return $output;
         if (isset($FaceData['audiodata']))
         {
             //coefVoiceDetection
-            if (isset($FaceData_["BaseNoiseLevel"]))
+
+            $basicFrame0=json_decode($basicFrame,true);
+            if (isset($basicFrame0) && isset($basicFrame0["BaseNoiseLevel"]))
             {
-                $coefs["BaseNoiseLevel"]=$FaceData_["BaseNoiseLevel"];
+                $coefs["BaseNoiseLevel"]=$basicFrame0["BaseNoiseLevel"];
+                $options["BaseNoiseLevel"]=$basicFrame0["BaseNoiseLevel"];
             }
             else
             {
                 $coefs["BaseNoiseLevel"]=null;
             }
 
+
+               // $detectedFeatures =$this->processAudioByText($detectedFeatures, $FaceData["audiodata"], 'mouth',$textData, $FPS,$coefs);
+
+
+        $detectedFeatures = $this->processAudio($detectedFeatures,
+                    $FaceData["audiodata"], 'mouth',$coefs);
+            file_put_contents('/var/www/hr-robot-interface.com/public_html/components/processAudioDataBL.json', json_encode($detectedFeatures['mouth']["audio_db_val"]));
+
+            $coefs["BaseNoiseLevel"]=null;
             $detectedFeatures = $this->processAudio($detectedFeatures,
                 $FaceData["audiodata"], 'mouth',$coefs);
+
+            file_put_contents('/var/www/hr-robot-interface.com/public_html/components/processAudioData.json', json_encode($detectedFeatures['mouth']["audio_db_val"]));
         }
 
-
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectFeaturesV3_Opt.json', json_encode($options));
 
         //$options["Duration"]=$Duration;
         //$detectedFeatures["options"]=$options;
@@ -5394,6 +5551,21 @@ return $output;
             $detectedFeaturesWithTrends=$this->detectEyeClosedFeatures($detectedFeaturesWithTrends,$coefs);
 
         $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeatures($detectedFeaturesWithTrends,$coefs);
+
+        if (isset ($jsonA)) {
+            //конвератция данных модуля Андрея
+            //patch for AJson
+            if (strpos($jsonA, 'AUs') !== false) {
+                $jsonA = str_replace('{"AUs"', ',{"AUs"', $jsonA);
+                $jsonA = trim($jsonA, ',');
+                $jsonA = '[' . $jsonA . ']';
+            }
+            $FaceData_A = json_decode($jsonA, true);
+
+            $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeaturesWithA($detectedFeaturesWithTrends,$FaceData_A,$coefs);
+        }
+
+
         $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends, $coefs);
 
         $detectedFeaturesWithTrends = $this->detectFeatureStatistics($detectedFeaturesWithTrends,$FPS,$FrameCount,$Duration,$voiceActingTime);
@@ -5955,7 +6127,90 @@ return $output;
                             if (($k1 === 'right_eye_blink') || ($k1 === 'left_eye_blink') ||
                                 ($k1 === 'speaking')) {
                                 //---------------------------------------------------------------------------------------
-                                for ($i = 1; $i < count($v1); $i++) {
+                                for ($i = 0; $i < count($v1); $i++) {//было $i=1
+                                    //определение закрытие глаза, когда ширина равна 50%
+                                    if (isset($v1[$i]["val"]) && ($v1[$i]["val"] == 'yes')) {
+                                        //                                echo $i.'<br>';
+                                        if (isset($resSums[$i])) {
+                                            unset($resSums[$i]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+            reset($resSums); //получение первого элемента массива - номер первого экстремального фрейма
+
+            //сохраняем хоть какой-то результат
+            reset($resSums);   // Устанавливает внутренний указатель массива на его первый элемент
+            if (count($resSums)>0)   $indexOfFrame = key($resSums); //получение первого элемента массива - номер первого экстремального фрейма
+
+            //исключение экстремальных кадров с морганием
+            $resSums=$this->excludeSpeakingFromBasicFrames($targetFaceData,$resSums);
+            reset($resSums);
+            if (count($resSums)>0)   $indexOfFrame = key($resSums);
+
+            //исключение экстремальных кадров с говорением
+            $resSums=$this->excludeEyeBlinkFromBasicFrames($targetFaceData,$resSums);
+            reset($resSums);
+            if (count($resSums)>0)   $indexOfFrame = key($resSums);
+
+            //исключение кадров с наклоном носа больше 5 градусов по точкам 27 и 29
+            $resSums=$this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums,27,29,5);
+            reset($resSums);
+            if (count($resSums)>0)   $indexOfFrame = key($resSums);
+
+            //исключение кадров с наклоном носа больше 5 градусов по точкам 27 и 30
+            $resSums=$this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums,27,30,5);
+            reset($resSums);
+            if (count($resSums)>0)   $indexOfFrame = key($resSums);
+
+            //исключение кадров по данным МОВ
+            //в разработке (если вообще нужно)
+
+
+        }
+        return $indexOfFrame;
+    }
+
+    public function minimumDeviatedFrame0($sourceFaceData1,$targetFaceData,$basicPoints)
+    {
+        // поиск экстремальных кадров - кадров относительно которых максимальные отличия по базовым точкам
+        //базовые точки - э
+        //то точки описания глаз, рта, бровей
+        $resSums = array();
+        $indexOfFrame=null;
+
+        if (is_array($sourceFaceData1)) {
+            for ($i0 = 0; $i0 < count($sourceFaceData1) - 1; $i0++) {
+                $sumForAllFramesOfCurFrame = 0;
+                for ($i = 1; $i < count($sourceFaceData1); $i++) {
+                    $sumForCurFrame = 0;
+                    foreach ($basicPoints as $k1 => $v1) {
+                        if (isset($sourceFaceData1[$i][$v1])) {
+                            $sumForCurFrame += (abs($sourceFaceData1[$i][$v1]['X'] - $sourceFaceData1[$i0][$v1]['X']) +
+                                    abs($sourceFaceData1[$i][$v1]['Y'] - $sourceFaceData1[$i0][$v1]['Y'])) / 2;
+                        }
+                    }
+                    //                $resSums[$i0.'_'.$i] = $sumForCurFrame;
+                    $sumForAllFramesOfCurFrame += $sumForCurFrame;
+                }
+                $resSums[$i0] = $sumForAllFramesOfCurFrame;
+            }
+            asort($resSums);
+            //        print_r($resSums);
+
+            //исключение экстремальных кадров с морганием и говорением
+            if ($targetFaceData != null)
+                foreach ($targetFaceData as $k => $v) {
+                    if (($k === 'eye') || ($k === 'mouth')) {
+                        foreach ($v as $k1 => $v1) {
+                            if (($k1 === 'right_eye_blink') || ($k1 === 'left_eye_blink') ||
+                                ($k1 === 'speaking')) {
+                                //---------------------------------------------------------------------------------------
+                                for ($i = 0; $i < count($v1); $i++) {//было $i=1
                                     //определение закрытие глаза, когда ширина равна 50%
                                     if (isset($v1[$i]["val"]) && ($v1[$i]["val"] == 'yes')) {
                                         //                                echo $i.'<br>';
@@ -5976,51 +6231,136 @@ return $output;
 
     }
 
-
-    public function maximumDeviatedFrameIndex($sourceFaceData1,$targetFaceData,$basicPoints)
+    public function confirmBasicFramesByAU()
     {
-        // поиск экстремальных кадров - кадров относительно которых максимальные отличия по базовым точкам
-        //базовые точки - это точки описания глаз, рта, бровей
-        $resSums = array();
-        for ($i0 = 0; $i0 < count($sourceFaceData1)-1; $i0++) {
-            $sumForAllFramesOfCurFrame = 0;
-            for ($i = 1; $i < count($sourceFaceData1); $i++) {
-                $sumForCurFrame = 0;
-                foreach ($basicPoints as $k1 => $v1) {
-                    if (isset($sourceFaceData1[$i][$v1])) {
-                        $sumForCurFrame += (abs($sourceFaceData1[$i][$v1]['X'] -  $sourceFaceData1[$i0][$v1]['X'])+
-                                abs($sourceFaceData1[$i][$v1]['Y'] -  $sourceFaceData1[$i0][$v1]['Y']))/2;
-                    }
-                }
-                //                $resSums[$i0.'_'.$i] = $sumForCurFrame;
-                $sumForAllFramesOfCurFrame +=  $sumForCurFrame;
-            }
-            $resSums[$i0] = $sumForAllFramesOfCurFrame;
-        }
-        arsort($resSums);
-        //        print_r($resSums);
 
-        //исключение экстремальных кадров с морганием и говорением
-        if ($targetFaceData != null)
+    }
+
+    public function excludeEyeBlinkFromBasicFrames($targetFaceData,$theBasicFrames)
+    {
+        //исключение экстремальных кадров с морганием
+        if ($targetFaceData != null && isset($theBasicFrames) && is_array($theBasicFrames))
             foreach ($targetFaceData as $k=>$v) {
                 if (($k === 'eye') || ($k === 'mouth')) {
                     foreach ($v as $k1 => $v1) {
-                        if (($k1 === 'right_eye_blink') || ($k1 === 'left_eye_blink') ||
-                            ($k1 === 'speaking')) {
+                        if (($k1 === 'right_eye_blink') || ($k1 === 'left_eye_blink') ) {
                             //---------------------------------------------------------------------------------------
                             for ($i = 1; $i < count($v1); $i++) {
                                 //определение закрытие глаза, когда ширина равна 50%
                                 if (isset($v1[$i]["val"]) && ($v1[$i]["val"] == 'yes')) {
                                     //                                echo $i.'<br>';
-                                    if(isset($resSums[$i])){ unset($resSums[$i]);}
+                                    if(isset($theBasicFrames[$i])){ unset($theBasicFrames[$i]);}
                                 }
                             }
                         }
                     }
                 }}
 
-        reset($resSums); //получение первого элемента массива - номер первого экстремального фрейма
-        $indexOfFrame = key($resSums);
+        return $theBasicFrames;
+    }
+
+    public function excludeSpeakingFromBasicFrames($targetFaceData,$theBasicFrames)
+    {
+        //исключение экстремальных кадров с говорением
+        if ($targetFaceData != null && isset($theBasicFrames) && is_array($theBasicFrames))
+            foreach ($targetFaceData as $k=>$v) {
+                if (($k === 'eye') || ($k === 'mouth')) {
+                    foreach ($v as $k1 => $v1) {
+                        if ( ($k1 === 'speaking')) {
+                            //---------------------------------------------------------------------------------------
+                            for ($i = 1; $i < count($v1); $i++) {
+                                if (isset($v1[$i]["val"]) && ($v1[$i]["val"] == 'yes')) {
+                                    //                                echo $i.'<br>';
+                                    if(isset($theBasicFrames[$i])){ unset($theBasicFrames[$i]);}
+                                }
+                            }
+                        }
+                    }
+                }}
+        return $theBasicFrames;
+    }
+
+    public function excludeNoseTurnsFromBasicFrames($FaceData,$theBasicFrames,$upPoint,$downPoint,$level)
+    {
+
+         if (isset($FaceData) && isset($theBasicFrames) && isset($level)
+             && is_array($FaceData) && is_array($theBasicFrames))
+         {
+             foreach ($FaceData as $k1 => $v1)
+             {
+                 $deltaX_27_29=abs($v1[$upPoint]['X']-$v1[$downPoint]['X']);
+                 $deltaY_27_29=abs($v1[$downPoint]['Y']-$v1[$upPoint]['Y']);
+                 $v27_29=$deltaY_27_29*sqrt($deltaX_27_29*$deltaX_27_29+$deltaY_27_29*$deltaY_27_29);
+                 $v27_29=($deltaY_27_29*$deltaY_27_29)/$v27_29;
+                 $ugol27_29=round(acos($v27_29),3);
+
+                 if ($ugol27_29>$level)
+                 {
+                     if(isset($theBasicFrames[$k1])){ unset($theBasicFrames[$k1]);}
+                 }
+             }
+         }
+
+        return $theBasicFrames;
+    }
+
+
+
+
+    public function maximumDeviatedFrameIndex($sourceFaceData1,$targetFaceData,$basicPoints)
+    {
+        // поиск экстремальных кадров - кадров относительно которых максимальные отличия по базовым точкам
+        //базовые точки - это точки описания глаз, рта, бровей
+        $indexOfFrame = null;
+        $resSums = array();
+
+        if (is_array($sourceFaceData1)) {
+            for ($i0 = 0; $i0 < count($sourceFaceData1) - 1; $i0++) {
+                $sumForAllFramesOfCurFrame = 0;
+                for ($i = 1; $i < count($sourceFaceData1); $i++) {
+                    $sumForCurFrame = 0;
+                    foreach ($basicPoints as $k1 => $v1) {
+                        if (isset($sourceFaceData1[$i][$v1])) {
+                            $sumForCurFrame += (abs($sourceFaceData1[$i][$v1]['X'] - $sourceFaceData1[$i0][$v1]['X']) +
+                                    abs($sourceFaceData1[$i][$v1]['Y'] - $sourceFaceData1[$i0][$v1]['Y'])) / 2;
+                        }
+                    }
+                    //                $resSums[$i0.'_'.$i] = $sumForCurFrame;
+                    $sumForAllFramesOfCurFrame += $sumForCurFrame;
+                }
+                $resSums[$i0] = $sumForAllFramesOfCurFrame;
+            }
+            arsort($resSums);//Сортирует массив в обратном порядке, сохраняя ключи
+            //        print_r($resSums);
+
+            //сохраняем хоть какой-то результат
+            reset($resSums);   // Устанавливает внутренний указатель массива на его первый элемент
+            if (count($resSums) > 0) $indexOfFrame = key($resSums); //получение первого элемента массива - номер первого экстремального фрейма
+
+            //исключение экстремальных кадров с морганием
+            $resSums = $this->excludeSpeakingFromBasicFrames($targetFaceData, $resSums);
+            reset($resSums);
+            if (count($resSums) > 0) $indexOfFrame = key($resSums);
+
+            //исключение экстремальных кадров с говорением
+            $resSums = $this->excludeEyeBlinkFromBasicFrames($targetFaceData, $resSums);
+            reset($resSums);
+            if (count($resSums) > 0) $indexOfFrame = key($resSums);
+
+            //исключение кадров с наклоном носа по точкам 27 и 29
+            $resSums = $this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums, 27, 29, 5);
+            reset($resSums);
+            if (count($resSums) > 0) $indexOfFrame = key($resSums);
+
+            //исключение кадров с наклоном носа по точкам 27 и 30
+            $resSums = $this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums, 27, 30, 5);
+            reset($resSums);
+            if (count($resSums) > 0) $indexOfFrame = key($resSums);
+
+            //исключение кадров по данным МОВ
+            //в разработке (если вообще нужно)
+
+        }
 
         return $indexOfFrame;
     }
@@ -6029,13 +6369,14 @@ return $output;
     public function makeBasicFrameWithSmoothingAndRotating($theFaceData,$theFaceDataA,$options,$text)
     {
         file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Andr.json', $theFaceDataA);
-        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Opt.json', json_encode($options));
+
         file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Txt.json', json_encode($text));
 
         $configData=array();
 
         $configData["pointsFlag"]=$options["pointsFlag"];
         $configData["IsCalibrationData"]=1;
+        $configData["options"]=$options;
 
 
 
@@ -6058,17 +6399,23 @@ return $output;
 
         $configData["BasicFrameMethod"]="minimumDeviatedFrame";
 
-        $basicFrameDetectionResult =  $this->makeBasicFrame($theFaceData,$configData);
+        $basicFrameDetectionResult =  $this->makeBasicFrame($theFaceData,$configData,$text,$theFaceDataA);
+
+        $options["BaseIndex"]=$basicFrameDetectionResult["FrameIndex"];
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Opt.json', json_encode($options));
 
         if (isset($basicFrameDetectionResult["FrameSource"])==True)
         {
                 return    $basicFrameDetectionResult["FrameSource"];
         }
 
+
+
+
         return NULL;
 }
 
-    public function makeBasicFrame($json,$configs)
+    public function makeBasicFrame($json,$configs,$theText,$theDataA)
     {
        // $json - цифровая маска
         //$pointsFlag == 0 - без нормализации 'points'
@@ -6146,10 +6493,36 @@ return $output;
         $detectedFeatures['mouth'] = $this->detectMouthFeatures($FaceData[$curKey],'mouth',39,42,$coefs);
         $detectedFeatures['eyebrow'] = $this->detectEyeBrowFeatures($FaceData[$curKey],'eyebrow',39,42,$coefs);
 
-        if (isset($FaceData['audiodata']))  $detectedFeatures = $this->processAudio($detectedFeatures, $FaceData["audiodata"], 'mouth',$coefs);
+        $FPS=null;
+        if (isset($FaceData_["FPS"])) $FPS=$FaceData_["FPS"];
+
+        $BaseNoiseLevel=null;
+        if (isset($FaceData['audiodata']) && isset($configs["options"]) && isset($configs["options"]["voiceActingTime"]) && isset($FPS))
+        {
+            $BaseNoiseLevel=$this->detectBaseNoiseLevel($FaceData["audiodata"],$theText,round(round($configs["options"]["voiceActingTime"]/1000,3)),$FPS);
+            $detectedFeatures = $this->processAudio($detectedFeatures, $FaceData["audiodata"], 'mouth',$coefs);
+        }
+
+
 
         $detectedFeaturesWithTrends = $this->detectTrends($detectedFeatures,5);
         $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeatures($detectedFeaturesWithTrends,$coefs);
+
+
+        if (isset ($theDataA)) {
+            //конвератция данных модуля Андрея
+            //patch for AJson
+            if (strpos($theDataA, 'AUs') !== false) {
+                $theDataA = str_replace('{"AUs"', ',{"AUs"', $theDataA);
+                $theDataA = trim($theDataA, ',');
+                $theDataA = '[' . $theDataA . ']';
+            }
+            $FaceData_A = json_decode($theDataA, true);
+
+            $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeaturesWithA($detectedFeaturesWithTrends,$FaceData_A,$coefs);
+        }
+
+
         $detectedFeaturesWithTrends = $this->detectAdditionalMouthFeatures($detectedFeaturesWithTrends,$coefs);
 
         $arr = array(61,62, 63, 65, 66, 67, 36,37,38,39, 40, 41, 42, 43, 44, 45, 46,47, 31, 35, 19,24, 17, 21, 22, 26, 48, 54, 51, 57, 27, 28, 29);
@@ -6177,11 +6550,23 @@ return $output;
                 $res["FrameArray"]=$FaceData[$curKey][$res["FrameIndex"]];
                 $res["FrameSource"]=  json_encode($FaceData_[$res["FrameIndex"]]);
 
+                if (isset($BaseNoiseLevel))
+                {
+                    if(isset($FaceData_['frame_#'.$res["FrameIndex"]])) $FaceData_['frame_#'.$res["FrameIndex"]]["BaseNoiseLevel"]=$BaseNoiseLevel;
+                }
+
+                if(isset($FaceData_['frame_#'.$res["FrameIndex"]])) $res["FrameSource"]= json_encode($FaceData_['frame_#'.$res["FrameIndex"]]);
+
             }
             if ($configs["BasicFrameMethod"]=="minimumDeviatedFrame")
             {
                 $res["FrameIndex"] = $this->minimumDeviatedFrame($FaceData[$curKey], $detectedFeaturesWithTrends, $arr);
                 $res["FrameArray"]=$FaceData[$curKey][$res["FrameIndex"]];
+
+                if (isset($BaseNoiseLevel))
+                {
+                    if(isset($FaceData_['frame_#'.$res["FrameIndex"]])) $FaceData_['frame_#'.$res["FrameIndex"]]["BaseNoiseLevel"]=$BaseNoiseLevel;
+                }
 
                 if(isset($FaceData_['frame_#'.$res["FrameIndex"]])) $res["FrameSource"]= json_encode($FaceData_['frame_#'.$res["FrameIndex"]]);
 

@@ -5,15 +5,56 @@ namespace app\components\TextDetection;
 class TextFrequencyDetector
 {
 
-    public static function CountSpeechFrequencyByWords($theTextData,$AnswerTime)
+    //null - ошибка, проблемы и т.п.
+    //-1 - текста в указанный момент времени нет
+    //0,... - текст в указнное время есть и возварщается индекс элемента в массиве распознанных слов
+
+    public static function IsTextInTime($theTime, $theTextData,$theStartIndex)
+    {
+        if (isset($theTime) && isset($theTextData) && is_array($theTextData)  && $theTime>0)
+        {
+            $N=count($theTextData);
+            $startFrom=0;
+            if (isset($theStartIndex) && $theStartIndex>=0) $startFrom=$theStartIndex;
+
+            for ($i=$startFrom; $i<$N; $i++)
+            {
+                if (isset($theTextData[$i][1]) && isset($theTextData[$i][2]))
+                {
+                    $startTime=$theTextData[$i][1];
+                    $durationTime=$theTextData[$i][2];
+                    if ($theTime>$startTime && $theTime<$startTime+$durationTime)return $i;
+                }
+            }
+            return -1;
+        }
+        return null;
+    }
+
+
+
+    public static function CountSpeechFrequencyByWords($theTextData,$AnswerTime,$theStartIndex)
     {
 
         if (isset($theTextData) && is_array($theTextData) && isset($AnswerTime))
         {
 
             $WordsCount=count($theTextData);
+            if (isset($theStartIndex))
+            {
 
-            if ($WordsCount>0 && $AnswerTime>=0)
+                if ($theStartIndex>=0)
+                {
+                    $WordsCount-=$theStartIndex;
+                }
+                else{
+                    return null;
+                }
+
+            }
+
+
+            if ($WordsCount>0 && $AnswerTime>0)
             {
                 return (double)$WordsCount/$AnswerTime;
             }
@@ -61,6 +102,7 @@ class TextFrequencyDetector
                         if ($theTextData[$i][1]>$theOtherVoiceEndsAtSec) return $i;
                     }
                 }
+                return -1;
             }
         }
         return null;
