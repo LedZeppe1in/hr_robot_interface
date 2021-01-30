@@ -16,7 +16,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <div class="run-features-detection">
 
-    <h1>Результата для видеоинтервью: <?= Html::encode($this->title) ?></h1>
+    <h1>Результата для видеоинтервью №: <?= $model->id ?></h1>
 
     <pre><?php print_r($featureStatistics); ?></pre>
 

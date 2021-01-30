@@ -7,6 +7,7 @@ use stdClass;
 use Exception;
 use SoapClient;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 use yii\web\UploadedFile;
 use yii\web\NotFoundHttpException;
@@ -1087,21 +1088,27 @@ class VideoInterviewController extends Controller
      * Запуск обработки калибровочных вопросов видеоинтервью (для API).
      *
      * @param $id - идентификатор видеоинтервью
-     * @return \yii\console\Response|Response
+     * @return \yii\console\Response|Response|bool
      */
     public function actionRunCalibrationQuestionsProcessing($id)
     {
-        // Создание объекта AnalysisHelper
-        $analysisHelper = new AnalysisHelper();
-        // Запуск обработки видеоинтервью
-        $result = $analysisHelper->runCalibrationQuestionsProcessing($id);
-        // Установка формата JSON для возвращаемых данных
-        $response = Yii::$app->response;
-        $response->format = Response::FORMAT_JSON;
-        // Возвращение данных
-        $response->data = $result;
+        if (Yii::$app->getRequest()->getUserIP() == '84.201.129.65' ||
+            Yii::$app->getRequest()->getUserIP() == '10.128.0.24' ||
+            Yii::$app->getRequest()->getUserIP() == '127.0.0.1') {
+            // Создание объекта AnalysisHelper
+            $analysisHelper = new AnalysisHelper();
+            // Запуск обработки видеоинтервью
+            $result = $analysisHelper->runCalibrationQuestionsProcessing($id);
+            // Установка формата JSON для возвращаемых данных
+            $response = Yii::$app->response;
+            $response->format = Response::FORMAT_JSON;
+            // Возвращение данных
+            $response->data = $result;
 
-        return $response;
+            return $response;
+        }
+
+        throw new ForbiddenHttpException('Доступ запрещен.');
     }
 
     /**
@@ -1112,17 +1119,23 @@ class VideoInterviewController extends Controller
      */
     public function actionRunVideoInterviewProcessing($id)
     {
-        // Создание объекта AnalysisHelper
-        $analysisHelper = new AnalysisHelper();
-        // Запуск обработки видеоинтервью
-        list($videoInterviewInProgress, $calibrationQuestionExist) = $analysisHelper->runVideoInterviewProcessing($id);
-        // Установка формата JSON для возвращаемых данных
-        $response = Yii::$app->response;
-        $response->format = Response::FORMAT_JSON;
-        // Возвращение данных
-        $response->data = array($videoInterviewInProgress, $calibrationQuestionExist);
+        if (Yii::$app->getRequest()->getUserIP() == '84.201.129.65' ||
+            Yii::$app->getRequest()->getUserIP() == '10.128.0.24' ||
+            Yii::$app->getRequest()->getUserIP() == '127.0.0.1') {
+            // Создание объекта AnalysisHelper
+            $analysisHelper = new AnalysisHelper();
+            // Запуск обработки видеоинтервью
+            $result = $analysisHelper->runVideoInterviewProcessing($id);
+            // Установка формата JSON для возвращаемых данных
+            $response = Yii::$app->response;
+            $response->format = Response::FORMAT_JSON;
+            // Возвращение данных
+            $response->data = $result;
 
-        return $response;
+            return $response;
+        }
+
+        throw new ForbiddenHttpException('Доступ запрещен.');
     }
 
     /**

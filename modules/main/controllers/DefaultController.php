@@ -861,10 +861,14 @@ class DefaultController extends Controller
             $questionModel->videoFile = $videoFile;
             $questionModel->video_file_name = $questionModel->videoFile->baseName . '.' .
                 $questionModel->videoFile->extension;
-            $questionModel->description = 'Видео-интервью для профиля кассира.';
             $questionModel->video_interview_id = Yii::$app->request->post('Landmark')['video_interview_id'];
             $questionModel->test_question_id = $testQuestion->id;
             $questionModel->save();
+            // Поиск полного видеоинтервью по id
+            $videoInterview = VideoInterview::findOne($questionModel->video_interview_id);
+            // Обновление описания видео ответа на вопрос
+            $questionModel->description = $videoInterview->description;
+            $questionModel->updateAttributes(['description']);
             // Создание объекта коннектора с Yandex.Cloud Object Storage
             $osConnector = new OSConnector();
             // Сохранение файла видео ответа на вопрос на Object Storage
@@ -908,8 +912,6 @@ class DefaultController extends Controller
                 }
                 // Если текущий вопрос является калибровочным и он последний
                 if ($topicQuestion->topic_id == 25) {
-                    // Поиск полного видеоинтервью по id
-                    $videoInterview = VideoInterview::findOne($questionModel->video_interview_id);
                     // Ожидание завершения анализа видео по калибровочным вопросам
                     do {
                         // Задержка выполнения скрипта в 1 секунду
@@ -957,10 +959,12 @@ class DefaultController extends Controller
                                     list($fpsValue, $qualityVideo, $videoQualityParameters) = $analysisHelper->determineQuality($landmark);
                                 // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
                                 if ($topicQuestion->topic_id == 24)
-                                    $turnRight = $analysisHelper->determineTurn($landmark);
+                                    if (strripos($landmark->landmark_file_name, '_ext') !== false)
+                                        $turnRight = $analysisHelper->determineTurn($landmark);
                                 // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
                                 if ($topicQuestion->topic_id == 25)
-                                    $turnLeft = $analysisHelper->determineTurn($landmark);
+                                    if (strripos($landmark->landmark_file_name, '_ext') !== false)
+                                        $turnLeft = $analysisHelper->determineTurn($landmark);
                             }
                         } else
                             $successfullyFormedLandmark = false;

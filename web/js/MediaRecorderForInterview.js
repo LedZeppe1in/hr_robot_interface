@@ -327,17 +327,27 @@ function uploadCalibrationVideo() {
                 let finalText = document.getElementById("final-text");
                 finalText.textContent = "Спасибо за ожидание! К сожалению, Ваше видео плохого качества. Рекомендации к вашему видео:";
                 finalText.style.display = "inline-block";
-                // Отображение слоя с рекомендациями к видео
-                mainRecommendations.style.display = "inline-block";
-                // if (response.fpsValue < 20)
+                // if (response.fpsValue < 20) {
+                //     // Отображение слоя с рекомендациями к видео
+                //     mainRecommendations.style.display = "inline-block";
                 //     fpsRecommendation.style.display = "inline-block";
-                if (response.videoQualityParameters[4] < 2)
+                // }
+                if (response.videoQualityParameters[4] < 2) {
+                    // Отображение слоя с рекомендациями к видео
+                    mainRecommendations.style.display = "inline-block";
                     focusingRecommendation.style.display = "inline-block";
-                if (response.videoQualityParameters[0] < 15 && response.videoQualityParameters[1] > 2 &&
-                    response.videoQualityParameters[2] > 0.5)
+                }
+                if (response.videoQualityParameters[0] < 10 && response.videoQualityParameters[1] > 2 &&
+                    response.videoQualityParameters[2] > 0.5) {
+                    // Отображение слоя с рекомендациями к видео
+                    mainRecommendations.style.display = "inline-block";
                     illuminationRecommendation.style.display = "inline-block";
-                if (response.videoQualityParameters[3] > 7)
+                }
+                if (response.videoQualityParameters[3] > 25) {
+                    // Отображение слоя с рекомендациями к видео
+                    mainRecommendations.style.display = "inline-block";
                     cameraMovementsRecommendation.style.display = "inline-block";
+                }
             }
         }
         else
