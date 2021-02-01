@@ -445,7 +445,7 @@ class FacialFeatureDetector
                     $targetFaceData[$facePart]["left_eye_outer_movement"][$i]["val"] = 'none';
                 }
                 if ($rightEyeOuterCornerH < 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'up';
-                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
+                if ($rightEyeOuterCornerH > 0) $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'down';
                 if ($rightEyeOuterCornerH == 0) {
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["force"] = 0;
                     $targetFaceData[$facePart]["right_eye_outer_movement"][$i]["val"] = 'none';
