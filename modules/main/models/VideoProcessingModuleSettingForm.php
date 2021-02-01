@@ -57,6 +57,8 @@ class VideoProcessingModuleSettingForm extends Model
     const OPEN_MOUTH_EVENT      = 'OpenMouth';     // Рот открыт
     const HEAD_NOD_DOWN_EVENT   = 'HeadNodDown';   // Наклон назад
     const HEAD_NOD_UP_EVENT     = 'HeadNodUp';     // Наклон вперед
+    const HAS_NODDED_VERT       = 'HasNoddedVert'; // Кивание головой
+    const HAS_NODDED_HORZ       = 'HasNoddedHorz'; // Мотание головой
 
     public $rotateMode;               // Режим поворота изображения
     public $enableAutoRotate;         // Режим автоматического покадрового разворота головы
