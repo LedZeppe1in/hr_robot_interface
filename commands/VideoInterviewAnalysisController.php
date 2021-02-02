@@ -833,9 +833,10 @@ class VideoInterviewAnalysisController extends Controller
             ->where(['video_interview_id' => $videoInterview->id])
             ->one();
         // Обновление атрибута статуса и времени обработки видеоинтервью в БД
+        $videoInterviewProcessingStatus->updated_at = time();
         $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
         $videoInterviewProcessingStatus->all_runtime = null;
-        $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
+        $videoInterviewProcessingStatus->updateAttributes(['updated_at', 'status', 'all_runtime']);
 
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $videoInterview->id])->all();
@@ -851,18 +852,7 @@ class VideoInterviewAnalysisController extends Controller
             // Если есть видео ответ на калибровочный вопрос (27 - посмотрите в камеру)
             if (!empty($topicQuestion) && $topicQuestion->topic_id == 27) {
                 // Поиск цифровой маски по калибровочному вопросу, сформированной во время записи видеоинтервью
-                $landmark = Landmark::find()->where(['question_id' => $question->id])->one();
-                // Создание цифровой маски в БД
-                $landmarkModel = new Landmark();
-                $landmarkModel->start_time = Landmark::formatMilliseconds($landmark->start_time);
-                $landmarkModel->finish_time = Landmark::formatMilliseconds($landmark->finish_time);
-                $landmarkModel->type = $landmark->type;
-                $landmarkModel->rotation = $landmark->rotation;
-                $landmarkModel->mirroring = $landmark->mirroring;
-                $landmarkModel->question_id = $question->id;
-                $landmarkModel->video_interview_id = $videoInterview->id;
-                $landmarkModel->save();
-
+                $landmarkModel = Landmark::find()->where(['question_id' => $question->id])->one();
                 // Путь к программе обработки видео от Ивана
                 $mainPath = '/home/-Common/-ivan/';
                 // Путь к файлу видеоинтервью
@@ -910,7 +900,7 @@ class VideoInterviewAnalysisController extends Controller
                 $questionProcessingStatus = QuestionProcessingStatus::find()
                     ->where([
                         'video_interview_processing_status_id' => $videoInterviewProcessingStatus->id,
-                        'question_id', $question->id
+                        'question_id' => $question->id
                     ])
                     ->one();
                 // Если статус обработки для данного вопроса не существует
@@ -923,8 +913,15 @@ class VideoInterviewAnalysisController extends Controller
                     $questionProcessingStatus->save();
                 } else {
                     // Обновление статуса обработки вопроса для данного видео
+                    $questionProcessingStatus->updated_at = time();
                     $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_IVAN_VIDEO_PROCESSING_MODULE_IN_PROGRESS;
-                    $questionProcessingStatus->updateAttributes(['status']);
+                    $questionProcessingStatus->updateAttributes(['updated_at', 'status']);
+                    // Удаление всех сообщений для данного состояния процесса обработки вопроса
+                    $moduleMessages = ModuleMessage::find()
+                        ->where(['question_processing_status_id' => $questionProcessingStatus->id])
+                        ->all();
+                    foreach ($moduleMessages as $moduleMessage)
+                        $moduleMessage->delete();
                 }
                 // Время начала выполнения МОВ Ивана
                 $ivanVideoAnalysisStart = microtime(true);
@@ -948,15 +945,14 @@ class VideoInterviewAnalysisController extends Controller
                 $questionProcessingStatus->ivan_video_analysis_runtime = $ivanVideoAnalysisRuntime;
                 $questionProcessingStatus->updateAttributes(['ivan_video_analysis_runtime']);
 
+                // Обновление времени редактирования записи в БД
+                $landmarkModel->updated_at = time();
                 // Формирование названия json-файла с результатами обработки видео
                 $landmarkModel->landmark_file_name = $jsonResultFile;
                 // Формирование названия видео-файла с нанесенной цифровой маской
                 $landmarkModel->processed_video_file_name = $videoResultFile;
-                // Формирование описания цифровой маски
-                $landmarkModel->description = $videoInterview->description . ' (время нарезки: ' .
-                    $landmarkModel->getStartTime() . ' - ' . $landmarkModel->getFinishTime() . ')';
                 // Обновление атрибутов цифровой маски в БД
-                $landmarkModel->updateAttributes(['landmark_file_name', 'processed_video_file_name', 'description']);
+                $landmarkModel->updateAttributes(['updated_at', 'landmark_file_name', 'processed_video_file_name']);
                 // Проверка существования json-файл с результатами обработки видео
                 if (file_exists($jsonResultPath . $landmarkModel->landmark_file_name)) {
                     // Получение json-файла с результатами обработки видео в виде цифровой маски
@@ -1001,7 +997,7 @@ class VideoInterviewAnalysisController extends Controller
                         } else {
                             // Создание сообщения об ошибке определения базового кадра в БД
                             $moduleMessageModel = new ModuleMessage();
-                            $moduleMessageModel->message = 'МОП не смог сформировать базовый кадр!';
+                            $moduleMessageModel->message = 'МОП не смог сформировать базовый кадр! ' . $e->getMessage();;
                             $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
                             $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
                             $moduleMessageModel->save();
@@ -1037,7 +1033,7 @@ class VideoInterviewAnalysisController extends Controller
 
                 // Обновление атрибута статуса обработки вопроса в БД
                 $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_COMPLETED;
-                $questionProcessingStatus->updateAttributes(['status']);
+                $questionProcessingStatus->updateAttributes(['updated_at', 'status']);
 
                 // Если не сформирован json-файл или не был сформирован результат МОП или не был получен базовый кадр
                 if ($landmarkFileExists == false || $fdmResultFileExists == false || $baseFrame == null) {

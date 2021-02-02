@@ -1408,7 +1408,7 @@ class AnalysisHelper
                                         // Массив для хранения набора фактов признаков общего поведения
                                         $generalBehaviorFeatureFacts = array();
                                         // Обход событий
-                                        foreach ($value['EVENTS'] as $eventKey => $event)
+                                        foreach ($value['EVENTS'] as $eventKey => $event) {
                                             // Обход значений событий
                                             foreach ($value['EVENT_VALS'] as $eventValueKey => $eventValue)
                                                 if ($eventKey == $eventValueKey) {
@@ -1416,11 +1416,11 @@ class AnalysisHelper
                                                     if ($event == VideoProcessingModuleSettingForm::TILT_LEFT_EVENT) {
                                                         // Формирование факта о наклоне головы влево
                                                         $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Наклон головы влево';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
+                                                        $generalBehaviorFeatureFact->{'NameOfTemplate'} = 'T2046';
+                                                        $generalBehaviorFeatureFact->{'s908'} = 'Наклон головы влево';
+                                                        $generalBehaviorFeatureFact->{'s909'} = (int)$frame + 1;
+                                                        $generalBehaviorFeatureFact->{'s913'} = 'Голова';
+                                                        $generalBehaviorFeatureFact->{'s1011'} = $eventValue;
                                                         // Добавление факта о наклоне головы влево в
                                                         // массив фактов признаков общего поведения
                                                         array_push($generalBehaviorFeatureFacts,
@@ -1430,11 +1430,11 @@ class AnalysisHelper
                                                     if ($event == VideoProcessingModuleSettingForm::TILT_RIGHT_EVENT) {
                                                         // Формирование факта о наклоне головы вправо
                                                         $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Наклон головы вправо';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
+                                                        $generalBehaviorFeatureFact->{'NameOfTemplate'} = 'T2046';
+                                                        $generalBehaviorFeatureFact->{'s908'} = 'Наклон головы вправо';
+                                                        $generalBehaviorFeatureFact->{'s909'} = (int)$frame + 1;
+                                                        $generalBehaviorFeatureFact->{'s913'} = 'Голова';
+                                                        $generalBehaviorFeatureFact->{'s1011'} = $eventValue;
                                                         // Добавление факта о наклоне головы вправо в
                                                         // массив фактов признаков общего поведения
                                                         array_push($generalBehaviorFeatureFacts,
@@ -1444,11 +1444,11 @@ class AnalysisHelper
                                                     if ($event == VideoProcessingModuleSettingForm::TURN_LEFT_EVENT) {
                                                         // Формирование факта о повороте головы влево
                                                         $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Поворот головы влево';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
+                                                        $generalBehaviorFeatureFact->{'NameOfTemplate'} = 'T2046';
+                                                        $generalBehaviorFeatureFact->{'s908'} = 'Поворот головы влево';
+                                                        $generalBehaviorFeatureFact->{'s909'} = (int)$frame + 1;
+                                                        $generalBehaviorFeatureFact->{'s913'} = 'Голова';
+                                                        $generalBehaviorFeatureFact->{'s1011'} = $eventValue;
                                                         // Добавление факта о повороте головы влево в
                                                         // массив фактов признаков общего поведения
                                                         array_push($generalBehaviorFeatureFacts,
@@ -1458,11 +1458,11 @@ class AnalysisHelper
                                                     if ($event == VideoProcessingModuleSettingForm::TURN_RIGHT_EVENT) {
                                                         // Формирование факта о повороте головы вправо
                                                         $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Поворот головы вправо';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
+                                                        $generalBehaviorFeatureFact->{'NameOfTemplate'} = 'T2046';
+                                                        $generalBehaviorFeatureFact->{'s908'} = 'Поворот головы вправо';
+                                                        $generalBehaviorFeatureFact->{'s909'} = (int)$frame + 1;
+                                                        $generalBehaviorFeatureFact->{'s913'} = 'Голова';
+                                                        $generalBehaviorFeatureFact->{'s1011'} = $eventValue;
                                                         // Добавление факта о повороте головы вправо в
                                                         // массив фактов признаков общего поведения
                                                         array_push($generalBehaviorFeatureFacts,
@@ -1472,11 +1472,11 @@ class AnalysisHelper
                                                     if ($event == VideoProcessingModuleSettingForm::HEAD_NOD_DOWN_EVENT) {
                                                         // Формирование факта об опускании головы вниз
                                                         $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Опускание головы вниз';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
+                                                        $generalBehaviorFeatureFact->{'NameOfTemplate'} = 'T2046';
+                                                        $generalBehaviorFeatureFact->{'s908'} = 'Опускание головы вниз';
+                                                        $generalBehaviorFeatureFact->{'s909'} = (int)$frame + 1;
+                                                        $generalBehaviorFeatureFact->{'s913'} = 'Голова';
+                                                        $generalBehaviorFeatureFact->{'s1011'} = $eventValue;
                                                         // Добавление факта об опускании головы вниз в
                                                         // массив фактов признаков общего поведения
                                                         array_push($generalBehaviorFeatureFacts,
@@ -1486,51 +1486,50 @@ class AnalysisHelper
                                                     if ($event == VideoProcessingModuleSettingForm::HEAD_NOD_UP_EVENT) {
                                                         // Формирование факта о поднятии головы вверх
                                                         $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Поднятие головы вверх';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
+                                                        $generalBehaviorFeatureFact->{'NameOfTemplate'} = 'T2046';
+                                                        $generalBehaviorFeatureFact->{'s908'} = 'Поднятие головы вверх';
+                                                        $generalBehaviorFeatureFact->{'s909'} = (int)$frame + 1;
+                                                        $generalBehaviorFeatureFact->{'s913'} = 'Голова';
+                                                        $generalBehaviorFeatureFact->{'s1011'} = $eventValue;
                                                         // Добавление факта о поднятии головы вверх в
                                                         // массив фактов признаков общего поведения
                                                         array_push($generalBehaviorFeatureFacts,
                                                             $generalBehaviorFeatureFact);
                                                     }
-                                                    // Если есть событие кивка головы
-                                                    if (strripos($event, VideoProcessingModuleSettingForm::HAS_NODDED_VERT) !== false) {
-                                                        // Формирование факта о кивке головы
-                                                        $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Кивание головой';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
-                                                        $eventWithCertainty = explode(':', $event);
-                                                        if (isset($eventWithCertainty[1]))
-                                                            $generalBehaviorFeatureFact -> {'s1028'} = $eventWithCertainty[1];
-                                                        // Добавление факта о кивке головы в
-                                                        // массив фактов признаков общего поведения
-                                                        array_push($generalBehaviorFeatureFacts,
-                                                            $generalBehaviorFeatureFact);
-                                                    }
-                                                    // Если есть событие мотания головы
-                                                    if (strripos($event, VideoProcessingModuleSettingForm::HAS_NODDED_HORZ) !== false) {
-                                                        // Формирование факта о мотании головы
-                                                        $generalBehaviorFeatureFact = new stdClass;
-                                                        $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
-                                                        $generalBehaviorFeatureFact -> {'s908'} = 'Мотание головой';
-                                                        $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
-                                                        $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
-                                                        $generalBehaviorFeatureFact -> {'s1011'} = $eventValue;
-                                                        $eventWithCertainty = explode(':', $event);
-                                                        if (isset($eventWithCertainty[1]))
-                                                            $generalBehaviorFeatureFact -> {'s1028'} = $eventWithCertainty[1];
-                                                        // Добавление факта о мотании головы в
-                                                        // массив фактов признаков общего поведения
-                                                        array_push($generalBehaviorFeatureFacts,
-                                                            $generalBehaviorFeatureFact);
-                                                    }
                                                 }
+                                            // Если есть событие кивка головы
+                                            if (strripos($event, VideoProcessingModuleSettingForm::HAS_NODDED_VERT) !== false) {
+                                                // Формирование факта о кивке головы
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Кивание головой';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                $eventWithCertainty = explode(':', $event);
+                                                if (isset($eventWithCertainty[1]))
+                                                    $generalBehaviorFeatureFact -> {'s1028'} = $eventWithCertainty[1];
+                                                // Добавление факта о кивке головы в
+                                                // массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts,
+                                                    $generalBehaviorFeatureFact);
+                                            }
+                                            // Если есть событие мотания головы
+                                            if (strripos($event, VideoProcessingModuleSettingForm::HAS_NODDED_HORZ) !== false) {
+                                                // Формирование факта о мотании головы
+                                                $generalBehaviorFeatureFact = new stdClass;
+                                                $generalBehaviorFeatureFact -> {'NameOfTemplate'} = 'T2046';
+                                                $generalBehaviorFeatureFact -> {'s908'} = 'Мотание головой';
+                                                $generalBehaviorFeatureFact -> {'s909'} = (int)$frame + 1;
+                                                $generalBehaviorFeatureFact -> {'s913'} = 'Голова';
+                                                $eventWithCertainty = explode(':', $event);
+                                                if (isset($eventWithCertainty[1]))
+                                                    $generalBehaviorFeatureFact -> {'s1028'} = $eventWithCertainty[1];
+                                                // Добавление факта о мотании головы в
+                                                // массив фактов признаков общего поведения
+                                                array_push($generalBehaviorFeatureFacts,
+                                                    $generalBehaviorFeatureFact);
+                                            }
+                                        }
                                         // Добавление фактов признаков общего поведения в общий набор фактов для текущего кадра
                                         foreach ($generalBehaviorFeatureFacts as $generalBehaviorFeatureFact)
                                             array_push($updateFacts[$frameNumber], $generalBehaviorFeatureFact);
