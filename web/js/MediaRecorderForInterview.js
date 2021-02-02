@@ -326,6 +326,8 @@ function uploadCalibrationVideo() {
                 // Отображение слоя с текстом финальной фразы об ожидании результатов обработки
                 let finalText = document.getElementById("final-text");
                 finalText.textContent = "Спасибо за ожидание! К сожалению, Ваше видео плохого качества. Рекомендации к вашему видео:";
+                if (response.turnRight === null || response.turnLeft === null)
+                    finalText.textContent = "Спасибо за ожидание! К сожалению, Вы не повернули голову, дальнейшее прохождение интервью невозможно.";
                 finalText.style.display = "inline-block";
                 // if (response.fpsValue < 20) {
                 //     // Отображение слоя с рекомендациями к видео

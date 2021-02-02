@@ -87,6 +87,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 // Активация кнопки следующего вопроса
                 nextQuestionButton.disabled = false;
                 nextQuestionButton.innerText = "Следующий вопрос";
+                nextQuestionButton.classList.remove( "btn-default");
+                nextQuestionButton.classList.add( "btn-primary");
                 // Если текущий индекс вопроса указывает на последний калибровочный вопрос
                 if (questionIndex === 3) {
                     // Скрытие кнопки следующего вопроса
@@ -105,6 +107,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 // Деактивация кнопки следующего вопроса
                 nextQuestionButton.disabled = true;
                 nextQuestionButton.innerText = "Ожидание ответа...";
+                nextQuestionButton.classList.remove( "btn-primary");
+                nextQuestionButton.classList.add( "btn-default");
             }
         }, 1);
     }
@@ -258,6 +262,8 @@ $this->params['breadcrumbs'][] = $this->title;
             // Деактивация кнопки завершения настройки камеры
             finishCameraSetupButton.disabled = true;
             finishCameraSetupButton.innerText = "Ожидание ответа...";
+            finishCameraSetupButton.classList.remove( "btn-success");
+            finishCameraSetupButton.classList.add( "btn-default");
             // Обновление текста информации о ходе видеоинтервью
             answerTimeText.textContent = "Обработка калибровочных вопросов...";
             // Остановка таймера
