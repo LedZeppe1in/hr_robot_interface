@@ -2,6 +2,10 @@
 
 namespace app\commands;
 
+use app\modules\main\models\ProfileKnowledgeBase;
+use app\modules\main\models\ProfileSurvey;
+use app\modules\main\models\SurveyQuestion;
+use Yii;
 use stdClass;
 use Exception;
 use SoapClient;
@@ -10,12 +14,14 @@ use yii\console\Controller;
 use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
+use app\components\FacialFeatureDetector;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\FinalResult;
 use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\ModuleMessage;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\AnalysisResult;
 use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\QuestionProcessingStatus;
 use app\modules\main\models\VideoInterviewProcessingStatus;
@@ -35,7 +41,8 @@ class VideoInterviewAnalysisController extends Controller
         echo 'yii video-interview-analysis/preparation' . PHP_EOL;
         echo 'yii video-interview-analysis/start-full-video-analysis' . PHP_EOL;
         echo 'yii video-interview-analysis/start-base-frame-detection' . PHP_EOL;
-        echo 'yii video-interview-analysis/start-facial-feature-detection' . PHP_EOL;
+        echo 'yii video-interview-analysis/start-video-processing' . PHP_EOL;
+        echo 'yii video-interview-analysis/start-video-interview-analysis' . PHP_EOL;
     }
 
     /**
@@ -819,6 +826,8 @@ class VideoInterviewAnalysisController extends Controller
      * Команда запуска анализа видео ответа на калибровочный вопрос видеоинтервью и формирование базового кадра.
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
      */
     public function actionStartBaseFrameDetection($videoInterviewId)
     {
@@ -1073,6 +1082,43 @@ class VideoInterviewAnalysisController extends Controller
 
         // Если сформирован json-файл, получен результат МОП и получен базовый кадр
         if ($landmarkFileExists && $fdmResultFileExists && isset($baseFrame)) {
+            // Параметр наличия зеркаливания
+            $mirroring = 0;
+            // Параметры наличия поворота головы вправо и влево
+            $turnRight = null;
+            $turnLeft = null;
+            // Обход всех видео ответов на вопросы для данного видеоинтервью
+            foreach ($questions as $question) {
+                // Поиск цифровых масок по определенному вопросу
+                $landmarks = Landmark::find()
+                    ->where(['question_id' => $question->id])
+                    ->all();
+                // Если цифровые маски по данному вопросу сформированы
+                if (!empty($landmarks)) {
+                    foreach ($landmarks as $landmark) {
+                        // Поиск темы вопроса по id вопроса
+                        $topicQuestion = TopicQuestion::find()
+                            ->where(['test_question_id' => $question->test_question_id])
+                            ->one();
+                        // Создание объекта AnalysisHelper
+                        $analysisHelper = new AnalysisHelper();
+                        // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                        if ($topicQuestion->topic_id == 24)
+                            if (strripos($landmark->landmark_file_name, '_ext') !== false)
+                                $turnRight = $analysisHelper->determineTurn($landmark);
+                        // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                        if ($topicQuestion->topic_id == 25)
+                            if (strripos($landmark->landmark_file_name, '_ext') !== false)
+                                $turnLeft = $analysisHelper->determineTurn($landmark);
+                    }
+                }
+            }
+            // Если повороты определены
+            if ($turnRight != null && $turnLeft != null)
+                // Если заркаливание есть
+                if ($turnRight != AnalysisHelper::TURN_RIGHT && $turnLeft != AnalysisHelper::TURN_LEFT)
+                    $mirroring = 1;
+
             // Обход всех видео ответов на вопросы для данного видеоинтервью
             foreach ($questions as $question) {
                 // Поиск темы для вопроса - 27 (калибровочный для камеры)
@@ -1108,21 +1154,22 @@ class VideoInterviewAnalysisController extends Controller
                         // Создание объекта запуска консольной команды
                         $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
                         // Выполнение команды анализа видео ответа на вопрос в фоновом режиме (этапы МОВ и МОП)
-                        $consoleRunner->run('video-interview-analysis/start-facial-feature-detection ' .
-                            $question->id);
+                        $consoleRunner->run('video-interview-analysis/start-video-processing ' . $question->id .
+                            ' ' . $mirroring);
                     }
             }
         }
     }
 
     /**
-     * Команда запуска анализа видео ответа на вопрос.
+     * Команда запуска анализа видео ответа на вопрос (формирование цифровой маски).
      *
      * @param $questionId - идентификатор видео ответа на вопрос
+     * @param $mirroring - наличие зеркаливания
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
-    public function actionStartFacialFeatureDetection($questionId)
+    public function actionStartVideoProcessing($questionId, $mirroring)
     {
         // Поиск вопроса видеоинтервью по id
         $question = Question::findOne((int)$questionId);
@@ -1133,8 +1180,8 @@ class VideoInterviewAnalysisController extends Controller
         $landmarkModel->start_time = '00:00:00:000';
         $landmarkModel->finish_time = '12:00:00:000';
         $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
-        $landmarkModel->rotation = Landmark::TYPE_ZERO;             // TODO - надо вычислить поворот
-        $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE; // TODO - надо вычислить зеркаливание
+        $landmarkModel->rotation = Landmark::TYPE_ZERO; // TODO - надо вычислить поворот
+        $landmarkModel->mirroring = boolval($mirroring);
         $landmarkModel->question_id = $question->id;
         $landmarkModel->video_interview_id = $videoInterview->id;
         $landmarkModel->save();
@@ -1143,8 +1190,8 @@ class VideoInterviewAnalysisController extends Controller
         $additionalLandmarkModel->start_time = '00:00:00:000';
         $additionalLandmarkModel->finish_time = '12:00:00:000';
         $additionalLandmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
-        $additionalLandmarkModel->rotation = Landmark::TYPE_ZERO;             // TODO - надо вычислить поворот
-        $additionalLandmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE; // TODO - надо вычислить зеркаливание
+        $additionalLandmarkModel->rotation = Landmark::TYPE_ZERO; // TODO - надо вычислить поворот
+        $additionalLandmarkModel->mirroring = boolval($mirroring);
         $additionalLandmarkModel->description = 'Цифровая маска получена на основе цифровой маски №' .
             $landmarkModel->id;
         $additionalLandmarkModel->question_id = $question->id;
@@ -1383,8 +1430,8 @@ class VideoInterviewAnalysisController extends Controller
                 $landmarkModel->start_time = '00:00:00:000';
                 $landmarkModel->finish_time = '12:00:00:000';
                 $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
-                $landmarkModel->rotation = Landmark::TYPE_ZERO;             // TODO - надо вычислить поворот
-                $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE; // TODO - надо вычислить зеркаливание
+                $landmarkModel->rotation = Landmark::TYPE_ZERO; // TODO - надо вычислить поворот
+                $landmarkModel->mirroring = boolval($mirroring);
                 $landmarkModel->description = $videoInterview->description . ' (время нарезки: ' .
                     $landmarkModel->start_time . ' - ' . $landmarkModel->finish_time . ')';
                 $landmarkModel->question_id = $question->id;
@@ -1455,6 +1502,257 @@ class VideoInterviewAnalysisController extends Controller
             // Обновление атрибутов статуса обработки видеоинтервью в БД
             $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
             $videoInterviewProcessingStatus->updateAttributes(['status']);
+        }
+    }
+
+    /**
+     * Команда запуска определения и интерпретации признаков.
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     * @throws \SoapFault
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionStartVideoInterviewAnalysis($videoInterviewId)
+    {
+        // Поиск состояния обработки видеоинтервью по id
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => (int)$videoInterviewId])
+            ->one();
+        // Ожидание завершения обработки видеоинтервью (формирования цифровых масок)
+        do {
+            $processingFinished = True;
+            $questionProcessingStatuses = QuestionProcessingStatus::find()
+                ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                ->all();
+            foreach($questionProcessingStatuses as $questionProcessingStatus) {
+                if ($questionProcessingStatus->status !== QuestionProcessingStatus::STATUS_COMPLETED) {
+                    $processingFinished = False;
+                    break;
+                }
+            }
+            sleep(5);
+        } while ($processingFinished === False);
+
+        $detectionResultExist = false;
+        $analysisResultIds = array();
+        $errorMessages = '';
+        // Поиск всех видео ответов на вопросы для данного видеоинтервью
+        $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+        // Обход всех видео ответов на вопросы
+        foreach ($questions as $question) {
+            // Поиск темы вопроса
+            $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $question->test_question_id])->one();
+            // Если тема для вопроса найдена
+            if (!empty($topicQuestion)) {
+                // Если текущий вопрос не является калибровочным
+                if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27) {
+                    // Поиск цифровых масок полученных модулем Ивана для текущего вопроса видеоинтервью
+                    $landmarks = Landmark::find()->where([
+                        'question_id' => $question->id,
+                        'video_interview_id' => (int)$videoInterviewId,
+                        'type' => Landmark::TYPE_LANDMARK_IVAN_MODULE
+                    ])->all();
+                    // Если цифровые маски найдены
+                    if (!empty($landmarks))
+                        foreach ($landmarks as $landmark) {
+
+                            // Поиск результатов анализа для данной цифровой маски
+                            $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmark->id])->all();
+                            // Если результаты анализа для данной цифровой маски уже сформированы
+                            if (!empty($analysisResults)) {
+                                // Создание объекта AnalysisHelper
+                                $analysisHelper = new AnalysisHelper();
+                                // Удаление всех результатов анализа для данной цифровой маски на Object Storage
+                                $analysisHelper->deleteAnalysisResultsInObjectStorage($landmark->id);
+                                // Удаление всех результатов анализа для данной цифровой маски в БД
+                                foreach ($analysisResults as $analysisResult)
+                                    $analysisResult->delete();
+                            }
+
+                            // Если цифровая маска полученная не вторым скриптом Ивана
+                            if (strripos($landmark->landmark_file_name, '_ext') === false) {
+                                try {
+                                    // Создание объекта AnalysisHelper
+                                    $analysisHelper = new AnalysisHelper();
+                                    // Получение базового кадра для видеоинтервью из json-файла на сервере
+                                    $baseFrame = file_get_contents(Yii::$app->basePath .
+                                        '/web/base-frame-' . $videoInterviewId . '.json', true);
+                                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+                                    $analysisResultId = $analysisHelper->getAnalysisResult(
+                                        $landmark,
+                                        2, // Задание определения признаков по новому МОП
+                                        $baseFrame,
+                                        AnalysisHelper::NEW_FDM,
+                                        null
+                                    );
+                                    // Сохранение id полученного результата определения признаков в массиве
+                                    array_push($analysisResultIds, $analysisResultId);
+                                } catch (Exception $e) {
+                                    // Формирование текста с ошибкой работы МОП
+                                    $errorMessages .= 'Ошибка МОП на данных Ивана для ЦМ id = ' . $landmark->id .
+                                        ' Код ошибки: ' . $e->getMessage() . PHP_EOL;
+                                }
+                            }
+                        }
+                }
+            }
+        }
+        // Если нет ошибки при работе МОП
+        if ($errorMessages == '') {
+            // Массив всех статистик, сформированных по всем видео на вопросы
+            $featureStatistics = array();
+            // Создание объекта коннектора с Yandex.Cloud Object Storage
+            $osConnector = new OSConnector();
+            // Обход всех идентификаторов результатов анализа
+            foreach ($analysisResultIds as $analysisResultId) {
+                // Поиск результата анализа (определения признаков) по id
+                $analysisResult = AnalysisResult::findOne($analysisResultId);
+                // Получение содержимого json-файла с результатами определения признаков из Object Storage
+                $jsonAnalysisResultFile = $osConnector->getFileContentFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->detection_result_file_name
+                );
+                // Декодирование json-файла с результатами определения признаков
+                $analysisResultFile = json_decode($jsonAnalysisResultFile, true);
+                // Обход содержимого результатов определения признаков
+                foreach ($analysisResultFile as $key => $value)
+                    if ($key == 'feature_statistics')
+                        // Добавление текущей статистики в массив всех статистик по видео на вопрос
+                        array_push($featureStatistics, $value);
+            }
+            // Создание объекта обнаружения лицевых признаков
+            $facialFeatureDetector = new FacialFeatureDetector();
+            // Определение статистики по всем результатам определения признаков
+            $summarizedFeatureStatistics = $facialFeatureDetector->detectSummarizedFeatureStatistics($featureStatistics);
+            // Конвертация определенной статистики в набор фактов
+            $summarizedFeatureStatisticsFacts = AnalysisHelper::convertSummarizedFeatureStatistics($summarizedFeatureStatistics['summarized_feature_statistics']);
+            // Обход всех идентификаторов результатов анализа
+            foreach ($analysisResultIds as $analysisResultId) {
+                // Поиск результата анализа (определения признаков) по id
+                $analysisResult = AnalysisResult::findOne($analysisResultId);
+                // Получение содержимого json-файла с набором фактов из Object Storage
+                $jsonFacts = $osConnector->getFileContentFromObjectStorage(
+                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->facts_file_name
+                );
+                // Декодирование json-файла с набором фактов
+                $facts = json_decode($jsonFacts, true);
+                // Если результатом конвертации определенной статистики в набор фактов является массив,
+                // то формирование двух фактов и добавление их в общий набор в первый (0) кадр
+                if (is_array($summarizedFeatureStatisticsFacts))
+                    foreach ($summarizedFeatureStatisticsFacts as $summarizedFeatureStatisticsFact)
+                        array_push($facts[0], $summarizedFeatureStatisticsFact);
+                // Сохранение json-файла с измененным набор фактов на Object Storage
+                $osConnector->saveFileToObjectStorage(
+                    OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                    $analysisResult->id,
+                    $analysisResult->facts_file_name,
+                    $facts
+                );
+            }
+            $detectionResultExist = true;
+        }
+        // Если есть результаты определения признаков
+        if ($detectionResultExist) {
+            // Поиск всех видео ответов на вопросы для данного видеоинтервью
+            $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+            // Если есть видео ответы на вопросы
+            if (!empty($questions)) {
+                // Обход всех видео ответов на вопросы
+                foreach ($questions as $question) {
+                    // Поиск темы для вопроса
+                    $topicQuestion = TopicQuestion::find()
+                        ->where(['test_question_id' => $question->test_question_id])
+                        ->one();
+                    // Если тема для вопроса найдена
+                    if (!empty($topicQuestion)) {
+                        // Если вопрос не калибровочный (темы 24, 25 и 27)
+                        if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 &&
+                            $topicQuestion->topic_id != 27) {
+                            // Поиск связанной базы знаний с заданным профилем интервью
+                            $surveyQuestion = SurveyQuestion::find()
+                                ->where(['test_question_id' => $question->test_question_id])
+                                ->one();
+                            if (!empty($surveyQuestion)) {
+                                $profileSurvey = ProfileSurvey::find()
+                                    ->where(['survey_id' => $surveyQuestion->survey_id])
+                                    ->one();
+                                if (!empty($profileSurvey)) {
+                                    $profileKnowledgeBase = ProfileKnowledgeBase::find()
+                                        ->where(['profile_id' => $profileSurvey->profile_id])
+                                        ->one();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Если существует связь профиля с базами знаний по данному видеоинтервью
+            if (!empty($profileKnowledgeBase)) {
+                // Если задана база знаний для интерпретации первого уровня
+                if ($profileKnowledgeBase->first_level_knowledge_base_id != null) {
+                    // Массив идентификаторов результатов анализа
+                    $analysisResultIds = '';
+                    // Поиск всех цифровых масок для данного видеоинтервью
+                    $Landmarks = Landmark::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+                    // Обход всех найденных цифровых масок
+                    foreach ($Landmarks as $Landmark) {
+                        // Поиск всех результатов определения признаков для данной цифровой маски
+                        $analysisResults = AnalysisResult::find()->where(['landmark_id' => $Landmark->id])->all();
+                        // Обход всех результатов определения признаков
+                        foreach ($analysisResults as $analysisResult)
+                            if ($analysisResultIds == '')
+                                $analysisResultIds .= $analysisResult->id;
+                            else
+                                $analysisResultIds .= ',' . $analysisResult->id;
+                    }
+                    // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
+                    ini_set('default_socket_timeout', 60 * 30);
+                    $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                    $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                    $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
+                        $profileKnowledgeBase->first_level_knowledge_base_id;
+                    $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
+                    $idsOfInitialConditions = '[' . $analysisResultIds . ']';
+                    $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+                    $additionalDataToSend = new stdClass;
+                    $additionalDataToSend->{'IDOfFile'} = Null;
+                    $client->LaunchReasoningProcessForSetOfInitialConditions(array(
+                        'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                        'arg1' => $addressForInitialConditionsRetrieval,
+                        'arg2' => $idsOfInitialConditions,
+                        'arg3' => $addressToSendResults,
+                        'arg4' => 'ResultsOfReasoningProcess',
+                        'arg5' => 'IDOfFile',
+                        'arg6' => json_encode($additionalDataToSend)))->return;
+                    $client = Null;
+                }
+                // Если задана база знаний для интерпретации второго уровня
+                if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
+                    // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
+                    ini_set('default_socket_timeout', 60 * 30);
+                    $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                    $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                    $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
+                        $profileKnowledgeBase->second_level_knowledge_base_id;
+                    $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $id;
+                    $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+                    $additionalDataToSend = new stdClass;
+                    $additionalDataToSend->{'IDOfFile'} = $id;
+                    $additionalDataToSend->{'Type'} = 'Interpretation Level II';
+                    $client->LaunchReasoningProcessAndSendResultsToURL(array(
+                        'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                        'arg1' => $addressForInitialConditionsRetrieval,
+                        'arg2' => $addressToSendResults,
+                        'arg3' => 'ResultsOfReasoningProcess',
+                        'arg4' => json_encode($additionalDataToSend)))->return;
+                    $client = Null;
+                }
+            }
         }
     }
 

@@ -14,6 +14,7 @@ use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\data\ActiveDataProvider;
+use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\components\FacialFeatureDetector;
@@ -1125,12 +1126,19 @@ class VideoInterviewController extends Controller
             // Создание объекта AnalysisHelper
             $analysisHelper = new AnalysisHelper();
             // Запуск обработки видеоинтервью
-            $result = $analysisHelper->runVideoInterviewProcessing($id);
+            list($videoInterviewInProgress, $calibrationQuestionExist) = $analysisHelper->runVideoInterviewProcessing($id);
+            // Если видео-интервью не находится в обработке и существует калибровочный вопрос
+            if ($videoInterviewInProgress == false && $calibrationQuestionExist) {
+                // Создание объекта запуска консольной команды
+                $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                // Выполнение команды анализа видео-интервью в фоновом режиме
+                $consoleRunner->run('video-interview-analysis/start-video-interview-analysis ' . $id);
+            }
             // Установка формата JSON для возвращаемых данных
             $response = Yii::$app->response;
             $response->format = Response::FORMAT_JSON;
             // Возвращение данных
-            $response->data = $result;
+            $response->data = array($videoInterviewInProgress, $calibrationQuestionExist);
 
             return $response;
         }
