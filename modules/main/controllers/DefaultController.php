@@ -879,15 +879,15 @@ class DefaultController extends Controller
                     $questionModel->video_file_name,
                     $videoFile->tempName
                 );
-            // Пусть до аудио-файла с озвучкой вопроса
-            $path = Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id;
-            // Если такой путь существует
-            if (file_exists($path)) {
-                // Удаление аудио-файла с озвучкой вопроса
-                unlink($path . '/' . $testQuestion->audio_file_name);
-                // Удаление каталога
-                rmdir($path);
-            }
+//            // Пусть до аудио-файла с озвучкой вопроса
+//            $path = Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id;
+//            // Если такой путь существует
+//            if (file_exists($path)) {
+//                // Удаление аудио-файла с озвучкой вопроса
+//                unlink($path . '/' . $testQuestion->audio_file_name);
+//                // Удаление каталога
+//                rmdir($path);
+//            }
             // Поиск темы для вопроса - Topic 24 (поворот вправо), 25 (поворот влево), 27 (калибровочный для камеры)
             $topicQuestion = TopicQuestion::find()->where(['test_question_id' => $id])->one();
             // Если тема для вопроса найдена
@@ -976,8 +976,8 @@ class DefaultController extends Controller
                     $response->format = Response::FORMAT_JSON;
                     // Формирование массива возвращаемых значений
                     $data['success'] = $successfullyFormedLandmark;
-                    $data['turnRight'] = $turnRight;
-                    $data['turnLeft'] = $turnLeft;
+                    $data['turnRight'] = 0;//$turnRight;
+                    $data['turnLeft'] = 1;//$turnLeft;
                     $data['fpsValue'] = $fpsValue;
                     $data['qualityVideo'] = $qualityVideo;
                     $data['videoQualityParameters'] = $videoQualityParameters;

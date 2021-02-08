@@ -1086,7 +1086,7 @@ class VideoInterviewController extends Controller
     }
 
     /**
-     * Запуск обработки калибровочных вопросов видеоинтервью (для API).
+     * Запуск обработки калибровочных вопросов для видеоинтервью (для внешнего API).
      *
      * @param $id - идентификатор видеоинтервью
      * @return \yii\console\Response|Response|bool
@@ -1113,7 +1113,7 @@ class VideoInterviewController extends Controller
     }
 
     /**
-     * Запуск обработки обычных вопросов видеоинтервью (для API).
+     * Запуск обработки обычных вопросов для видеоинтервью (для внешнего API).
      *
      * @param $id - идентификатор видеоинтервью
      * @return \yii\console\Response|Response
@@ -1123,9 +1123,12 @@ class VideoInterviewController extends Controller
         if (Yii::$app->getRequest()->getUserIP() == '84.201.129.65' ||
             Yii::$app->getRequest()->getUserIP() == '10.128.0.24' ||
             Yii::$app->getRequest()->getUserIP() == '127.0.0.1') {
+            // Установка формата JSON для возвращаемых данных
+            $response = Yii::$app->response;
+            $response->format = Response::FORMAT_JSON;
             // Создание объекта AnalysisHelper
             $analysisHelper = new AnalysisHelper();
-            // Запуск обработки видеоинтервью
+            // Запуск обработки видеоинтервью средствами МОВ Ивана и Андрея
             list($videoInterviewInProgress, $calibrationQuestionExist) = $analysisHelper->runVideoInterviewProcessing($id);
             // Если видео-интервью не находится в обработке и существует калибровочный вопрос
             if ($videoInterviewInProgress == false && $calibrationQuestionExist) {
@@ -1133,12 +1136,15 @@ class VideoInterviewController extends Controller
                 $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
                 // Выполнение команды анализа видео-интервью в фоновом режиме
                 $consoleRunner->run('video-interview-analysis/start-video-interview-analysis ' . $id);
+                // Возвращение данных
+                $response->data = array(true, 'Анализ видео-интервью успешно запущен.');
             }
-            // Установка формата JSON для возвращаемых данных
-            $response = Yii::$app->response;
-            $response->format = Response::FORMAT_JSON;
-            // Возвращение данных
-            $response->data = array($videoInterviewInProgress, $calibrationQuestionExist);
+            // Если видео-интервью находится в обработке и существует калибровочный вопрос
+            if ($videoInterviewInProgress && $calibrationQuestionExist)
+                $response->data = array(false, 'Анализ данного видео-интервью уже запущен.');
+            // Если видео-интервью не находится в обработке и нет калибровочного вопроса
+            if ($videoInterviewInProgress == false && $calibrationQuestionExist == false)
+                $response->data = array(false, 'У данного видео-интервью отсутствует калибровочный вопрос.');
 
             return $response;
         }

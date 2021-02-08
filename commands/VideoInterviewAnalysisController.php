@@ -2,6 +2,7 @@
 
 namespace app\commands;
 
+use app\components\AnalysisHelperExperiment;
 use app\modules\main\models\ProfileKnowledgeBase;
 use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\SurveyQuestion;
@@ -844,7 +845,7 @@ class VideoInterviewAnalysisController extends Controller
         // Обновление атрибута статуса и времени обработки видеоинтервью в БД
         $videoInterviewProcessingStatus->updated_at = time();
         $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
-        $videoInterviewProcessingStatus->all_runtime = null;
+        $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingStart;
         $videoInterviewProcessingStatus->updateAttributes(['updated_at', 'status', 'all_runtime']);
 
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
@@ -862,6 +863,19 @@ class VideoInterviewAnalysisController extends Controller
             if (!empty($topicQuestion) && $topicQuestion->topic_id == 27) {
                 // Поиск цифровой маски по калибровочному вопросу, сформированной во время записи видеоинтервью
                 $landmarkModel = Landmark::find()->where(['question_id' => $question->id])->one();
+                // Если цифровой маски нет
+                if (empty($landmarkModel)) {
+                    // Создание цифровой маски в БД
+                    $landmarkModel = new Landmark();
+                    $landmarkModel->start_time = '00:00:00:000';
+                    $landmarkModel->finish_time = '12:00:00:000';
+                    $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                    $landmarkModel->rotation = Landmark::TYPE_ZERO;             // TODO - по-умолчанию нет поворота
+                    $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE; // TODO - по-умолчанию нет зеркаливания
+                    $landmarkModel->question_id = $question->id;
+                    $landmarkModel->video_interview_id = $videoInterview->id;
+                    $landmarkModel->save();
+                }
                 // Путь к программе обработки видео от Ивана
                 $mainPath = '/home/-Common/-ivan/';
                 // Путь к файлу видеоинтервью
@@ -1151,12 +1165,37 @@ class VideoInterviewAnalysisController extends Controller
                                 $landmark->delete();
                             }
 
-                        // Создание объекта запуска консольной команды
-                        $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
-                        // Выполнение команды анализа видео ответа на вопрос в фоновом режиме (этапы МОВ и МОП)
-                        $consoleRunner->run('video-interview-analysis/start-video-processing ' . $question->id .
-                            ' ' . $mirroring);
+//                        // Создание объекта запуска консольной команды
+//                        $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+//                        // Выполнение команды анализа видео ответа на вопрос в фоновом режиме (этапы МОВ и МОП)
+//                        $consoleRunner->run('video-interview-analysis/start-video-processing ' . $question->id .
+//                            ' ' . $mirroring);
+
+                        //
+                        $analysisHelperExperiment = new AnalysisHelperExperiment();
+                        $analysisHelperExperiment->startVideoProcessing($question->id, $mirroring);
                     }
+            }
+            //
+            $completed = true;
+            // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
+            $questionProcessingStatuses = QuestionProcessingStatus::find()
+                ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                ->all();
+            // Обход всех статусов обработки вопросов и определение завершенности каждого
+            foreach ($questionProcessingStatuses as $questionProcessingStatus)
+                if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
+                    $completed = false;
+            // Если анализ всех видео ответов на вопросы завершен
+            if ($completed) {
+                // Время окончания выполнения анализа видеоинтервью
+                $videoInterviewProcessingEnd = microtime(true);
+                // Вычисление времени выполнения анализа видеоинтервью
+                $videoInterviewProcessingRuntime = $videoInterviewProcessingEnd - $videoInterviewProcessingStatus->all_runtime;
+                // Обновление атрибутов статуса обработки видеоинтервью, полного времени анализа видеоинтервью в БД
+                $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingRuntime;
+                $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
+                $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
             }
         }
     }
@@ -1426,7 +1465,7 @@ class VideoInterviewAnalysisController extends Controller
             if (file_exists($jsonAndrewResultPath . $jsonFileName . '.json')) {
                 // Создание цифровой маски в БД
                 $landmarkModel = new Landmark();
-                $landmarkModel->landmark_file_name = $videoResultFile;
+                $landmarkModel->landmark_file_name = $jsonResultFile;
                 $landmarkModel->start_time = '00:00:00:000';
                 $landmarkModel->finish_time = '12:00:00:000';
                 $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
@@ -1454,7 +1493,7 @@ class VideoInterviewAnalysisController extends Controller
             // Создание сообщения об ошибке МОВ Андрея в БД
             $moduleMessageModel = new ModuleMessage();
             $moduleMessageModel->message = 'Ошибка модуля обработки видео Андрея! ' . $e->getMessage();
-            $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+            $moduleMessageModel->module_name = ModuleMessage::ANDREY_VIDEO_PROCESSING_MODULE;
             $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
             $moduleMessageModel->save();
         }
@@ -1499,9 +1538,14 @@ class VideoInterviewAnalysisController extends Controller
                 $completed = false;
         // Если анализ всех видео ответов на вопросы завершен
         if ($completed) {
-            // Обновление атрибутов статуса обработки видеоинтервью в БД
+            // Время окончания выполнения анализа видеоинтервью
+            $videoInterviewProcessingEnd = microtime(true);
+            // Вычисление времени выполнения анализа видеоинтервью
+            $videoInterviewProcessingRuntime = $videoInterviewProcessingEnd - $videoInterviewProcessingStatus->all_runtime;
+            // Обновление атрибутов статуса обработки видеоинтервью, полного времени анализа видеоинтервью в БД
+            $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingRuntime;
             $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
-            $videoInterviewProcessingStatus->updateAttributes(['status']);
+            $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
         }
     }
 
@@ -1515,28 +1559,30 @@ class VideoInterviewAnalysisController extends Controller
      */
     public function actionStartVideoInterviewAnalysis($videoInterviewId)
     {
-        // Поиск состояния обработки видеоинтервью по id
+        // Ожидание завершения обработки всех видео по обычным вопросам
+        do {
+            // Задержка выполнения скрипта в 5 секунд
+            sleep(5);
+            // Поиск статуса обработки видеоинтервью по id видеоинтервью
+            $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                ->where(['video_interview_id' => (int)$videoInterviewId])
+                ->one();
+        } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
+
+        // Время начала выполнения анализа видеоинтервью
+        $videoInterviewProcessingStart = microtime(true);
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
         $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
             ->where(['video_interview_id' => (int)$videoInterviewId])
             ->one();
-        // Ожидание завершения обработки видеоинтервью (формирования цифровых масок)
-        do {
-            $processingFinished = True;
-            $questionProcessingStatuses = QuestionProcessingStatus::find()
-                ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
-                ->all();
-            foreach($questionProcessingStatuses as $questionProcessingStatus) {
-                if ($questionProcessingStatus->status !== QuestionProcessingStatus::STATUS_COMPLETED) {
-                    $processingFinished = False;
-                    break;
-                }
-            }
-            sleep(5);
-        } while ($processingFinished === False);
+        // Обновление атрибута статуса и времени обработки видеоинтервью в БД
+        $videoInterviewProcessingStatus->updated_at = time();
+        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
+        $videoInterviewProcessingStatus->updateAttributes(['updated_at', 'status']);
 
         $detectionResultExist = false;
         $analysisResultIds = array();
-        $errorMessages = '';
+        $errorExist = false;
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
         // Обход всех видео ответов на вопросы
@@ -1572,6 +1618,16 @@ class VideoInterviewAnalysisController extends Controller
 
                             // Если цифровая маска полученная не вторым скриптом Ивана
                             if (strripos($landmark->landmark_file_name, '_ext') === false) {
+                                // Время начала выполнения МОП
+                                $featuresDetectionStart = microtime(true);
+                                // Обновление атрибута статуса обработки вопроса в БД
+                                $questionProcessingStatus = QuestionProcessingStatus::find()
+                                    ->where([
+                                        'video_interview_processing_status_id' => $videoInterviewProcessingStatus->id,
+                                        'question_id' => $question->id])
+                                    ->one();
+                                $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
+                                $questionProcessingStatus->updateAttributes(['status']);
                                 try {
                                     // Создание объекта AnalysisHelper
                                     $analysisHelper = new AnalysisHelper();
@@ -1589,17 +1645,30 @@ class VideoInterviewAnalysisController extends Controller
                                     // Сохранение id полученного результата определения признаков в массиве
                                     array_push($analysisResultIds, $analysisResultId);
                                 } catch (Exception $e) {
-                                    // Формирование текста с ошибкой работы МОП
-                                    $errorMessages .= 'Ошибка МОП на данных Ивана для ЦМ id = ' . $landmark->id .
-                                        ' Код ошибки: ' . $e->getMessage() . PHP_EOL;
+                                    $errorExist = true;
+                                    // Создание сообщения об ошибке МОП в БД
+                                    $moduleMessageModel = new ModuleMessage();
+                                    $moduleMessageModel->message = 'Ошибка МОП на данных Ивана для ЦМ id = ' .
+                                        $landmark->id . ' Текст ошибки: ' . $e->getMessage();
+                                    $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+                                    $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
+                                    $moduleMessageModel->save();
                                 }
+                                // Время окончания выполнения МОП
+                                $featuresDetectionEnd = microtime(true);
+                                // Вычисление времени выполнения МОП
+                                $featuresDetectionRuntime = $featuresDetectionEnd - $featuresDetectionStart;
+                                // Обновление атрибута времени и статуса выполнения МОП в БД
+                                $questionProcessingStatus->feature_detection_runtime = $featuresDetectionRuntime;
+                                $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_COMPLETED;
+                                $questionProcessingStatus->updateAttributes(['feature_detection_runtime', 'status']);
                             }
                         }
                 }
             }
         }
         // Если нет ошибки при работе МОП
-        if ($errorMessages == '') {
+        if ($errorExist == false) {
             // Массив всех статистик, сформированных по всем видео на вопросы
             $featureStatistics = array();
             // Создание объекта коннектора с Yandex.Cloud Object Storage
@@ -1733,16 +1802,19 @@ class VideoInterviewAnalysisController extends Controller
                 }
                 // Если задана база знаний для интерпретации второго уровня
                 if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
+                    // Обновление атрибутов статуса обработки видеоинтервью в БД
+                    $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_FINAL_RESULT_FORMATION;
+                    $videoInterviewProcessingStatus->updateAttributes(['status']);
                     // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
                     ini_set('default_socket_timeout', 60 * 30);
                     $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                     $client = new SoapClient($addressOfRBRWebServiceDefinition);
                     $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
                         $profileKnowledgeBase->second_level_knowledge_base_id;
-                    $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $id;
+                    $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $videoInterviewId;
                     $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
                     $additionalDataToSend = new stdClass;
-                    $additionalDataToSend->{'IDOfFile'} = $id;
+                    $additionalDataToSend->{'IDOfFile'} = (int)$videoInterviewId;
                     $additionalDataToSend->{'Type'} = 'Interpretation Level II';
                     $client->LaunchReasoningProcessAndSendResultsToURL(array(
                         'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
@@ -1754,6 +1826,15 @@ class VideoInterviewAnalysisController extends Controller
                 }
             }
         }
+        // Время окончания выполнения анализа видеоинтервью
+        $videoInterviewProcessingEnd = microtime(true);
+        // Вычисление времени выполнения анализа видеоинтервью
+        $videoInterviewProcessingRuntime = $videoInterviewProcessingEnd - $videoInterviewProcessingStart;
+        // Обновление атрибутов статуса обработки видеоинтервью, полного времени анализа видеоинтервью в БД
+        $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingStatus->all_runtime +
+            $videoInterviewProcessingRuntime;
+        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
+        $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
     }
 
     /**
