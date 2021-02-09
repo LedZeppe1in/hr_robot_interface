@@ -28,14 +28,42 @@ class UserController extends Controller
         // Создание пользователя администратора в БД
         $model = new User();
         $model->username = 'admin';
-        $model->setPassword('admin');
+        $model->setPassword('admin098123');
         $model->role = User::ROLE_ADMINISTRATOR;
         $model->status = User::STATUS_ACTIVE;
         $this->log($model->save());
-        // Создание пользователя психолога в БД
+        // Создание первого пользователя психолога в БД
         $model = new User();
         $model->username = 'psycho';
-        $model->setPassword('psycho');
+        $model->setPassword('psycho_12345');
+        $model->role = User::ROLE_PSYCHOLOGIST;
+        $model->status = User::STATUS_ACTIVE;
+        $this->log($model->save());
+        // Создание второго пользователя психолога в БД
+        $model = new User();
+        $model->username = 'psycho2';
+        $model->setPassword('psycho2_45835');
+        $model->role = User::ROLE_PSYCHOLOGIST;
+        $model->status = User::STATUS_ACTIVE;
+        $this->log($model->save());
+        // Создание третьего пользователя психолога в БД
+        $model = new User();
+        $model->username = 'psycho3';
+        $model->setPassword('psycho3_09857');
+        $model->role = User::ROLE_PSYCHOLOGIST;
+        $model->status = User::STATUS_ACTIVE;
+        $this->log($model->save());
+        // Создание четвертого пользователя психолога в БД
+        $model = new User();
+        $model->username = 'psycho4';
+        $model->setPassword('psycho4_38563');
+        $model->role = User::ROLE_PSYCHOLOGIST;
+        $model->status = User::STATUS_ACTIVE;
+        $this->log($model->save());
+        // Создание пятого пользователя психолога в БД
+        $model = new User();
+        $model->username = 'psycho5';
+        $model->setPassword('psycho5_55992');
         $model->role = User::ROLE_PSYCHOLOGIST;
         $model->status = User::STATUS_ACTIVE;
         $this->log($model->save());
