@@ -2,11 +2,6 @@
 
 namespace app\commands;
 
-use app\components\AnalysisHelperExperiment;
-use app\modules\main\models\CalibrationConclusion;
-use app\modules\main\models\ProfileKnowledgeBase;
-use app\modules\main\models\ProfileSurvey;
-use app\modules\main\models\SurveyQuestion;
 use Yii;
 use stdClass;
 use Exception;
@@ -17,14 +12,18 @@ use vova07\console\ConsoleRunner;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\components\FacialFeatureDetector;
+use app\components\AnalysisHelperExperiment;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
 use app\modules\main\models\FinalResult;
 use app\modules\main\models\TopicQuestion;
 use app\modules\main\models\ModuleMessage;
+use app\modules\main\models\ProfileSurvey;
+use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\AnalysisResult;
-use app\modules\main\models\FinalConclusion;
+use app\modules\main\models\ProfileKnowledgeBase;
+use app\modules\main\models\CalibrationConclusion;
 use app\modules\main\models\QuestionProcessingStatus;
 use app\modules\main\models\VideoInterviewProcessingStatus;
 use app\modules\main\models\VideoProcessingModuleSettingForm;

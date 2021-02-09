@@ -12,6 +12,7 @@ use yii\bootstrap\Button;
 /* @var $questionMaximumTimes app\modules\main\controllers\DefaultController */
 /* @var $questionTimes app\modules\main\controllers\DefaultController */
 /* @var $questionAudioFilePaths app\modules\main\controllers\DefaultController */
+/* @var $respondent app\modules\main\models\Respondent */
 
 $this->title = 'Запись интервью';
 $this->params['breadcrumbs'][] = $this->title;
@@ -65,6 +66,8 @@ $this->params['breadcrumbs'][] = $this->title;
     let questionTimes = [<?php echo '"' . implode('","', $questionTimes) . '"' ?>];
     // Массив с путями до аудио-файлов с озвучкой вопросов
     let questionAudioFilePaths = [<?php echo '"' . implode('","', $questionAudioFilePaths) . '"' ?>];
+    // Код респондента
+    let respondentCode = '<?= $respondent->name ?>';
 
     console.log(questionIds);
     console.log(questionTexts);

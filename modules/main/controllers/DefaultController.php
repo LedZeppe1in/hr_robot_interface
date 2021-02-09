@@ -655,19 +655,32 @@ class DefaultController extends Controller
         $profile = Profile::findOne($profileSurvey->profile_id);
         // Поиск респондента по id
         $mainRespondent = MainRespondent::findOne(1); // id респондента
+
         // Создание нового респондента (уникальной записи прохождения интервью респондентом)
-        $respondent = new Respondent();
-        $respondent->name = 'test' . mt_rand(5, 15);
-        $respondent->main_respondent_id = $mainRespondent->id;
-        $respondent->save();
+        require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
+        $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
+        if (isset($result[1])) {
+            $respondent = Respondent::findOne($result[1]);
+            if (empty($respondent)) {
+                // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                $respondent = new Respondent();
+                $respondent->name = 'test' . mt_rand(10, 15);
+                $respondent->main_respondent_id = $mainRespondent->id;
+                $respondent->save();
+            }
+        } else {
+            // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+            $respondent = new Respondent();
+            $respondent->name = 'test' . mt_rand(10, 15);
+            $respondent->main_respondent_id = $mainRespondent->id;
+            $respondent->save();
+        }
+
         // Создание модели видеоинтервью
         $videoInterviewModel = new VideoInterview();
         $videoInterviewModel->description = 'Видео-интервью для профиля: ' . $profile->name;
         $videoInterviewModel->respondent_id = $respondent->id;
         $videoInterviewModel->save();
-        // Формирование и сохранение в БД уникального имени респондента
-        $respondent->name = 'Иван Иванович-' . $videoInterviewModel->id;
-        $respondent->updateAttributes(['name']);
         // Создание модели итогового результата
         $finalResultModel = new FinalResult();
         $finalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
@@ -807,6 +820,7 @@ class DefaultController extends Controller
                 'questionMaximumTimes' => $questionMaximumTimes,
                 'questionTimes' => $questionTimes,
                 'questionAudioFilePaths' => $questionAudioFilePaths,
+                'respondent' => $respondent,
             ]);
         }
 
@@ -853,6 +867,10 @@ class DefaultController extends Controller
         set_time_limit(60 * 200);
         // Если пришел POST-запрос
         if (Yii::$app->request->isPost) {
+
+            require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
+            \TCommonData::SaveDebugInformation('QuestionIdAndAddressIP', $id . Yii::$app->getRequest()->getUserIP());
+
             // Поиск вопроса опроса по id
             $testQuestion = TestQuestion::findOne($id);
             // Создание модели вопроса видео-интервью

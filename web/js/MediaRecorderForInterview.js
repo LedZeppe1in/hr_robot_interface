@@ -212,7 +212,7 @@ function upload() {
       console.log("Успех");
       // Отображение финальной фразы
       let finalText = document.getElementById("final-text");
-      finalText.textContent = "Спасибо, Ваши ответы приняты!";
+      finalText.textContent = "Спасибо, Ваши ответы приняты! Ваш код: " + respondentCode;
      }
     else
      {

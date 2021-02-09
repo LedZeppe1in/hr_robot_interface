@@ -2,8 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\CalibrationConclusion;
-use app\modules\main\models\VideoInterviewProcessingStatus;
 use Yii;
 use stdClass;
 use Exception;
@@ -29,6 +27,8 @@ use app\modules\main\models\VideoInterview;
 use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\ProfileKnowledgeBase;
+use app\modules\main\models\CalibrationConclusion;
+use app\modules\main\models\VideoInterviewProcessingStatus;
 use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
