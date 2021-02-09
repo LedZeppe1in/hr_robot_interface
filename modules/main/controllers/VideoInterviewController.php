@@ -2,6 +2,8 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\CalibrationConclusion;
+use app\modules\main\models\VideoInterviewProcessingStatus;
 use Yii;
 use stdClass;
 use Exception;
@@ -1145,6 +1147,87 @@ class VideoInterviewController extends Controller
             // Если видео-интервью не находится в обработке и нет калибровочного вопроса
             if ($videoInterviewInProgress == false && $calibrationQuestionExist == false)
                 $response->data = array(false, 'У данного видео-интервью отсутствует калибровочный вопрос.');
+
+            return $response;
+        }
+
+        throw new ForbiddenHttpException('Доступ запрещен.');
+    }
+
+    /**
+     * Запуск обработки калибровочных вопросов для видеоинтервью (для чат-бота).
+     *
+     * @param $id - идентификатор видеоинтервью
+     * @return \yii\console\Response|Response|bool
+     */
+    public function actionRunCalibrationQuestionsProcessingForChatBot($id)
+    {
+        if (Yii::$app->getRequest()->getUserIP() == '84.201.129.65' ||
+            Yii::$app->getRequest()->getUserIP() == '10.128.0.24' ||
+            Yii::$app->getRequest()->getUserIP() == '127.0.0.1') {
+            // Поиск итогового заключения по данному видеоинтервью
+            $finalResult = FinalResult::find()->where(['video_interview_id' => $id])->one();
+            // Если итоговое заключение существует
+            if (!empty($finalResult)) {
+                // Поиск результатов обработки калибровочных вопросов
+                $calibrationConclusion = CalibrationConclusion::findOne($finalResult->id);
+                // Если результаты обработки калибровочных вопросов для данного видеоинтервью уже созданы
+                if (!empty($calibrationConclusion)) {
+                    // Обновление записи о результатах обработки калибровочных вопросов в БД
+                    $calibrationConclusion->text = 'empty';
+                    $calibrationConclusion->updateAttributes(['text']);
+                } else {
+                    // Создание записи о результатах обработки калибровочных вопросов в БД
+                    $calibrationConclusionModel = new CalibrationConclusion();
+                    $calibrationConclusionModel->id = $finalResult->id;
+                    $calibrationConclusionModel->text = 'empty';
+                    $calibrationConclusionModel->save();
+                }
+            }
+            // Установка формата JSON для возвращаемых данных
+            $response = Yii::$app->response;
+            $response->format = Response::FORMAT_JSON;
+            // Поиск статуса обработки видеоинтервью по id видеоинтервью
+            $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                ->where(['video_interview_id' => $id])
+                ->one();
+            // Если данное видеоинтервью не находится в обработке
+            if (empty($videoInterviewProcessingStatus) ||
+                $videoInterviewProcessingStatus->status != VideoInterviewProcessingStatus::STATUS_IN_PROGRESS) {
+                // Поиск всех видео ответов на вопросы для данного видеоинтервью
+                $questions = Question::find()->where(['video_interview_id' => $id])->all();
+                // Если есть видео ответов на вопросы для данного видеоинтервью
+                if (!empty($questions)) {
+                    // Создание объекта запуска консольной команды
+                    $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                    // Выполнение команды анализа видео-интервью в фоновом режиме
+                    $consoleRunner->run('video-interview-analysis/start-calibration-questions-processing ' . $id);
+                    // Формирование возвращаемых данных
+                    $response->data = array(true, 'Анализ видео-интервью успешно запущен.');
+                } else {
+                    // Если итоговое заключение существует
+                    if (!empty($finalResult)) {
+                        // Поиск результатов обработки калибровочных вопросов
+                        $calibrationConclusion = CalibrationConclusion::findOne($finalResult->id);
+                        // Обновление записи о результатах обработки калибровочных вопросов в БД
+                        $calibrationConclusion->text = 'null';
+                        $calibrationConclusion->updateAttributes(['text']);
+                    }
+                    // Формирование возвращаемых данных
+                    $response->data = array(null, 'У данного видео-интервью нет вопросов.');
+                }
+            } else {
+                // Если итоговое заключение существует
+                if (!empty($finalResult)) {
+                    // Поиск результатов обработки калибровочных вопросов
+                    $calibrationConclusion = CalibrationConclusion::findOne($finalResult->id);
+                    // Обновление записи о результатах обработки калибровочных вопросов в БД
+                    $calibrationConclusion->text = 'false';
+                    $calibrationConclusion->updateAttributes(['text']);
+                }
+                // Формирование возвращаемых данных
+                $response->data = array(false, 'Анализ данного видео-интервью уже запущен.');
+            }
 
             return $response;
         }

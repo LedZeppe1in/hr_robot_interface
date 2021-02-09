@@ -3,6 +3,7 @@
 namespace app\commands;
 
 use app\components\AnalysisHelperExperiment;
+use app\modules\main\models\CalibrationConclusion;
 use app\modules\main\models\ProfileKnowledgeBase;
 use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\SurveyQuestion;
@@ -44,6 +45,7 @@ class VideoInterviewAnalysisController extends Controller
         echo 'yii video-interview-analysis/start-base-frame-detection' . PHP_EOL;
         echo 'yii video-interview-analysis/start-video-processing' . PHP_EOL;
         echo 'yii video-interview-analysis/start-video-interview-analysis' . PHP_EOL;
+        echo 'yii video-interview-analysis/start-calibration-questions-processing' . PHP_EOL;
     }
 
     /**
@@ -349,479 +351,479 @@ class VideoInterviewAnalysisController extends Controller
         }
     }
 
-    /**
-     * Команда запуска полного анализа видео.
-     *
-     * @param $questionId - идентификатор вопроса видеоинтервью
-     * @param $landmarkId - идентификатор цифровой маски
-     * @throws \Throwable
-     * @throws \yii\db\StaleObjectException
-     */
-    public function actionStartFullVideoAnalysis($questionId, $landmarkId)
-    {
-        // Время начала выполнения анализа видеоинтервью
-        $videoInterviewProcessingStart = microtime(true);
-
-        // Поиск вопроса видеоинтервью по id
-        $question = Question::findOne((int)$questionId);
-        // Поиск цифровой маски по id
-        $landmark = Landmark::findOne((int)$landmarkId);
-        // Поиск полного видеоинтервью по id
-        $videoInterview = VideoInterview::findOne($landmark->video_interview_id);
-
-        // Поиск статуса обработки видеоинтервью по id видеоинтервью
-        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
-            ->where(['video_interview_id' => $videoInterview->id])
-            ->one();
-        // Обновление атрибута статуса обработки видеоинтервью в БД
-        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
-        $videoInterviewProcessingStatus->updateAttributes(['status']);
-
-        // Путь к программе обработки видео от Ивана
-        $mainPath = '/home/-Common/-ivan/';
-        // Путь к файлу видеоинтервью
-        $videoPath = $mainPath . 'video/';
-        // Путь к json-файлу результатов обработки видеоинтервью
-        $jsonResultPath = $mainPath . 'json/';
-        // Создание объекта коннектора с Yandex.Cloud Object Storage
-        $osConnector = new OSConnector();
-        // Сохранение файла видео ответа на вопрос на сервер
-        $osConnector->saveFileToServer(
-            OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
-            $question->id,
-            $question->video_file_name,
-            $videoPath
-        );
-        // Название видео-файла с результатами обработки видео
-        $videoResultFile = 'out_' . $question->id . '.avi';
-        // Название json-файла с результатами обработки видео
-        $jsonResultFile = 'out_' . $question->id . '.json';
-        // Название аудио-файла (mp3) с результатами обработки видео
-        $audioResultFile = 'out_' . $question->id . '.mp3';
-        // Формирование массива с параметрами запуска программы обработки видео
-        $parameters['nameVidFilesIn'] = 'video/' . $question->video_file_name;
-        $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
-        $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
-        $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
-        $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
-            [35, 47, 75], [27, 35, 42], [27, 31, 39]];
-        $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
-        $parameters['enableAutoRotate'] = VideoProcessingModuleSettingForm::AUTO_ROTATE_TRUE;
-        $parameters['Mirroring'] = $landmark->mirroring;
-        $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
-        $parameters['id'] = $question->id;
-        $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
-        $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
-        // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
-        $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
-        // Открытие файла на запись для сохранения параметров запуска программы обработки видео
-        $jsonFile = fopen($mainPath . 'test' . $question->id . '.json', 'a');
-        // Запись в файл json-строки с параметрами запуска программы обработки видео
-        fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
-        // Закрытие файла
-        fclose($jsonFile);
-        // Создание модели статуса обработки вопроса
-        $questionProcessingStatusModel = new QuestionProcessingStatus();
-        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_IVAN_VIDEO_PROCESSING_MODULE_IN_PROGRESS;
-        $questionProcessingStatusModel->question_id = $question->id;
-        $questionProcessingStatusModel->video_interview_processing_status_id = $videoInterviewProcessingStatus->id;
-        $questionProcessingStatusModel->save();
-        // Время начала выполнения МОВ Ивана
-        $ivanVideoAnalysisStart = microtime(true);
-        try {
-            // Запуск программы обработки видео Ивана
-            chdir($mainPath);
-            exec('./venv/bin/python ./main_new.py ./test' . $question->id . '.json');
-        } catch (Exception $e) {
-            // Создание сообщения об ошибке МОВ Ивана в БД
-            $moduleMessageModel = new ModuleMessage();
-            $moduleMessageModel->message = 'Ошибка модуля обработки видео Ивана! ' . $e->getMessage();
-            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
-            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-            $moduleMessageModel->save();
-        }
-
+//    /**
+//     * Команда запуска полного анализа видео.
+//     *
+//     * @param $questionId - идентификатор вопроса видеоинтервью
+//     * @param $landmarkId - идентификатор цифровой маски
+//     * @throws \Throwable
+//     * @throws \yii\db\StaleObjectException
+//     */
+//    public function actionStartFullVideoAnalysis($questionId, $landmarkId)
+//    {
+//        // Время начала выполнения анализа видеоинтервью
+//        $videoInterviewProcessingStart = microtime(true);
+//
+//        // Поиск вопроса видеоинтервью по id
+//        $question = Question::findOne((int)$questionId);
+//        // Поиск цифровой маски по id
+//        $landmark = Landmark::findOne((int)$landmarkId);
+//        // Поиск полного видеоинтервью по id
+//        $videoInterview = VideoInterview::findOne($landmark->video_interview_id);
+//
+//        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+//        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+//            ->where(['video_interview_id' => $videoInterview->id])
+//            ->one();
+//        // Обновление атрибута статуса обработки видеоинтервью в БД
+//        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_IN_PROGRESS;
+//        $videoInterviewProcessingStatus->updateAttributes(['status']);
+//
+//        // Путь к программе обработки видео от Ивана
+//        $mainPath = '/home/-Common/-ivan/';
+//        // Путь к файлу видеоинтервью
+//        $videoPath = $mainPath . 'video/';
+//        // Путь к json-файлу результатов обработки видеоинтервью
+//        $jsonResultPath = $mainPath . 'json/';
+//        // Создание объекта коннектора с Yandex.Cloud Object Storage
+//        $osConnector = new OSConnector();
+//        // Сохранение файла видео ответа на вопрос на сервер
+//        $osConnector->saveFileToServer(
+//            OSConnector::OBJECT_STORAGE_QUESTION_ANSWER_VIDEO_BUCKET,
+//            $question->id,
+//            $question->video_file_name,
+//            $videoPath
+//        );
+//        // Название видео-файла с результатами обработки видео
+//        $videoResultFile = 'out_' . $question->id . '.avi';
 //        // Название json-файла с результатами обработки видео
-//        $extJsonResultFile = 'out_' . $question->id . '_ext.json';
+//        $jsonResultFile = 'out_' . $question->id . '.json';
+//        // Название аудио-файла (mp3) с результатами обработки видео
+//        $audioResultFile = 'out_' . $question->id . '.mp3';
+//        // Формирование массива с параметрами запуска программы обработки видео
+//        $parameters['nameVidFilesIn'] = 'video/' . $question->video_file_name;
+//        $parameters['nameVidFilesOut'] = 'json/out_{}.avi';
+//        $parameters['nameJsonFilesOut'] = 'json/out_{}.json';
+//        $parameters['nameAudioFilesOut'] = 'json/out_{}.mp3';
+//        $parameters['indexesTriagnleStats'] = [[21, 22, 28], [31, 48, 74], [31, 40, 74], [35, 54, 75],
+//            [35, 47, 75], [27, 35, 42], [27, 31, 39]];
+//        $parameters['rotate_mode'] = VideoProcessingModuleSettingForm::ROTATE_MODE_ZERO;
+//        $parameters['enableAutoRotate'] = VideoProcessingModuleSettingForm::AUTO_ROTATE_TRUE;
+//        $parameters['Mirroring'] = $landmark->mirroring;
+//        $parameters['AlignMode'] = VideoProcessingModuleSettingForm::ALIGN_MODE_BY_THREE_FACIAL_POINTS;
+//        $parameters['id'] = $question->id;
+//        $parameters['landmark_mode'] = VideoProcessingModuleSettingForm::LANDMARK_MODE_FAST;
+//        $parameters['parameters'] = VideoProcessingModuleSettingForm::PARAMETER_CHECK_ALL_VIDEO_DATA;
+//        // Формирование json-строки на основе массива с параметрами запуска программы обработки видео
+//        $jsonParameters = json_encode($parameters, JSON_UNESCAPED_UNICODE);
+//        // Открытие файла на запись для сохранения параметров запуска программы обработки видео
+//        $jsonFile = fopen($mainPath . 'test' . $question->id . '.json', 'a');
+//        // Запись в файл json-строки с параметрами запуска программы обработки видео
+//        fwrite($jsonFile, str_replace("\\", "", $jsonParameters));
+//        // Закрытие файла
+//        fclose($jsonFile);
+//        // Создание модели статуса обработки вопроса
+//        $questionProcessingStatusModel = new QuestionProcessingStatus();
+//        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_IVAN_VIDEO_PROCESSING_MODULE_IN_PROGRESS;
+//        $questionProcessingStatusModel->question_id = $question->id;
+//        $questionProcessingStatusModel->video_interview_processing_status_id = $videoInterviewProcessingStatus->id;
+//        $questionProcessingStatusModel->save();
+//        // Время начала выполнения МОВ Ивана
+//        $ivanVideoAnalysisStart = microtime(true);
 //        try {
-//            // Запуск второго скрипта модуля обработки видео Ивана
+//            // Запуск программы обработки видео Ивана
 //            chdir($mainPath);
-//            exec('./venv/bin/python ./main_new2.py ./json/' . $jsonResultFile);
+//            exec('./venv/bin/python ./main_new.py ./test' . $question->id . '.json');
 //        } catch (Exception $e) {
 //            // Создание сообщения об ошибке МОВ Ивана в БД
 //            $moduleMessageModel = new ModuleMessage();
-//            $moduleMessageModel->message = 'Ошибка второго скрипта модуля обработки видео Ивана! ' . $e->getMessage();
+//            $moduleMessageModel->message = 'Ошибка модуля обработки видео Ивана! ' . $e->getMessage();
 //            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
 //            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
 //            $moduleMessageModel->save();
 //        }
-//        // Проверка существования json-файл с результатами обработки видео
-//        if (file_exists($jsonResultPath . $extJsonResultFile)) {
-//            // Получение json-файла с результатами обработки видео в виде цифровой маски
-//            $jsonLandmarkFile = file_get_contents($jsonResultPath . $extJsonResultFile, true);
-//            // Замена в строке некорректных значений для правильного декодирования json-формата
-//            $jsonLandmarkFile = str_ireplace('NaN','99999', $jsonLandmarkFile);
-//            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
-//            $landmarkFile = json_decode($jsonLandmarkFile, true);
 //
-//            // Определение кол-ва событий поворотов головы вправо и влево
-//            foreach ($landmarkFile as $key => $value)
-//                if (strpos(Trim($key), 'frame_') !== false)
-//                    if (isset($value['EVENTS']))
-//                        foreach ($value['EVENTS'] as $event) {
-//                            if ($event == VideoProcessingModuleSettingForm::TURN_RIGHT_EVENT)
-//                                $turnRightNumber++;
-//                            if ($event == VideoProcessingModuleSettingForm::TURN_LEFT_EVENT)
-//                                $turnLeftNumber++;
-//                        }
+////        // Название json-файла с результатами обработки видео
+////        $extJsonResultFile = 'out_' . $question->id . '_ext.json';
+////        try {
+////            // Запуск второго скрипта модуля обработки видео Ивана
+////            chdir($mainPath);
+////            exec('./venv/bin/python ./main_new2.py ./json/' . $jsonResultFile);
+////        } catch (Exception $e) {
+////            // Создание сообщения об ошибке МОВ Ивана в БД
+////            $moduleMessageModel = new ModuleMessage();
+////            $moduleMessageModel->message = 'Ошибка второго скрипта модуля обработки видео Ивана! ' . $e->getMessage();
+////            $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+////            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+////            $moduleMessageModel->save();
+////        }
+////        // Проверка существования json-файл с результатами обработки видео
+////        if (file_exists($jsonResultPath . $extJsonResultFile)) {
+////            // Получение json-файла с результатами обработки видео в виде цифровой маски
+////            $jsonLandmarkFile = file_get_contents($jsonResultPath . $extJsonResultFile, true);
+////            // Замена в строке некорректных значений для правильного декодирования json-формата
+////            $jsonLandmarkFile = str_ireplace('NaN','99999', $jsonLandmarkFile);
+////            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+////            $landmarkFile = json_decode($jsonLandmarkFile, true);
+////
+////            // Определение кол-ва событий поворотов головы вправо и влево
+////            foreach ($landmarkFile as $key => $value)
+////                if (strpos(Trim($key), 'frame_') !== false)
+////                    if (isset($value['EVENTS']))
+////                        foreach ($value['EVENTS'] as $event) {
+////                            if ($event == VideoProcessingModuleSettingForm::TURN_RIGHT_EVENT)
+////                                $turnRightNumber++;
+////                            if ($event == VideoProcessingModuleSettingForm::TURN_LEFT_EVENT)
+////                                $turnLeftNumber++;
+////                        }
+////        }
+//
+//        // Время окончания выполнения МОВ Ивана
+//        $ivanVideoAnalysisEnd = microtime(true);
+//        // Вычисление времени выполнения МОВ Ивана
+//        $ivanVideoAnalysisRuntime = $ivanVideoAnalysisEnd - $ivanVideoAnalysisStart;
+//        // Обновление атрибута времени выполнения МОВ Ивана в БД
+//        $questionProcessingStatusModel->ivan_video_analysis_runtime = $ivanVideoAnalysisRuntime;
+//        $questionProcessingStatusModel->updateAttributes(['ivan_video_analysis_runtime']);
+//
+//        $success = false;
+//        $analysisResultId = '';
+//        $analysisResultIds = '';
+//        // Формирование названия json-файла с результатами обработки видео
+//        $landmark->landmark_file_name = $jsonResultFile;
+//        // Формирование названия видео-файла с нанесенной цифровой маской
+//        $landmark->processed_video_file_name = $videoResultFile;
+//        // Формирование описания цифровой маски
+//        $landmark->description = $videoInterview->description . ' (время нарезки: ' .
+//            $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
+//        // Обновление атрибутов цифровой маски в БД
+//        $landmark->updateAttributes(['landmark_file_name', 'processed_video_file_name', 'description']);
+//        // Проверка существования json-файл с результатами обработки видео
+//        if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
+//            // Получение json-файла с результатами обработки видео в виде цифровой маски
+//            $landmarkFile = file_get_contents($jsonResultPath .
+//                $landmark->landmark_file_name, true);
+//            // Сохранение файла с лицевыми точками на Object Storage
+//            $osConnector->saveFileToObjectStorage(
+//                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+//                $landmark->id,
+//                $landmark->landmark_file_name,
+//                $landmarkFile
+//            );
+//            // Сохранение файла видео с нанесенной цифровой маской на Object Storage
+//            $osConnector->saveFileToObjectStorage(
+//                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+//                $landmark->id,
+//                $landmark->processed_video_file_name,
+//                $jsonResultPath . $landmark->processed_video_file_name
+//            );
+//            // Обновление атрибута статуса обработки вопроса в БД
+//            $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
+//            $questionProcessingStatusModel->updateAttributes(['status']);
+//            // Время начала выполнения МОП
+//            $featureDetectionStart = microtime(true);
+//            try {
+//                // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+//                $analysisHelper = new AnalysisHelper();
+//                $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id);
+//                $analysisResultId = $analysisHelper->getAnalysisResult(
+//                    $landmark,
+//                    VideoInterview::TYPE_NORMALIZED_POINTS,
+//                    $baseFrame
+//                );
+//            } catch (Exception $e) {
+//                // Создание сообщения об ошибке МОП в БД
+//                $moduleMessageModel = new ModuleMessage();
+//                $moduleMessageModel->message = 'Ошибка МОП на данных Ивана! ' . $e->getMessage();
+//                $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+//                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//                $moduleMessageModel->save();
+//            }
+//            // Время окончания выполнения МОП
+//            $featureDetectionEnd = microtime(true);
+//            // Вычисление времени выполнения МОП
+//            $featureDetectionRuntime = $featureDetectionEnd - $featureDetectionStart;
+//            // Обновление атрибута времени выполнения МОП в БД
+//            $questionProcessingStatusModel->feature_detection_runtime = $featureDetectionRuntime;
+//            $questionProcessingStatusModel->updateAttributes(['feature_detection_runtime']);
+//            // Формирование строки из всех id результатов анализа
+//            if ($analysisResultIds == '')
+//                $analysisResultIds = $analysisResultId;
+//            else
+//                $analysisResultIds .= ', ' . $analysisResultId;
+//            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
+//            $jsonLandmarkFile = json_decode($landmarkFile, true);
+//            // Если в json-файле с цифровой маской есть текст с предупреждением
+//            if (isset($jsonLandmarkFile['err_msg'])) {
+//                // Создание сообщения о предупреждении МОВ Ивана в БД
+//                $moduleMessageModel = new ModuleMessage();
+//                $moduleMessageModel->message = $jsonLandmarkFile['err_msg'];
+//                $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
+//                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//                $moduleMessageModel->save();
+//            }
+//            $success = true;
 //        }
-
-        // Время окончания выполнения МОВ Ивана
-        $ivanVideoAnalysisEnd = microtime(true);
-        // Вычисление времени выполнения МОВ Ивана
-        $ivanVideoAnalysisRuntime = $ivanVideoAnalysisEnd - $ivanVideoAnalysisStart;
-        // Обновление атрибута времени выполнения МОВ Ивана в БД
-        $questionProcessingStatusModel->ivan_video_analysis_runtime = $ivanVideoAnalysisRuntime;
-        $questionProcessingStatusModel->updateAttributes(['ivan_video_analysis_runtime']);
-
-        $success = false;
-        $analysisResultId = '';
-        $analysisResultIds = '';
-        // Формирование названия json-файла с результатами обработки видео
-        $landmark->landmark_file_name = $jsonResultFile;
-        // Формирование названия видео-файла с нанесенной цифровой маской
-        $landmark->processed_video_file_name = $videoResultFile;
-        // Формирование описания цифровой маски
-        $landmark->description = $videoInterview->description . ' (время нарезки: ' .
-            $landmark->getStartTime() . ' - ' . $landmark->getFinishTime() . ')';
-        // Обновление атрибутов цифровой маски в БД
-        $landmark->updateAttributes(['landmark_file_name', 'processed_video_file_name', 'description']);
-        // Проверка существования json-файл с результатами обработки видео
-        if (file_exists($jsonResultPath . $landmark->landmark_file_name)) {
-            // Получение json-файла с результатами обработки видео в виде цифровой маски
-            $landmarkFile = file_get_contents($jsonResultPath .
-                $landmark->landmark_file_name, true);
-            // Сохранение файла с лицевыми точками на Object Storage
-            $osConnector->saveFileToObjectStorage(
-                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                $landmark->id,
-                $landmark->landmark_file_name,
-                $landmarkFile
-            );
-            // Сохранение файла видео с нанесенной цифровой маской на Object Storage
-            $osConnector->saveFileToObjectStorage(
-                OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                $landmark->id,
-                $landmark->processed_video_file_name,
-                $jsonResultPath . $landmark->processed_video_file_name
-            );
-            // Обновление атрибута статуса обработки вопроса в БД
-            $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
-            $questionProcessingStatusModel->updateAttributes(['status']);
-            // Время начала выполнения МОП
-            $featureDetectionStart = microtime(true);
-            try {
-                // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                $analysisHelper = new AnalysisHelper();
-                $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id);
-                $analysisResultId = $analysisHelper->getAnalysisResult(
-                    $landmark,
-                    VideoInterview::TYPE_NORMALIZED_POINTS,
-                    $baseFrame
-                );
-            } catch (Exception $e) {
-                // Создание сообщения об ошибке МОП в БД
-                $moduleMessageModel = new ModuleMessage();
-                $moduleMessageModel->message = 'Ошибка МОП на данных Ивана! ' . $e->getMessage();
-                $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
-                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-                $moduleMessageModel->save();
-            }
-            // Время окончания выполнения МОП
-            $featureDetectionEnd = microtime(true);
-            // Вычисление времени выполнения МОП
-            $featureDetectionRuntime = $featureDetectionEnd - $featureDetectionStart;
-            // Обновление атрибута времени выполнения МОП в БД
-            $questionProcessingStatusModel->feature_detection_runtime = $featureDetectionRuntime;
-            $questionProcessingStatusModel->updateAttributes(['feature_detection_runtime']);
-            // Формирование строки из всех id результатов анализа
-            if ($analysisResultIds == '')
-                $analysisResultIds = $analysisResultId;
-            else
-                $analysisResultIds .= ', ' . $analysisResultId;
-            // Декодирование json-файла с результатами обработки видео в виде цифровой маски
-            $jsonLandmarkFile = json_decode($landmarkFile, true);
-            // Если в json-файле с цифровой маской есть текст с предупреждением
-            if (isset($jsonLandmarkFile['err_msg'])) {
-                // Создание сообщения о предупреждении МОВ Ивана в БД
-                $moduleMessageModel = new ModuleMessage();
-                $moduleMessageModel->message = $jsonLandmarkFile['err_msg'];
-                $moduleMessageModel->module_name = ModuleMessage::IVAN_VIDEO_PROCESSING_MODULE;
-                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-                $moduleMessageModel->save();
-            }
-            $success = true;
-        }
-        // Удаление записи о цифровой маски для которой не сформирован json-файл
-        if ($success == false)
-            Landmark::findOne($landmark->id)->delete();
-//        // Текст сообщения об ошибке
-//        $errorMessage = 'Не удалось проанализировать видеоинтервью!';
-//        // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
-//        if (file_exists($mainPath . 'error.json')) {
-//            // Получение json-файл с ошибками обработки видеоинтервью
-//            $jsonErrorFile = file_get_contents($mainPath . 'error.json', true);
-//            // Декодирование json
-//            $jsonErrorFile = json_decode($jsonErrorFile, true);
-//            // Дополнение текста сообщения об ошибке
-//            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
-//            // Удаление json-файла с сообщением ошибке
-//            unlink($mainPath . 'error.json');
+//        // Удаление записи о цифровой маски для которой не сформирован json-файл
+//        if ($success == false)
+//            Landmark::findOne($landmark->id)->delete();
+////        // Текст сообщения об ошибке
+////        $errorMessage = 'Не удалось проанализировать видеоинтервью!';
+////        // Проверка существования json-файл с ошибками обработки видеоинтервью в корневой папке
+////        if (file_exists($mainPath . 'error.json')) {
+////            // Получение json-файл с ошибками обработки видеоинтервью
+////            $jsonErrorFile = file_get_contents($mainPath . 'error.json', true);
+////            // Декодирование json
+////            $jsonErrorFile = json_decode($jsonErrorFile, true);
+////            // Дополнение текста сообщения об ошибке
+////            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
+////            // Удаление json-файла с сообщением ошибке
+////            unlink($mainPath . 'error.json');
+////        }
+////        // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
+////        if (file_exists($jsonResultPath . 'out_error.json')) {
+////            // Получение json-файл с ошибками обработки видеоинтервью
+////            $jsonErrorFile = file_get_contents($jsonResultPath . 'out_error.json', true);
+////            // Декодирование json
+////            $jsonErrorFile = json_decode($jsonErrorFile, true);
+////            // Дополнение текста сообщения об ошибке
+////            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
+////            // Удаление json-файла с сообщением ошибке
+////            unlink($jsonResultPath . 'out_error.json');
+////        }
+//
+//        // Путь к программе обработки видео от Андрея
+//        $mainAndrewModulePath = '/home/-Common/-andrey/';
+//        // Путь к json-файлу результатов обработки видеоинтервью от Андрея
+//        $jsonAndrewResultPath = $mainAndrewModulePath . 'Records/';
+//        // Обновление атрибута статуса обработки вопроса в БД
+//        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_ANDREY_VIDEO_PROCESSING_MODULE_IN_PROGRESS;
+//        $questionProcessingStatusModel->updateAttributes(['status']);
+//        // Время начала выполнения МОВ Андрея
+//        $andreyVideoAnalysisStart = microtime(true);
+//        try {
+//            // Запуск программы обработки видео Андрея
+//            chdir($mainAndrewModulePath);
+//            exec('./EmotionDetection -f ' . $videoPath . $question->video_file_name);
+//            // Время окончания выполнения МОВ Андрея
+//            $andreyVideoAnalysisEnd = microtime(true);
+//            // Вычисление времени выполнения МОВ Андрея
+//            $andreyVideoAnalysisRuntime = $andreyVideoAnalysisEnd - $andreyVideoAnalysisStart;
+//            // Обновление атрибута времени выполнения МОВ Андрея в БД
+//            $questionProcessingStatusModel->andrey_video_analysis_runtime = $andreyVideoAnalysisRuntime;
+//            $questionProcessingStatusModel->updateAttributes(['andrey_video_analysis_runtime']);
+//            // Получение имени файла без расширения
+//            $jsonFileName = preg_replace('/\.\w+$/', '', $question->video_file_name);
+//            // Проверка существования json-файл с результатами обработки видео
+//            if (file_exists($jsonAndrewResultPath . $jsonFileName . '.json')) {
+//                // Создание цифровой маски в БД
+//                $landmarkModel = new Landmark();
+//                $landmarkModel->landmark_file_name = $videoResultFile;
+//                $landmarkModel->start_time = Landmark::formatMilliseconds($landmark->start_time);
+//                $landmarkModel->finish_time = Landmark::formatMilliseconds($landmark->finish_time);
+//                $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
+//                $landmarkModel->rotation = Landmark::TYPE_ZERO;
+//                $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+//                $landmarkModel->description = $videoInterview->description . ' (время нарезки: ' .
+//                    $landmarkModel->start_time . ' - ' . $landmarkModel->finish_time . ')';
+//                $landmarkModel->question_id = $question->id;
+//                $landmarkModel->video_interview_id = $videoInterview->id;
+//                $landmarkModel->save();
+//                // Получение json-файла с результатами обработки видео в виде цифровой маски
+//                $landmarkFile = file_get_contents($jsonAndrewResultPath .
+//                    $jsonFileName . '.json', true);
+//                // Сохранение файла с лицевыми точками на Object Storage
+//                $osConnector->saveFileToObjectStorage(
+//                    OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
+//                    $landmarkModel->id,
+//                    $landmarkModel->landmark_file_name,
+//                    $landmarkFile
+//                );
+//                // Обновление атрибута статуса обработки вопроса в БД
+//                $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
+//                $questionProcessingStatusModel->updateAttributes(['status']);
+//                // Время начала выполнения МОП
+//                $featureDetectionStart = microtime(true);
+//                try {
+//                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+//                    $analysisHelper = new AnalysisHelper();
+//                    $baseFrame = $analysisHelper->getBaseFrame($landmarkModel->video_interview_id);
+//                    $analysisResultId = $analysisHelper->getAnalysisResult(
+//                        $landmarkModel,
+//                        VideoInterview::TYPE_RAW_POINTS,
+//                        $baseFrame
+//                    );
+//                } catch (Exception $e) {
+//                    // Создание сообщения об ошибке МОП в БД
+//                    $moduleMessageModel = new ModuleMessage();
+//                    $moduleMessageModel->message = 'Ошибка МОП на данных Андрея! ' . $e->getMessage();
+//                    $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+//                    $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//                    $moduleMessageModel->save();
+//                }
+//                // Время окончания выполнения МОП
+//                $featureDetectionEnd = microtime(true);
+//                // Вычисление времени выполнения МОП
+//                $featureDetectionRuntime = $featureDetectionEnd - $featureDetectionStart;
+//                // Обновление атрибута времени выполнения МОП в БД
+//                $questionProcessingStatusModel->feature_detection_runtime += $featureDetectionRuntime;
+//                $questionProcessingStatusModel->updateAttributes(['feature_detection_runtime']);
+//                // Формирование строки из всех id результатов анализа
+//                if ($analysisResultIds == '')
+//                    $analysisResultIds = $analysisResultId;
+//                else
+//                    $analysisResultIds .= ', ' . $analysisResultId;
+//                // Удаление json-файла с результатами обработки видеоинтервью программой Андрея
+//                unlink($jsonAndrewResultPath . $jsonFileName . '.json');
+//            }
+//        } catch (Exception $e) {
+//            // Создание сообщения об ошибке МОВ Андрея в БД
+//            $moduleMessageModel = new ModuleMessage();
+//            $moduleMessageModel->message = 'Ошибка модуля обработки видео Андрея! ' . $e->getMessage();
+//            $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+//            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//            $moduleMessageModel->save();
 //        }
-//        // Проверка существования json-файл с ошибками обработки видеоинтервью в папке json
-//        if (file_exists($jsonResultPath . 'out_error.json')) {
-//            // Получение json-файл с ошибками обработки видеоинтервью
-//            $jsonErrorFile = file_get_contents($jsonResultPath . 'out_error.json', true);
-//            // Декодирование json
-//            $jsonErrorFile = json_decode($jsonErrorFile, true);
-//            // Дополнение текста сообщения об ошибке
-//            $errorMessage .= PHP_EOL . $jsonErrorFile['err_msg'];
-//            // Удаление json-файла с сообщением ошибке
-//            unlink($jsonResultPath . 'out_error.json');
+//
+//        // Если есть результаты определения признаков
+//        if ($analysisResultIds != '')
+//            try {
+//                // Обновление атрибута статуса обработки вопроса в БД
+//                $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_INTERPRETATION_MODULE_IN_PROGRESS;
+//                $questionProcessingStatusModel->updateAttributes(['status']);
+//                // Время начала выполнения МИП
+//                $featureInterpretationStart = microtime(true);
+//                // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
+//                ini_set('default_socket_timeout', 60 * 30);
+//                $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+//                $client = new SoapClient($addressOfRBRWebServiceDefinition);
+//                //$addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
+//                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=1';
+//                //$addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
+//                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
+//                $idsOfInitialConditions = '[' . $analysisResultIds . ']';
+//                //$addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+//                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+//                $additionalDataToSend = new stdClass;
+//                $additionalDataToSend->{'IDOfFile'} = Null;
+//                $client->LaunchReasoningProcessForSetOfInitialConditions(array(
+//                    'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+//                    'arg1' => $addressForInitialConditionsRetrieval,
+//                    'arg2' => $idsOfInitialConditions,
+//                    'arg3' => $addressToSendResults,
+//                    'arg4' => 'ResultsOfReasoningProcess',
+//                    'arg5' => 'IDOfFile',
+//                    'arg6' => json_encode($additionalDataToSend)))->return;
+//                $client = Null;
+//                // Время окончания выполнения МИП
+//                $featureInterpretationEnd = microtime(true);
+//                // Вычисление времени выполнения МИП
+//                $featureInterpretationRuntime = $featureInterpretationEnd - $featureInterpretationStart;
+//                // Обновление атрибута времени выполнения МИП в БД
+//                $questionProcessingStatusModel->feature_interpretation_runtime = $featureInterpretationRuntime;
+//                $questionProcessingStatusModel->updateAttributes(['feature_interpretation_runtime']);
+//            } catch (Exception $e) {
+//                // Создание сообщения об ошибке МИП в БД
+//                $moduleMessageModel = new ModuleMessage();
+//                $moduleMessageModel->message = 'Ошибка МИП (первый уровень)! ' . $e->getMessage();
+//                $moduleMessageModel->module_name = ModuleMessage::FEATURE_INTERPRETATION_MODULE;
+//                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//                $moduleMessageModel->save();
+//            }
+//        // Обновление атрибута статуса обработки вопроса в БД
+//        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_COMPLETED;
+//        $questionProcessingStatusModel->updateAttributes(['status']);
+//
+//        // Удаление файла с видеоинтервью
+//        if (file_exists($videoPath . $question->video_file_name))
+//            unlink($videoPath . $question->video_file_name);
+//        // Удаление файла с параметрами запуска программы обработки видео
+//        if (file_exists($mainPath . 'test' . $question->id . '.json'))
+//            unlink($mainPath . 'test' . $question->id . '.json');
+//        // Удаление файла с выходной аудио-информацией
+//        //if (file_exists($mainPath . 'audio_out.mp3'))
+//        //    unlink($mainPath . 'audio_out.mp3');
+//        // Удаление видео-файла с результатами обработки видеоинтервью
+//        if (file_exists($jsonResultPath . $videoResultFile))
+//            unlink($jsonResultPath . $videoResultFile);
+//        // Удаление json-файла с результатами обработки видео программой Ивана
+//        if (file_exists($jsonResultPath . $jsonResultFile))
+//            unlink($jsonResultPath . $jsonResultFile);
+//        // Удаление аудио-файла с результатами обработки видео программой Ивана
+//        if (file_exists($jsonResultPath . $audioResultFile))
+//            unlink($jsonResultPath . $audioResultFile);
+//
+//        $completed = true;
+//        // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
+//        $questionProcessingStatuses = QuestionProcessingStatus::find()
+//            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+//            ->all();
+//        // Обход всех статусов обработки вопросов и определение завершенности каждого
+//        foreach ($questionProcessingStatuses as $questionProcessingStatus)
+//            if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
+//                $completed = false;
+//        // Если анализ всех видео ответов на вопросы завершен
+//        if ($completed) {
+//            // Обновление атрибута статуса обработки видеоинтервью в БД
+//            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_FINAL_RESULT_FORMATION;
+//            $videoInterviewProcessingStatus->updateAttributes(['status']);
+//            // Время начала выполнения МИП
+//            $emotionInterpretationStart = microtime(true);
+//            // Поиск итоговых результатов по id видеоинтервью
+//            $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
+//            // Создание модели заключения по видеоинтервью
+//            $finalConclusionModel = new FinalConclusion();
+//            // Установка первичного ключа с итогового результата
+//            $finalConclusionModel->id = $finalResult->id;
+//            // Сохранение модели заключения по видеоинтервью
+//            $finalConclusionModel->save();
+//            try {
+//                // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
+//                ini_set('default_socket_timeout', 60 * 30);
+//                $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+//                $client = new SoapClient($addressOfRBRWebServiceDefinition);
+//                //$addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
+//                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=2';
+//                //$addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
+//                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' .
+//                    $finalConclusionModel->id;
+//                //$addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
+//                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+//                $additionalDataToSend = new stdClass;
+//                $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
+//                $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
+//                $client->LaunchReasoningProcessAndSendResultsToURL(array(
+//                    'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+//                    'arg1' => $addressForInitialConditionsRetrieval,
+//                    'arg2' => $addressToSendResults,
+//                    'arg3' => 'ResultsOfReasoningProcess',
+//                    'arg4' => json_encode($additionalDataToSend)))->return;
+//                $client = Null;
+//            } catch (Exception $e) {
+//                // Создание сообщения об ошибке МИП в БД
+//                $moduleMessageModel = new ModuleMessage();
+//                $moduleMessageModel->message = 'Ошибка МИП (второй уровень)! ' . $e->getMessage();
+//                $moduleMessageModel->module_name = ModuleMessage::FEATURE_INTERPRETATION_MODULE;
+//                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
+//                $moduleMessageModel->save();
+//            }
+//            // Время окончания выполнения МИП
+//            $emotionInterpretationEnd = microtime(true);
+//            // Вычисление времени выполнения МИП
+//            $emotionInterpretationRuntime = $emotionInterpretationEnd - $emotionInterpretationStart;
+//            // Время окончания выполнения анализа видеоинтервью
+//            $videoInterviewProcessingEnd = microtime(true);
+//            // Вычисление времени выполнения анализа видеоинтервью
+//            $videoInterviewProcessingRuntime = $videoInterviewProcessingEnd - $videoInterviewProcessingStart;
+//            // Обновление атрибутов статуса обработки видеоинтервью, полного времени анализа видеоинтервью и
+//            // времени выполнения интерпретации эмоций (второй уровень интерпретации) в БД
+//            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
+//            $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingRuntime;
+//            $videoInterviewProcessingStatus->emotion_interpretation_runtime = $emotionInterpretationRuntime;
+//            $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime',
+//                'emotion_interpretation_runtime']);
 //        }
-
-        // Путь к программе обработки видео от Андрея
-        $mainAndrewModulePath = '/home/-Common/-andrey/';
-        // Путь к json-файлу результатов обработки видеоинтервью от Андрея
-        $jsonAndrewResultPath = $mainAndrewModulePath . 'Records/';
-        // Обновление атрибута статуса обработки вопроса в БД
-        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_ANDREY_VIDEO_PROCESSING_MODULE_IN_PROGRESS;
-        $questionProcessingStatusModel->updateAttributes(['status']);
-        // Время начала выполнения МОВ Андрея
-        $andreyVideoAnalysisStart = microtime(true);
-        try {
-            // Запуск программы обработки видео Андрея
-            chdir($mainAndrewModulePath);
-            exec('./EmotionDetection -f ' . $videoPath . $question->video_file_name);
-            // Время окончания выполнения МОВ Андрея
-            $andreyVideoAnalysisEnd = microtime(true);
-            // Вычисление времени выполнения МОВ Андрея
-            $andreyVideoAnalysisRuntime = $andreyVideoAnalysisEnd - $andreyVideoAnalysisStart;
-            // Обновление атрибута времени выполнения МОВ Андрея в БД
-            $questionProcessingStatusModel->andrey_video_analysis_runtime = $andreyVideoAnalysisRuntime;
-            $questionProcessingStatusModel->updateAttributes(['andrey_video_analysis_runtime']);
-            // Получение имени файла без расширения
-            $jsonFileName = preg_replace('/\.\w+$/', '', $question->video_file_name);
-            // Проверка существования json-файл с результатами обработки видео
-            if (file_exists($jsonAndrewResultPath . $jsonFileName . '.json')) {
-                // Создание цифровой маски в БД
-                $landmarkModel = new Landmark();
-                $landmarkModel->landmark_file_name = $videoResultFile;
-                $landmarkModel->start_time = Landmark::formatMilliseconds($landmark->start_time);
-                $landmarkModel->finish_time = Landmark::formatMilliseconds($landmark->finish_time);
-                $landmarkModel->type = Landmark::TYPE_LANDMARK_ANDREW_MODULE;
-                $landmarkModel->rotation = Landmark::TYPE_ZERO;
-                $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
-                $landmarkModel->description = $videoInterview->description . ' (время нарезки: ' .
-                    $landmarkModel->start_time . ' - ' . $landmarkModel->finish_time . ')';
-                $landmarkModel->question_id = $question->id;
-                $landmarkModel->video_interview_id = $videoInterview->id;
-                $landmarkModel->save();
-                // Получение json-файла с результатами обработки видео в виде цифровой маски
-                $landmarkFile = file_get_contents($jsonAndrewResultPath .
-                    $jsonFileName . '.json', true);
-                // Сохранение файла с лицевыми точками на Object Storage
-                $osConnector->saveFileToObjectStorage(
-                    OSConnector::OBJECT_STORAGE_LANDMARK_BUCKET,
-                    $landmarkModel->id,
-                    $landmarkModel->landmark_file_name,
-                    $landmarkFile
-                );
-                // Обновление атрибута статуса обработки вопроса в БД
-                $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
-                $questionProcessingStatusModel->updateAttributes(['status']);
-                // Время начала выполнения МОП
-                $featureDetectionStart = microtime(true);
-                try {
-                    // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                    $analysisHelper = new AnalysisHelper();
-                    $baseFrame = $analysisHelper->getBaseFrame($landmarkModel->video_interview_id);
-                    $analysisResultId = $analysisHelper->getAnalysisResult(
-                        $landmarkModel,
-                        VideoInterview::TYPE_RAW_POINTS,
-                        $baseFrame
-                    );
-                } catch (Exception $e) {
-                    // Создание сообщения об ошибке МОП в БД
-                    $moduleMessageModel = new ModuleMessage();
-                    $moduleMessageModel->message = 'Ошибка МОП на данных Андрея! ' . $e->getMessage();
-                    $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
-                    $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-                    $moduleMessageModel->save();
-                }
-                // Время окончания выполнения МОП
-                $featureDetectionEnd = microtime(true);
-                // Вычисление времени выполнения МОП
-                $featureDetectionRuntime = $featureDetectionEnd - $featureDetectionStart;
-                // Обновление атрибута времени выполнения МОП в БД
-                $questionProcessingStatusModel->feature_detection_runtime += $featureDetectionRuntime;
-                $questionProcessingStatusModel->updateAttributes(['feature_detection_runtime']);
-                // Формирование строки из всех id результатов анализа
-                if ($analysisResultIds == '')
-                    $analysisResultIds = $analysisResultId;
-                else
-                    $analysisResultIds .= ', ' . $analysisResultId;
-                // Удаление json-файла с результатами обработки видеоинтервью программой Андрея
-                unlink($jsonAndrewResultPath . $jsonFileName . '.json');
-            }
-        } catch (Exception $e) {
-            // Создание сообщения об ошибке МОВ Андрея в БД
-            $moduleMessageModel = new ModuleMessage();
-            $moduleMessageModel->message = 'Ошибка модуля обработки видео Андрея! ' . $e->getMessage();
-            $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
-            $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-            $moduleMessageModel->save();
-        }
-
-        // Если есть результаты определения признаков
-        if ($analysisResultIds != '')
-            try {
-                // Обновление атрибута статуса обработки вопроса в БД
-                $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_FEATURE_INTERPRETATION_MODULE_IN_PROGRESS;
-                $questionProcessingStatusModel->updateAttributes(['status']);
-                // Время начала выполнения МИП
-                $featureInterpretationStart = microtime(true);
-                // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
-                ini_set('default_socket_timeout', 60 * 30);
-                $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-                $client = new SoapClient($addressOfRBRWebServiceDefinition);
-                //$addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/1';
-                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=1';
-                //$addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/facts-download/';
-                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
-                $idsOfInitialConditions = '[' . $analysisResultIds . ']';
-                //$addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
-                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
-                $additionalDataToSend = new stdClass;
-                $additionalDataToSend->{'IDOfFile'} = Null;
-                $client->LaunchReasoningProcessForSetOfInitialConditions(array(
-                    'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-                    'arg1' => $addressForInitialConditionsRetrieval,
-                    'arg2' => $idsOfInitialConditions,
-                    'arg3' => $addressToSendResults,
-                    'arg4' => 'ResultsOfReasoningProcess',
-                    'arg5' => 'IDOfFile',
-                    'arg6' => json_encode($additionalDataToSend)))->return;
-                $client = Null;
-                // Время окончания выполнения МИП
-                $featureInterpretationEnd = microtime(true);
-                // Вычисление времени выполнения МИП
-                $featureInterpretationRuntime = $featureInterpretationEnd - $featureInterpretationStart;
-                // Обновление атрибута времени выполнения МИП в БД
-                $questionProcessingStatusModel->feature_interpretation_runtime = $featureInterpretationRuntime;
-                $questionProcessingStatusModel->updateAttributes(['feature_interpretation_runtime']);
-            } catch (Exception $e) {
-                // Создание сообщения об ошибке МИП в БД
-                $moduleMessageModel = new ModuleMessage();
-                $moduleMessageModel->message = 'Ошибка МИП (первый уровень)! ' . $e->getMessage();
-                $moduleMessageModel->module_name = ModuleMessage::FEATURE_INTERPRETATION_MODULE;
-                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-                $moduleMessageModel->save();
-            }
-        // Обновление атрибута статуса обработки вопроса в БД
-        $questionProcessingStatusModel->status = QuestionProcessingStatus::STATUS_COMPLETED;
-        $questionProcessingStatusModel->updateAttributes(['status']);
-
-        // Удаление файла с видеоинтервью
-        if (file_exists($videoPath . $question->video_file_name))
-            unlink($videoPath . $question->video_file_name);
-        // Удаление файла с параметрами запуска программы обработки видео
-        if (file_exists($mainPath . 'test' . $question->id . '.json'))
-            unlink($mainPath . 'test' . $question->id . '.json');
-        // Удаление файла с выходной аудио-информацией
-        //if (file_exists($mainPath . 'audio_out.mp3'))
-        //    unlink($mainPath . 'audio_out.mp3');
-        // Удаление видео-файла с результатами обработки видеоинтервью
-        if (file_exists($jsonResultPath . $videoResultFile))
-            unlink($jsonResultPath . $videoResultFile);
-        // Удаление json-файла с результатами обработки видео программой Ивана
-        if (file_exists($jsonResultPath . $jsonResultFile))
-            unlink($jsonResultPath . $jsonResultFile);
-        // Удаление аудио-файла с результатами обработки видео программой Ивана
-        if (file_exists($jsonResultPath . $audioResultFile))
-            unlink($jsonResultPath . $audioResultFile);
-
-        $completed = true;
-        // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
-        $questionProcessingStatuses = QuestionProcessingStatus::find()
-            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
-            ->all();
-        // Обход всех статусов обработки вопросов и определение завершенности каждого
-        foreach ($questionProcessingStatuses as $questionProcessingStatus)
-            if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
-                $completed = false;
-        // Если анализ всех видео ответов на вопросы завершен
-        if ($completed) {
-            // Обновление атрибута статуса обработки видеоинтервью в БД
-            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_FINAL_RESULT_FORMATION;
-            $videoInterviewProcessingStatus->updateAttributes(['status']);
-            // Время начала выполнения МИП
-            $emotionInterpretationStart = microtime(true);
-            // Поиск итоговых результатов по id видеоинтервью
-            $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
-            // Создание модели заключения по видеоинтервью
-            $finalConclusionModel = new FinalConclusion();
-            // Установка первичного ключа с итогового результата
-            $finalConclusionModel->id = $finalResult->id;
-            // Сохранение модели заключения по видеоинтервью
-            $finalConclusionModel->save();
-            try {
-                // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
-                ini_set('default_socket_timeout', 60 * 30);
-                $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-                $client = new SoapClient($addressOfRBRWebServiceDefinition);
-                //$addressForCodeOfKnowledgeBaseRetrieval = 'https://84.201.129.65/knowledge-base/knowledge-base-download/2';
-                $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=2';
-                //$addressForInitialConditionsRetrieval = 'https://84.201.129.65/analysis-result/interpretation-facts-download/' . $finalConclusionModel->id;
-                $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' .
-                    $finalConclusionModel->id;
-                //$addressToSendResults = 'https://84.201.129.65:9999/Drools/RetrieveData.php';
-                $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
-                $additionalDataToSend = new stdClass;
-                $additionalDataToSend -> {'IDOfFile'} = $finalConclusionModel->id;
-                $additionalDataToSend -> {'Type'} = 'Interpretation Level II';
-                $client->LaunchReasoningProcessAndSendResultsToURL(array(
-                    'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-                    'arg1' => $addressForInitialConditionsRetrieval,
-                    'arg2' => $addressToSendResults,
-                    'arg3' => 'ResultsOfReasoningProcess',
-                    'arg4' => json_encode($additionalDataToSend)))->return;
-                $client = Null;
-            } catch (Exception $e) {
-                // Создание сообщения об ошибке МИП в БД
-                $moduleMessageModel = new ModuleMessage();
-                $moduleMessageModel->message = 'Ошибка МИП (второй уровень)! ' . $e->getMessage();
-                $moduleMessageModel->module_name = ModuleMessage::FEATURE_INTERPRETATION_MODULE;
-                $moduleMessageModel->question_processing_status_id = $questionProcessingStatusModel->id;
-                $moduleMessageModel->save();
-            }
-            // Время окончания выполнения МИП
-            $emotionInterpretationEnd = microtime(true);
-            // Вычисление времени выполнения МИП
-            $emotionInterpretationRuntime = $emotionInterpretationEnd - $emotionInterpretationStart;
-            // Время окончания выполнения анализа видеоинтервью
-            $videoInterviewProcessingEnd = microtime(true);
-            // Вычисление времени выполнения анализа видеоинтервью
-            $videoInterviewProcessingRuntime = $videoInterviewProcessingEnd - $videoInterviewProcessingStart;
-            // Обновление атрибутов статуса обработки видеоинтервью, полного времени анализа видеоинтервью и
-            // времени выполнения интерпретации эмоций (второй уровень интерпретации) в БД
-            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
-            $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingRuntime;
-            $videoInterviewProcessingStatus->emotion_interpretation_runtime = $emotionInterpretationRuntime;
-            $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime',
-                'emotion_interpretation_runtime']);
-        }
-    }
+//    }
 
     /**
      * Команда запуска анализа видео ответа на калибровочный вопрос видеоинтервью и формирование базового кадра.
@@ -1802,9 +1804,12 @@ class VideoInterviewAnalysisController extends Controller
                 }
                 // Если задана база знаний для интерпретации второго уровня
                 if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
+                    // Время начала выполнения МИП (второй уровень)
+                    $emotionInterpretationStart = microtime(true);
                     // Обновление атрибутов статуса обработки видеоинтервью в БД
                     $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_FINAL_RESULT_FORMATION;
                     $videoInterviewProcessingStatus->updateAttributes(['status']);
+
                     // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
                     ini_set('default_socket_timeout', 60 * 30);
                     $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
@@ -1823,6 +1828,14 @@ class VideoInterviewAnalysisController extends Controller
                         'arg3' => 'ResultsOfReasoningProcess',
                         'arg4' => json_encode($additionalDataToSend)))->return;
                     $client = Null;
+
+                    // Время окончания выполнения МИП (второй уровень)
+                    $emotionInterpretationEnd = microtime(true);
+                    // Вычисление времени выполнения МИП (второй уровень)
+                    $emotionInterpretationRuntime = $emotionInterpretationEnd - $emotionInterpretationStart;
+                    // Обновление атрибутов времени МИП (второй уровень) в БД
+                    $videoInterviewProcessingStatus->emotion_interpretation_runtime = $emotionInterpretationRuntime;
+                    $videoInterviewProcessingStatus->updateAttributes(['emotion_interpretation_runtime']);
                 }
             }
         }
@@ -1835,6 +1848,191 @@ class VideoInterviewAnalysisController extends Controller
             $videoInterviewProcessingRuntime;
         $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
         $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
+    }
+
+    /**
+     * Команда запуска обработки калибровочных вопросов для видеоинтервью (для чат-бота).
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionStartCalibrationQuestionsProcessing($videoInterviewId)
+    {
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => (int)$videoInterviewId])
+            ->one();
+        // Если данное видеоинтервью не находится в обработке
+        if (empty($videoInterviewProcessingStatus) ||
+            $videoInterviewProcessingStatus->status != VideoInterviewProcessingStatus::STATUS_IN_PROGRESS) {
+
+            // Создание объекта AnalysisHelper
+            $analysisHelper = new AnalysisHelper();
+            // Удаление всех цифровых масок и связанных с ними результатов анализа для данного видеоинтервью на Object Storage
+            $analysisHelper->deleteLandmarksInObjectStorage((int)$videoInterviewId);
+            // Поиск всех цифровых масок принадлежащих данному видеоинтервью
+            $landmarks = Landmark::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+            // Удаление всех цифровых масок из БД
+            foreach ($landmarks as $landmark)
+                $landmark->delete();
+            // Если интервью новое
+            if (isset($videoInterviewProcessingStatus) === True) {
+                // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                $questionProcessingStatuses = QuestionProcessingStatus::find()
+                    ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                    ->all();
+                // Удаление всех статусов по вопросам у данного видеоинтервью из БД
+                foreach ($questionProcessingStatuses as $questionProcessingStatus)
+                    $questionProcessingStatus->delete();
+            }
+            // Поиск всех видео ответов на вопросы для данного видеоинтервью
+            $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+
+            $IDsOfProcessingQuestions = array();
+
+            // Если есть видео ответов на вопросы для данного видеоинтервью
+            if (!empty($questions)) {
+                // Обход всех видео ответов на вопросы для данного видеоинтервью
+                foreach ($questions as $question) {
+                    // Поиск темы для вопроса - Topic 24 (поворот вправо), 25 (поворот влево), 27 (калибровочный для камеры)
+                    $topicQuestion = TopicQuestion::find()
+                        ->where(['test_question_id' => $question->test_question_id])
+                        ->one();
+                    // Если тема для вопроса найдена
+                    if (!empty($topicQuestion)) {
+                        // Если вопросы калибровочные (темы 24, 25 и 27)
+                        if ($topicQuestion->topic_id == 24 || $topicQuestion->topic_id == 25 ||
+                            $topicQuestion->topic_id == 27) {
+
+                            // Сохраним ID'ы обрабатываемых вопросов
+                            $IDsOfProcessingQuestions[] = $question->id;
+
+                            // Создание цифровой маски в БД
+                            $landmarkModel = new Landmark();
+                            $landmarkModel->start_time = '00:00:00:000';
+                            $landmarkModel->finish_time = '12:00:00:000';
+                            $landmarkModel->type = Landmark::TYPE_LANDMARK_IVAN_MODULE;
+                            $landmarkModel->rotation = Landmark::TYPE_ZERO;
+                            $landmarkModel->mirroring = Landmark::TYPE_MIRRORING_FALSE;
+                            $landmarkModel->question_id = $question->id;
+                            $landmarkModel->video_interview_id = $question->video_interview_id;
+                            $landmarkModel->save();
+                            // Создание объекта запуска консольной команды
+                            $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                            // Выполнение команды анализа видео ответа на калибровочный вопрос в фоновом режиме
+                            $consoleRunner->run('video-interview-analysis/preparation ' . $question->id . ' ' .
+                                $landmarkModel->id . ' ' . $topicQuestion->topic_id);
+                            // Задержка выполнения скрипта в 1 секунду
+                            sleep(1);
+                        }
+                    }
+                }
+
+                // Ожидание завершения обработки всех видео по обычным вопросам
+                $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                    ->where(['video_interview_id' => (int)$videoInterviewId])
+                    ->one();
+                do {
+                    $processingFinished = true;
+                    $questionProcessingStatuses = QuestionProcessingStatus::find()
+                        ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                        ->all();
+                    foreach($questionProcessingStatuses as $questionProcessingStatus) {
+                        if ($questionProcessingStatus->status !== QuestionProcessingStatus::STATUS_COMPLETED) {
+                            $processingFinished = false;
+                            break;
+                        }
+                    }
+                    sleep(5); // Задержка выполнения скрипта в 5 секунд
+                    if ($processingFinished) {
+                        // Обновление атрибутов статуса обработки видеоинтервью в БД
+                        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
+                        $videoInterviewProcessingStatus->updateAttributes(['status']);
+                    }
+                } while ($processingFinished === false);
+
+                // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
+                $questionProcessingStatuses = QuestionProcessingStatus::find()
+                    ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                    ->orderBy(['question_id' => SORT_ASC])
+                    ->all();
+                // Массив сформированных цифровых масок МОВ Ивана
+                $formedLandmarks = array();
+                // Параметры наличия поворота головы вправо и влево
+                $turnRight = null;
+                $turnLeft = null;
+                // Значение FPS
+                $fpsValue = 0;
+                // Показатель качества видео
+                $qualityVideo = false;
+                // Массив с коэффициентами качества видео
+                $videoQualityParameters = array();
+                // Обход всех статусов обработки видео на вопрос
+                foreach ($questionProcessingStatuses as $questionProcessingStatus) {
+                    // Поиск видео ответа на вопрос по id
+                    $question = Question::findOne($questionProcessingStatus->question_id);
+                    // Поиск темы вопроса по id вопроса
+                    $topicQuestion = TopicQuestion::find()
+                        ->where(['test_question_id' => $question->test_question_id])
+                        ->one();
+                    // Поиск цифровых масок по определенному вопросу
+                    $landmarks = Landmark::find()
+                        ->where(['question_id' => $questionProcessingStatus->question_id])
+                        ->all();
+                    // Переменная существования цифровой маски
+                    $landmarkExist = false;
+                    // Создание объекта AnalysisHelper
+                    $analysisHelper = new AnalysisHelper();
+                    // Если вопрос калибровочный (сядьте прямо, посмотрите в камеру)
+                    if ($topicQuestion->topic_id == 27)
+                        if (!empty($landmarks))
+                            foreach ($landmarks as $landmark) {
+                                $landmarkExist = true;
+                                // Определение качества видео
+                                list($fpsValue, $qualityVideo, $videoQualityParameters) = $analysisHelper->determineQuality($landmark);
+                            }
+                    // Если вопрос калибровочный (поверните голову вправо)
+                    if ($topicQuestion->topic_id == 24)
+                        if (!empty($landmarks))
+                            foreach ($landmarks as $landmark)
+                                // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+                                if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+                                    $landmarkExist = true;
+                                    // Определение поворота головы, если калибровочный вопрос с темой 24 (поворот головы вправо)
+                                    $turnRight = $analysisHelper->determineTurn($landmark);
+                                }
+                    // Если вопрос калибровочный (поверните голову влево)
+                    if ($topicQuestion->topic_id == 25)
+                        if (!empty($landmarks))
+                            foreach ($landmarks as $landmark)
+                                // Если цифровая маска содержит события и получена вторым скриптом МОВ Ивана
+                                if (strripos($landmark->landmark_file_name, '_ext') !== false) {
+                                    $landmarkExist = true;
+                                    // Определение поворота головы, если калибровочный вопрос с темой 25 (поворот головы влево)
+                                    $turnLeft = $analysisHelper->determineTurn($landmark);
+                                }
+                    // Формирование массива получения цифровых масок
+                    array_push($formedLandmarks, [$question->test_question_id, $landmarkExist]);
+                }
+                // Формирование результата
+                $result = array($formedLandmarks, $turnRight, $turnLeft, $fpsValue,
+                    $qualityVideo, $videoQualityParameters);
+                // Поиск итогового заключения по данному видеоинтервью
+                $finalResult = FinalResult::find()->where(['video_interview_id' => (int)$videoInterviewId])->one();
+                // Если итоговое заключение существует
+                if (!empty($finalResult)) {
+                    // Поиск результатов обработки калибровочных вопросов
+                    $calibrationConclusion = CalibrationConclusion::findOne($finalResult->id);
+                    // Если результаты обработки калибровочных вопросов для данного видеоинтервью уже созданы
+                    if (!empty($calibrationConclusion)) {
+                        // Обновление записи о результатах обработки калибровочных вопросов в БД
+                        $calibrationConclusion->text = json_encode($result, JSON_UNESCAPED_UNICODE);
+                        $calibrationConclusion->updateAttributes(['text']);
+                    }
+                }
+            }
+        }
     }
 
     /**

@@ -2183,10 +2183,10 @@ class AnalysisHelper
             }
             // Поиск всех видео ответов на вопросы для данного видеоинтервью
             $questions = Question::find()->where(['video_interview_id' => $videoInterviewId])->all();
+
+            $IDsOfProcessingQuestions = array();
+
             // Если есть видео ответов на вопросы для данного видеоинтервью
-
-            $IDsOfProcessingQuestions = array(); 
-
             if (!empty($questions)) {
                 // Обход всех видео ответов на вопросы для данного видеоинтервью
                 foreach ($questions as $question) {
