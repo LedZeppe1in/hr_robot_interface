@@ -2,8 +2,10 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+use app\modules\main\models\QuestionProcessingStatus;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\QuestionProcessingStatusSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = 'Состояния обработки видео ответов по вопросам';
@@ -16,6 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             [
@@ -39,6 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function($data) {
                     return ($data->status !== null) ? $data->getStatus() : null;
                 },
+                'filter' => QuestionProcessingStatus::getStatuses(),
             ],
             [
                 'class' => 'yii\grid\ActionColumn',

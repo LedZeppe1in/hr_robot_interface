@@ -2,12 +2,13 @@
 
 namespace app\modules\main\controllers;
 
+use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use yii\data\ActiveDataProvider;
 use app\modules\main\models\VideoInterviewProcessingStatus;
+use app\modules\main\models\VideoInterviewProcessingStatusSearch;
 
 /**
  * VideoInterviewProcessingStatusController implements the CRUD actions for VideoInterviewProcessingStatus model.
@@ -48,11 +49,11 @@ class VideoInterviewProcessingStatusController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => VideoInterviewProcessingStatus::find(),
-        ]);
+        $searchModel = new VideoInterviewProcessingStatusSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }

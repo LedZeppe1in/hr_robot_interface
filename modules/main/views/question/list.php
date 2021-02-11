@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\grid\GridView;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\QuestionSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $videoProcessingModuleSettingForm app\modules\main\models\VideoProcessingModuleSettingForm */
 
@@ -65,8 +66,17 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
+            [
+                'attribute'=>'video_interview_id',
+                'format' => 'raw',
+                'value' => function($data) {
+                    return ($data->video_interview_id !== null) ? Html::a($data->video_interview_id,
+                        ['video-interview/view', 'id' => $data->video_interview_id]) : null;
+                },
+            ],
             [
                 'attribute'=>'test_question_id',
                 'format' => 'raw',
@@ -80,21 +90,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Текст вопроса',
                 'value' => function($data) {
                     return ($data->test_question_id !== null) ? $data->testQuestion->text : null;
-                },
-            ],
-            [
-                'attribute'=>'video_interview_id',
-                'format' => 'raw',
-                'value' => function($data) {
-                    return ($data->video_interview_id !== null) ? Html::a($data->video_interview_id,
-                        ['video-interview/view', 'id' => $data->video_interview_id]) : null;
-                },
-            ],
-            [
-                'attribute' => 'video_interview_id',
-                'label' => 'Название файла с полным видеоинтервью',
-                'value' => function($data) {
-                    return ($data->video_interview_id !== null) ? $data->videoInterview->video_file_name : null;
                 },
             ],
             'video_file_name',

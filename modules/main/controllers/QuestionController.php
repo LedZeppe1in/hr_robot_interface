@@ -8,12 +8,12 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\modules\main\models\Question;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\VideoInterview;
+use app\modules\main\models\QuestionSearch;
 use app\modules\main\models\VideoProcessingModuleSettingForm;
 
 /**
@@ -57,13 +57,13 @@ class QuestionController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Question::find(),
-        ]);
+        $searchModel = new QuestionSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
         // Создание формы настройки параметров запуска модуля обработки видео (Иван)
         $videoProcessingModuleSettingForm = new VideoProcessingModuleSettingForm();
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
             'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
         ]);

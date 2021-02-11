@@ -6,6 +6,7 @@ use app\modules\main\models\Landmark;
 use app\modules\main\models\FeaturesDetectionModuleSettingForm;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\LandmarkSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $featuresDetectionModuleSettingForm app\modules\main\models\FeaturesDetectionModuleSettingForm */
 
@@ -97,6 +98,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             [
@@ -136,6 +138,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function($data) {
                     return ($data->type !== null) ? $data->getType() : null;
                 },
+                'filter' => Landmark::getTypes(),
             ],
             [
                 'class' => 'yii\grid\ActionColumn',

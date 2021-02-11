@@ -2,8 +2,10 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+use app\modules\main\models\VideoInterviewProcessingStatus;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\VideoInterviewProcessingStatusSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = 'Состояния обработки видеоинтервью';
@@ -16,6 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             [
@@ -32,6 +35,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function($data) {
                     return ($data->status !== null) ? $data->getStatus() : null;
                 },
+                'filter' => VideoInterviewProcessingStatus::getStatuses(),
             ],
             [
                 'attribute'=>'all_runtime',

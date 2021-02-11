@@ -2,13 +2,14 @@
 
 namespace app\modules\main\controllers;
 
+use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use yii\data\ActiveDataProvider;
 use app\modules\main\models\ModuleMessage;
 use app\modules\main\models\QuestionProcessingStatus;
+use app\modules\main\models\QuestionProcessingStatusSearch;
 
 /**
  * QuestionProcessingStatusController implements the CRUD actions for QuestionProcessingStatus model.
@@ -49,11 +50,11 @@ class QuestionProcessingStatusController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => QuestionProcessingStatus::find(),
-        ]);
+        $searchModel = new QuestionProcessingStatusSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }

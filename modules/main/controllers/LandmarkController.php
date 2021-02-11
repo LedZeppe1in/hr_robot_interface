@@ -2,7 +2,6 @@
 
 namespace app\modules\main\controllers;
 
-
 use Yii;
 use Exception;
 use yii\web\Controller;
@@ -11,11 +10,11 @@ use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
-use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\modules\main\models\Landmark;
 use app\modules\main\models\Question;
+use app\modules\main\models\LandmarkSearch;
 use app\modules\main\models\FeaturesDetectionModuleSettingForm;
 
 /**
@@ -59,13 +58,13 @@ class LandmarkController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Landmark::find(),
-        ]);
+        $searchModel = new LandmarkSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
         // Создание формы настройки параметров запуска модуля определения признаков (МОП)
         $featuresDetectionModuleSettingForm = new FeaturesDetectionModuleSettingForm();
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
             'featuresDetectionModuleSettingForm' => $featuresDetectionModuleSettingForm
         ]);
