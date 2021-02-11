@@ -1326,7 +1326,7 @@ class AnalysisHelper
     public static function determineQuality($landmark)
     {
         // Значение FPS
-        $fpsValue = 0;
+        $fpsValue = true;
         // Показатель качества видео
         $qualityVideo = false;
         // Массив с коэффициентами качества видео
@@ -1347,8 +1347,10 @@ class AnalysisHelper
             $faceData = json_decode($jsonFaceData, true);
             // Определение качества видео по коэффициентам
             foreach ($faceData as $key => $value) {
-                if ($key == 'FPS')
-                    $fpsValue = $value;
+                if ($key == 'err_msg')
+                    $fpsValue = false;
+                //if ($key == 'FPS')
+                //    $fpsValue = $value;
                 if ($key == 'COEF_QUALITY') {
                     foreach ($value as $coefficient)
                         array_push($videoQualityParameters, $coefficient);

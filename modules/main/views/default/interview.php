@@ -18,6 +18,8 @@ $this->title = 'Запись интервью';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
+<?= $this->render('_camera_setting'); ?>
+
 <script type="text/javascript">
     // Перевод миллисекунд в формат времени
     function msToTime(s, flag) {
@@ -156,6 +158,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
         // Обработка нажатия кнопки подготовки к интервью
         $("#start-interview").click(function(e) {
+            // Открытие модального окна
+            $("#cameraSettingForm").modal("show");
             // Отображение кнопки начала записи интервью
             recordButton.style.display = "inline-block";
             // Скрытие кнопки подготовки к интервью
@@ -293,7 +297,7 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
         <div id="main-recommendations" class="col-md-11 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px; display: none;">
             <div id="fps-recommendation" style="display: none;">
-                &bull; Необходимо сменить оборудование для съемки видео-интервью. Оборудование должно обеспечивать частоту кадров в секунду более 20.
+                &bull; Необходимо сменить оборудование для съемки видео-интервью. Оборудование должно обеспечивать частоту кадров в секунду более 20. Такую функциональность обеспечивают персональный компьютер, планшет и стационарный компьютер. При отсутствии подобного оборудования Вы можете изменить разрешение камеры имеющегося оборудования на 640х480 пикселей.
             </div>
             <div id="focusing-recommendation" style="display: none;">
                 &bull; Необходимо сменить оборудование для съемки видео-интервью. Оборудование должно обеспечивать четкое изображение (разрешение камеры должно быть 640х480 пикселей).

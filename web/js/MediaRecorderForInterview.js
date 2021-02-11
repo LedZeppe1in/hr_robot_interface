@@ -52,8 +52,8 @@ if (!isSecureOrigin) {
  }
 
 var constraints = {audio: true,
-                   video: {width: 1280,
-                           height: 720,
+                   video: {width: 640,//1280,
+                           height: 480,//720,
                            frameRate: {min: 24,
                                        max: 50}}};
 
@@ -306,7 +306,7 @@ function uploadCalibrationVideo() {
             let cameraMovementsRecommendation = document.getElementById("camera-movements-recommendation");
             // Если проверка калибровочных вопросов прошла успешно
             if (response.success === true && response.turnRight !== null && response.turnLeft !== null &&
-                response.qualityVideo === true) {
+                response.qualityVideo === true && response.fpsValue === true) {
                 // Отображение кнопки запуска новой записи видео
                 startRecordButton.style.display = "inline-block";
                 // Обновление текста информации о ходе видеоинтервью
@@ -329,11 +329,11 @@ function uploadCalibrationVideo() {
                 if (response.turnRight === null || response.turnLeft === null)
                     finalText.textContent = "Спасибо за ожидание! К сожалению, Вы не повернули голову, дальнейшее прохождение интервью невозможно.";
                 finalText.style.display = "inline-block";
-                // if (response.fpsValue < 20) {
-                //     // Отображение слоя с рекомендациями к видео
-                //     mainRecommendations.style.display = "inline-block";
-                //     fpsRecommendation.style.display = "inline-block";
-                // }
+                if (response.fpsValue === false) {
+                    // Отображение слоя с рекомендациями к видео
+                    mainRecommendations.style.display = "inline-block";
+                    fpsRecommendation.style.display = "inline-block";
+                }
                 if (response.videoQualityParameters[4] < 2) {
                     // Отображение слоя с рекомендациями к видео
                     mainRecommendations.style.display = "inline-block";
