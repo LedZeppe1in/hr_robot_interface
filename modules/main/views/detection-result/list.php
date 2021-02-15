@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\grid\GridView;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\AnalysisResultSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = 'Результаты определения признаков';
@@ -16,6 +17,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             [
@@ -44,7 +46,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
             [
-                'attribute'=>'landmark_id',
+                'attribute'=>'landmarkName',
                 'label' => 'Название файла с лицевыми точками',
                 'format' => 'raw',
                 'value' => function($data) {

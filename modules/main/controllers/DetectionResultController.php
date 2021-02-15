@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\AnalysisResultSearch;
 use Yii;
 use Exception;
 use yii\web\Controller;
@@ -53,11 +54,11 @@ class DetectionResultController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => AnalysisResult::find(),
-        ]);
+        $searchModel = new AnalysisResultSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }

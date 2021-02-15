@@ -20,6 +20,8 @@ use yii\behaviors\TimestampBehavior;
  */
 class AnalysisResult extends \yii\db\ActiveRecord
 {
+    public $landmarkName; // Название файла с лицевыми точками
+
     /**
      * @return string table name
      */
@@ -40,6 +42,7 @@ class AnalysisResult extends \yii\db\ActiveRecord
                 'interpretation_result_file_name', 'description'], 'string'],
             [['landmark_id'], 'exist', 'skipOnError' => true, 'targetClass' => Landmark::className(),
                 'targetAttribute' => ['landmark_id' => 'id']],
+            [['landmarkName'], 'safe'],
         ];
     }
 

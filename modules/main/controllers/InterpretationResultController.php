@@ -8,10 +8,10 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use yii\data\ActiveDataProvider;
 use app\components\OSConnector;
 use app\components\AnalysisHelper;
 use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\AnalysisResultSearch;
 
 /**
  * InterpretationResultController implements the CRUD actions for AnalysisResult model.
@@ -52,11 +52,11 @@ class InterpretationResultController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => AnalysisResult::find(),
-        ]);
+        $searchModel = new AnalysisResultSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }
