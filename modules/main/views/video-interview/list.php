@@ -74,6 +74,10 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'id',
             [
+                'attribute' => 'created_at',
+                'format' => ['date', 'dd.MM.Y HH:mm:ss']
+            ],
+            [
                 'attribute'=>'video_file_name',
                 'label' => 'Видеоинтервью',
                 'format' => 'raw',
