@@ -164,11 +164,15 @@ $this->params['breadcrumbs'][] = $this->title;
             recordButton.style.display = "inline-block";
             // Скрытие кнопки подготовки к интервью
             document.querySelector('button#start-interview').style.display = "none";
+        });
+
+        // Обработка закрытия модульного окна с инструкциями по настройке оборудования
+        $("#cameraSettingForm").on('hidden.bs.modal', function (e) {
             // Проигрывание аудио-файла с озвучкой не вопроса
             audioSource.src = "/web/audio/interview-preparation-audio.mp3";
             audioPlayer.load();
             audioPlayer.play();
-        });
+        })
 
         // Обработка нажатия кнопки начала записи интервью
         $("#record").click(function(e) {

@@ -27,19 +27,25 @@ $this->params['breadcrumbs'][] = $this->title;
 <?php $this->registerJsFile('/js/jquery.ui.datepicker-ru.js') ?>
 <?php $this->registerJsFile('/js/grid.locale-ru.js') ?>
 <?php $this->registerJsFile('/js/jQueryGrid.js') ?>
-
 <script type="text/javascript">
     jQuery(document).ready(function() {
         var IDOfUser = '<?= $userId ?>';
         var CodeOfRespondentInterview = '<?= $model->name ?>';
         var AccessKey = '<?= TCommonData::InternalAccessKey() ?>';
 
-        <?php
-            if (mb_strpos($_SERVER['HTTP_HOST'], 'bribon') === False)
-                echo '		var RetrieveDataURL = \'https://84.201.129.65:8880/Main.php\';';
-            else
-                echo '		var RetrieveDataURL = \'https://bribon.ru:8880/Main.php\';';
-        ?>
+<?php
+
+ // if (mb_strpos($_SERVER['HTTP_HOST'], 'bribon') === False)
+ //  echo '		var RetrieveDataURL = \'https://84.201.129.65:8880/Main.php\';';
+ // else
+ //  echo '		var RetrieveDataURL = \'https://bribon.ru:8880/Main.php\';';
+
+ if (mb_strpos($_SERVER['HTTP_HOST'], 'imagesprint') === False)
+  echo '		var RetrieveDataURL = \'https://84.201.129.65:8880/Main.php\';';
+ else
+  echo '		var RetrieveDataURL = \'https://imagesprint.ru:8880/Main.php\';';
+
+?>
  
         VideoAnalysisLibrary.Initialize(jQuery('#VideoAnalysisUIControl'), IDOfUser, CodeOfRespondentInterview,
             AccessKey, RetrieveDataURL);
@@ -54,12 +60,19 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php echo TConstructorOfVideoAnalysisPage::IncludeRequiredCode(); ?>
 
-    <?php
-        if (mb_strpos($_SERVER['HTTP_HOST'], 'bribon') === False)
-            $URL = 'https://84.201.129.65:8880/Main.php';
-        else
-            $URL = 'https://bribon.ru:8880/Main.php';
-        echo '<iframe src = "'.$URL.'" style = "display:none; width:500px; height:350;"></iframe>';
-    ?>
+<?php
+
+// if (mb_strpos($_SERVER['HTTP_HOST'], 'bribon') === False)
+//  $URL = 'https://84.201.129.65:8880/Main.php';
+// else
+//  $URL = 'https://bribon.ru:8880/Main.php';
+
+ if (mb_strpos($_SERVER['HTTP_HOST'], 'imagesprint') === False)
+  $URL = 'https://84.201.129.65:8880/Main.php';
+ else
+  $URL = 'https://imagesprint.ru:8880/Main.php';
+ echo '<iframe src = "'.$URL.'" style = "display:none; width:500px; height:350;"></iframe>';
+
+?>
 
 </div>
