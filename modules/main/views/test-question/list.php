@@ -2,8 +2,10 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+use app\modules\main\models\TestQuestion;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\TestQuestionSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = 'Вопросы';
@@ -20,6 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             'name',
@@ -31,6 +34,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function($data) {
                     return ($data->type !== null) ? $data->getType() : null;
                 },
+                'filter' => TestQuestion::getTypes(),
             ],
             [
                 'attribute'=>'time',

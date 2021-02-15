@@ -51,7 +51,7 @@ class Respondent extends \yii\db\ActiveRecord
             'id' => 'ID',
             'created_at' => 'Создан',
             'updated_at' => 'Обновлен',
-            'name' => 'Имя',
+            'name' => 'Код интервью',
             'main_respondent_id' => 'ID респондента',
         ];
     }

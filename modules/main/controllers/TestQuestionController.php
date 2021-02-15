@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\TestQuestionSearch;
 use Yii;
 use Exception;
 use yii\web\Controller;
@@ -52,11 +53,11 @@ class TestQuestionController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => TestQuestion::find(),
-        ]);
+        $searchModel = new TestQuestionSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }

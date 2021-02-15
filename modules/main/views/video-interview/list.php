@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\grid\GridView;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\VideoInterviewSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $videoProcessingModuleSettingForm app\modules\main\models\VideoProcessingModuleSettingForm */
 
@@ -69,6 +70,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             [
@@ -89,7 +91,7 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute'=>'respondent_id',
-                'label' => 'Респондент',
+                'label' => 'Код интервью',
                 'format' => 'raw',
                 'value' => function($data) {
                     return $data->respondent->name;

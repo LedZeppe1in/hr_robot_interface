@@ -5,6 +5,7 @@ use yii\grid\GridView;
 use app\modules\main\models\User;
 
 /* @var $this yii\web\View */
+/* @var $searchModel app\modules\main\models\RespondentSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = 'Интервью респондентов';
@@ -22,6 +23,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
             'id',
             'name',

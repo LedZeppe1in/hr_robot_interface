@@ -127,7 +127,7 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'respondent_id',
-                'label' => 'Респондент',
+                'label' => 'Код интервью',
                 'value' => $model->respondent->name,
             ],
             [

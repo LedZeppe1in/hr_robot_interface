@@ -2,7 +2,7 @@
 
 namespace app\modules\main\controllers;
 
-use app\modules\main\models\User;
+use app\modules\main\models\RespondentSearch;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -10,8 +10,6 @@ use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use app\modules\main\models\Respondent;
-use app\modules\main\models\Question;
-use app\modules\main\models\VideoInterview;
 
 /**
  * RespondentController implements the CRUD actions for Respondent model.
@@ -52,11 +50,11 @@ class RespondentController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Respondent::find(),
-        ]);
+        $searchModel = new RespondentSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }

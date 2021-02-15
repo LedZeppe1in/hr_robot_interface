@@ -2,6 +2,7 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\VideoInterviewSearch;
 use Yii;
 use stdClass;
 use Exception;
@@ -76,13 +77,13 @@ class VideoInterviewController extends Controller
      */
     public function actionList()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => VideoInterview::find(),
-        ]);
+        $searchModel = new VideoInterviewSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->get());
         // Создание формы настройки параметров запуска модуля обработки видео Ивана и Андрея
         $videoProcessingModuleSettingForm = new VideoProcessingModuleSettingForm();
 
         return $this->render('list', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
             'videoProcessingModuleSettingForm' => $videoProcessingModuleSettingForm
         ]);
