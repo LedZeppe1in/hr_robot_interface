@@ -206,19 +206,31 @@ class AnalysisResultController extends Controller
         // Создание объекта AnalysisHelper
         $analysisHelper = new AnalysisHelper();
         // Определение базового кадра для видеоинтервью
-        $baseFrame = $analysisHelper->getBaseFrame($landmark->video_interview_id, $additionalOptions);
-        // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-        $analysisResultId = $analysisHelper->getAnalysisResult(
-            $landmark,
-            $processingType,
-            $baseFrame,
-            ($processingType == 2 || $processingType == 3) ? AnalysisHelper::NEW_FDM : AnalysisHelper::OLD_FDM,
-            $additionalOptions
-        );
-        // Вывод сообщения об успешном обнаружении признаков
-        Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
+        list($baseFrameExist, $baseFrame) = $analysisHelper->getBaseFrame($landmark->video_interview_id, $additionalOptions);
+        // Если базовый кадр сформирован
+        if ($baseFrameExist) {
+            // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+            list($resultExist, $analysisResultId) = $analysisHelper->getAnalysisResult(
+                $landmark,
+                $processingType,
+                $baseFrame,
+                ($processingType == 2 || $processingType == 3) ? AnalysisHelper::NEW_FDM : AnalysisHelper::OLD_FDM,
+                $additionalOptions
+            );
+            // Если результаты определения признаков сформированы
+            if ($resultExist) {
+                // Вывод сообщения об успешном обнаружении признаков
+                Yii::$app->getSession()->setFlash('success', 'Вы успешно определили признаки!');
 
-        return $this->redirect(['/detection-result/view/' . $analysisResultId]);
+                return $this->redirect(['/detection-result/view/' . $analysisResultId]);
+            } else
+                // Вывод сообщения об ошибке
+                Yii::$app->getSession()->setFlash('error', $analysisResultId);
+        } else
+            // Вывод сообщения об ошибке
+            Yii::$app->getSession()->setFlash('error', $baseFrame);
+
+        return $this->redirect(['/landmark/view/' . $id]);
     }
 
     /**
