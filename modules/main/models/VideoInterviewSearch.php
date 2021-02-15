@@ -62,10 +62,9 @@ class VideoInterviewSearch extends VideoInterview
 
         // grid filtering conditions
         $query->andFilterWhere([
-            'id' => $this->id,
+            'hrrobot_video_interview.id' => $this->id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            //'respondent_id' => $this->respondent->name,
         ]);
 
         $query->andFilterWhere(['ilike', 'video_file_name', $this->video_file_name])

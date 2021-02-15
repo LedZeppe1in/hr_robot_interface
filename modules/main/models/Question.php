@@ -21,7 +21,8 @@ use yii\behaviors\TimestampBehavior;
  */
 class Question extends \yii\db\ActiveRecord
 {
-    public $videoFile; // Файл c частью видео-интервью (видео на вопрос)
+    public $testQuestionText; // Текст вопроса
+    public $videoFile;        // Файл c частью видео-интервью (видео на вопрос)
 
     /**
      * @return string table name
@@ -44,6 +45,7 @@ class Question extends \yii\db\ActiveRecord
                 'targetAttribute' => ['test_question_id' => 'id']],
             [['video_interview_id'], 'exist', 'skipOnError' => true, 'targetClass' => VideoInterview::className(),
                 'targetAttribute' => ['video_interview_id' => 'id']],
+            [['testQuestionText'], 'safe'],
         ];
     }
 

@@ -17,7 +17,7 @@ class QuestionSearch extends Question
     {
         return [
             [['id', 'created_at', 'updated_at', 'test_question_id', 'video_interview_id'], 'integer'],
-            [['video_file_name', 'description'], 'safe'],
+            [['video_file_name', 'description', 'testQuestionText'], 'safe'],
         ];
     }
 
@@ -41,6 +41,8 @@ class QuestionSearch extends Question
     {
         $query = Question::find();
 
+        $query->joinWith('testQuestion'); // Объединение с таблицей "hrrobot_test_question" в БД
+
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
@@ -48,6 +50,20 @@ class QuestionSearch extends Question
             'pagination' => [
                 'pageSize' => 20,
             ],
+        ]);
+
+        // Реализация сортировки по добавленному полю "testQuestionText" в модели Question
+        $dataProvider->setSort([
+            'attributes' => [
+                'id',
+                'video_interview_id',
+                'test_question_id',
+                'testQuestionText' => [
+                    'asc' => ['hrrobot_test_question.text' => SORT_ASC],
+                    'desc' => ['hrrobot_test_question.text' => SORT_DESC],
+                ],
+                'video_file_name',
+            ]
         ]);
 
         $this->load($params);
@@ -68,7 +84,8 @@ class QuestionSearch extends Question
         ]);
 
         $query->andFilterWhere(['ilike', 'video_file_name', $this->video_file_name])
-            ->andFilterWhere(['ilike', 'description', $this->description]);
+            ->andFilterWhere(['ilike', 'description', $this->description])
+            ->andFilterWhere(['like', 'hrrobot_test_question.text', $this->testQuestionText]); // Поиск по тексту вопроса
 
         return $dataProvider;
     }

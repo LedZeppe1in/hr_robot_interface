@@ -86,7 +86,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
             [
-                'attribute' => 'test_question_id',
+                'attribute' => 'testQuestionText',
                 'label' => 'Текст вопроса',
                 'value' => function($data) {
                     return ($data->test_question_id !== null) ? $data->testQuestion->text : null;

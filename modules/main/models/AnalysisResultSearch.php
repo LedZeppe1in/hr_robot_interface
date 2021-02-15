@@ -62,6 +62,7 @@ class AnalysisResultSearch extends AnalysisResult
                     'asc' => ['hrrobot_landmark.landmark_file_name' => SORT_ASC],
                     'desc' => ['hrrobot_landmark.landmark_file_name' => SORT_DESC],
                 ],
+                'description',
             ]
         ]);
 
