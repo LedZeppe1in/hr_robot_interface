@@ -1357,9 +1357,15 @@ class AnalysisHelper
                     if (isset($videoQualityParameters[0]) && isset($videoQualityParameters[1]) &&
                         isset($videoQualityParameters[2]) && isset($videoQualityParameters[3]) &&
                         isset($videoQualityParameters[4])) {
+                        // Если видео полность подходит под коэффициенты качества
                         if ($videoQualityParameters[0] > 10 && $videoQualityParameters[1] < 2 &&
                             $videoQualityParameters[2] < 0.5 && $videoQualityParameters[3] < 25 &&
                             $videoQualityParameters[4] > 2)
+                            $qualityVideo = true;
+                        // Если К2 выше нормы И К1, К3, К4, К5 в норме
+                        if ($videoQualityParameters[0] > 15 && $videoQualityParameters[1] > 2 &&
+                            $videoQualityParameters[2] < 0.3 && $videoQualityParameters[3] < 5 &&
+                            $videoQualityParameters[4] > 3)
                             $qualityVideo = true;
                     }
                 }
