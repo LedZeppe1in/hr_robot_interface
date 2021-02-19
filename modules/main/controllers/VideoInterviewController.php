@@ -2,6 +2,8 @@
 
 namespace app\modules\main\controllers;
 
+use app\modules\main\models\ModuleMessage;
+use app\modules\main\models\QuestionProcessingStatus;
 use app\modules\main\models\VideoInterviewSearch;
 use Yii;
 use stdClass;
@@ -752,8 +754,15 @@ class VideoInterviewController extends Controller
     {
         // Установка времени выполнения скрипта в 3 часа
         set_time_limit(60 * 200);
+
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => $id])
+            ->one();
+
         $analysisResultIds = array();
         $errorMessages = '';
+        $resultExist = false;
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => $id])->all();
         // Обход всех видео ответов на вопросы
@@ -786,6 +795,16 @@ class VideoInterviewController extends Controller
 
                             // Если цифровая маска полученная не вторым скриптом Ивана
                             if (strripos($landmark->landmark_file_name, '_ext') === false) {
+                                // Время начала выполнения МОП
+                                $featuresDetectionStart = microtime(true);
+                                // Обновление атрибута статуса обработки вопроса в БД
+                                $questionProcessingStatus = QuestionProcessingStatus::find()
+                                    ->where([
+                                        'video_interview_processing_status_id' => $videoInterviewProcessingStatus->id,
+                                        'question_id' => $question->id])
+                                    ->one();
+                                $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
+                                $questionProcessingStatus->updateAttributes(['status']);
                                 try {
                                     // Создание объекта AnalysisHelper
                                     $analysisHelper = new AnalysisHelper();
@@ -793,27 +812,56 @@ class VideoInterviewController extends Controller
                                     $baseFrame = file_get_contents(Yii::$app->basePath .
                                         '/web/base-frame-' . $id . '.json', true);
                                     // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                                    $analysisResultId = $analysisHelper->getAnalysisResult(
+                                    list($resultExist, $analysisResultId) = $analysisHelper->getAnalysisResult(
                                         $landmark,
                                         2, // Задание определения признаков по новому МОП
                                         $baseFrame,
                                         AnalysisHelper::NEW_FDM,
                                         null
                                     );
-                                    // Сохранение id полученного результата определения признаков в массиве
-                                    array_push($analysisResultIds, $analysisResultId);
+                                    // Если нет ошибки при работе МОП
+                                    if ($resultExist)
+                                        // Сохранение id полученного результата определения признаков в массиве
+                                        array_push($analysisResultIds, $analysisResultId);
+                                    else {
+                                        // Формирование текста с ошибкой работы МОП
+                                        $errorMessages .= 'Ошибка МОП на данных Ивана для ЦМ id = ' . $landmark->id .
+                                            ' Текст ошибки: ' . $analysisResultId;
+                                        // Создание сообщения об ошибке МОП в БД
+                                        $moduleMessageModel = new ModuleMessage();
+                                        $moduleMessageModel->message = 'Ошибка МОП на данных Ивана для ЦМ id = ' .
+                                            $landmark->id . ' Текст ошибки: ' . $analysisResultId;
+                                        $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+                                        $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
+                                        $moduleMessageModel->save();
+                                    }
                                 } catch (Exception $e) {
                                     // Формирование текста с ошибкой работы МОП
                                     $errorMessages .= 'Ошибка МОП на данных Ивана для ЦМ id = ' . $landmark->id .
                                         ' Код ошибки: ' . $e->getMessage() . PHP_EOL;
+                                    // Создание сообщения об ошибке МОП в БД
+                                    $moduleMessageModel = new ModuleMessage();
+                                    $moduleMessageModel->message = 'Ошибка МОП на данных Ивана для ЦМ id = ' .
+                                        $landmark->id . ' Текст ошибки: ' . $e->getMessage();
+                                    $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+                                    $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
+                                    $moduleMessageModel->save();
                                 }
+                                // Время окончания выполнения МОП
+                                $featuresDetectionEnd = microtime(true);
+                                // Вычисление времени выполнения МОП
+                                $featuresDetectionRuntime = $featuresDetectionEnd - $featuresDetectionStart;
+                                // Обновление атрибута времени и статуса выполнения МОП в БД
+                                $questionProcessingStatus->feature_detection_runtime = $featuresDetectionRuntime;
+                                $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_COMPLETED;
+                                $questionProcessingStatus->updateAttributes(['feature_detection_runtime', 'status']);
                             }
                         }
                 }
             }
         }
         // Если нет ошибки при работе МОП
-        if ($errorMessages == '') {
+        if ($resultExist) {
             // Массив всех статистик, сформированных по всем видео на вопросы
             $featureStatistics = array();
             // Создание объекта коннектора с Yandex.Cloud Object Storage
@@ -879,7 +927,7 @@ class VideoInterviewController extends Controller
             ]);
         } else {
             // Вывод сообщений об ошибках обработка МОП
-            Yii::$app->getSession()->setFlash('warning', $errorMessages);
+            Yii::$app->getSession()->setFlash('error', $errorMessages);
 
             return $this->redirect(['/video-interview/view/' . $id]);
         }

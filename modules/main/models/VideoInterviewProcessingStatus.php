@@ -27,6 +27,7 @@ class VideoInterviewProcessingStatus extends \yii\db\ActiveRecord
     const STATUS_COMPLETED              = 3; // Статус завершено
     const STATUS_PARTIALLY_COMPLETED    = 4; // Статус завершено частично
     const STATUS_REJECTION              = 5; // Статус отказ
+    const STATUS_VIDEO_RECORDING        = 6; // Статус записи видеоинтервью
 
     /**
      * @return string table name
@@ -107,6 +108,7 @@ class VideoInterviewProcessingStatus extends \yii\db\ActiveRecord
             self::STATUS_COMPLETED => 'завершено',
             self::STATUS_PARTIALLY_COMPLETED => 'завершено частично',
             self::STATUS_REJECTION => 'отказ',
+            self::STATUS_VIDEO_RECORDING => 'запись видеоинтервью',
         ];
     }
 

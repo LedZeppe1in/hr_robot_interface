@@ -342,10 +342,16 @@ class VideoInterviewAnalysisController extends Controller
         foreach ($questionProcessingStatuses as $questionProcessingStatus)
             if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
                 $completed = false;
-        // Если анализ всех видео ответов на вопросы завершен
+        // Если анализ всех видео ответов на калибровочные вопросы завершен
         if ($completed && $questionProcessingStatusCount == 3) {
             // Обновление атрибутов статуса обработки видеоинтервью в БД
             $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_COMPLETED;
+            $videoInterviewProcessingStatus->updateAttributes(['status']);
+        }
+        // Если анализ видео ответов на вопросы завершен, но есть видео не по всем калибровочным вопросам
+        if ($completed && $questionProcessingStatusCount < 3) {
+            // Обновление атрибутов статуса обработки видеоинтервью в БД
+            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_REJECTION;
             $videoInterviewProcessingStatus->updateAttributes(['status']);
         }
     }
@@ -996,18 +1002,18 @@ class VideoInterviewAnalysisController extends Controller
                         $landmarkModel->processed_video_file_name,
                         $jsonResultPath . $landmarkModel->processed_video_file_name
                     );
+                    // Время начала выполнения МОП
+                    $featureDetectionStart = microtime(true);
                     // Обновление атрибута статуса обработки вопроса в БД
                     $questionProcessingStatus->status = QuestionProcessingStatus::STATUS_FEATURE_DEFINITION_MODULE_IN_PROGRESS;
                     $questionProcessingStatus->updateAttributes(['status']);
-                    // Время начала выполнения МОП
-                    $featureDetectionStart = microtime(true);
                     try {
                         // Создание объекта AnalysisHelper
                         $analysisHelper = new AnalysisHelper();
                         // Определение базового кадра для видеоинтервью
-                        $baseFrame = $analysisHelper->getBaseFrame($videoInterview->id, null);
+                        list($resultExist, $baseFrame) = $analysisHelper->getBaseFrame($videoInterview->id, null);
                         // Если базовый кадр определен
-                        if (isset($baseFrame)) {
+                        if ($resultExist && isset($baseFrame)) {
                             // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
                             // по новому методу МОП
                             $analysisHelper->getAnalysisResult(
@@ -1021,10 +1027,12 @@ class VideoInterviewAnalysisController extends Controller
                         } else {
                             // Создание сообщения об ошибке определения базового кадра в БД
                             $moduleMessageModel = new ModuleMessage();
-                            $moduleMessageModel->message = 'МОП не смог сформировать базовый кадр! ' . $e->getMessage();;
+                            $moduleMessageModel->message = 'МОП не смог сформировать базовый кадр! Текст ошибки: ' .
+                                $baseFrame;
                             $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
                             $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
                             $moduleMessageModel->save();
+                            $baseFrame = null;
                         }
                     } catch (Exception $e) {
                         // Создание сообщения об ошибке МОП в БД
@@ -1636,15 +1644,27 @@ class VideoInterviewAnalysisController extends Controller
                                     $baseFrame = file_get_contents(Yii::$app->basePath .
                                         '/web/base-frame-' . $videoInterviewId . '.json', true);
                                     // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                                    $analysisResultId = $analysisHelper->getAnalysisResult(
+                                    list($resultExist, $analysisResultId) = $analysisHelper->getAnalysisResult(
                                         $landmark,
                                         2, // Задание определения признаков по новому МОП
                                         $baseFrame,
                                         AnalysisHelper::NEW_FDM,
                                         null
                                     );
-                                    // Сохранение id полученного результата определения признаков в массиве
-                                    array_push($analysisResultIds, $analysisResultId);
+                                    // Если нет ошибки при работе МОП
+                                    if ($resultExist)
+                                        // Сохранение id полученного результата определения признаков в массиве
+                                        array_push($analysisResultIds, $analysisResultId);
+                                    else {
+                                        $errorExist = true;
+                                        // Создание сообщения об ошибке МОП в БД
+                                        $moduleMessageModel = new ModuleMessage();
+                                        $moduleMessageModel->message = 'Ошибка МОП на данных Ивана для ЦМ id = ' .
+                                            $landmark->id . ' Текст ошибки: ' . $analysisResultId;
+                                        $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
+                                        $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
+                                        $moduleMessageModel->save();
+                                    }
                                 } catch (Exception $e) {
                                     $errorExist = true;
                                     // Создание сообщения об ошибке МОП в БД

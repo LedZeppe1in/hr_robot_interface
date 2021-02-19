@@ -197,6 +197,7 @@ function upload() {
 
   formData.append("FileToUpload", blob, Date.now() + ".mp4");
   formData.append("_csrf", _csrf);
+  formData.append("LastQuestion", "true");
 
   // отслеживаем процесс отправки
   xhr.upload.onprogress = function(event)
@@ -210,9 +211,20 @@ function upload() {
     if (xhr.status == 200)
      {
       console.log("Успех");
+
+      // Получение ответа от сервера
+      let response = xhr.responseText;
+      response = JSON.parse(response);
+
+      console.log(response.successfulInterviewRecording);
+
       // Отображение финальной фразы
       let finalText = document.getElementById("final-text");
-      finalText.textContent = "Спасибо, Ваши ответы приняты! Ваш код: " + respondentCode;
+
+      if (response.success === true)
+          finalText.textContent = "Спасибо, Ваши ответы приняты! Ваш код: " + respondentCode;
+      else
+          finalText.textContent = "Вовремя записи видео произошла ошибка!";
      }
     else
      {

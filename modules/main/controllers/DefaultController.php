@@ -1005,11 +1005,53 @@ class DefaultController extends Controller
                     return $response;
                 }
             }
-//            // Если вопросы не калибровочные
-//            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27)
+            // Если вопросы не калибровочные
+            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27) {
+                // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                    ->where(['video_interview_id' => $videoInterview->id])
+                    ->one();
+                // Если респондент прошел калибровочные вопросы
+                if ($videoInterviewProcessingStatus->status == VideoInterviewProcessingStatus::STATUS_COMPLETED) {
+                    // Обновление атрибутов статуса обработки видеоинтервью в БД
+                    $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_VIDEO_RECORDING;
+                    $videoInterviewProcessingStatus->updateAttributes(['status']);
+                }
+                // Если респондент ответил на последний вопрос
+                if (Yii::$app->request->post('LastQuestion')) {
+                    // Определение массива возвращаемых данных
+                    $data = array();
+                    // Установка формата JSON для возвращаемых данных
+                    $response = Yii::$app->response;
+                    $response->format = Response::FORMAT_JSON;
+                    // Поиск кол-ва вопросов в профильном опросе
+                    $surveyQuestion = SurveyQuestion::find()->where(['test_question_id' => $testQuestion->id])->one();
+                    $surveyQuestionCount = SurveyQuestion::find()
+                        ->where(['survey_id' => $surveyQuestion->survey_id])
+                        ->count();
+                    // Поиск кол-ва записанных видео по вопросам
+                    $questionCount = Question::find()
+                        ->where(['video_interview_id' => $questionModel->video_interview_id])
+                        ->count();
+                    // Если кол-во записанных видео по вопросам совпадает с фактическим кол-вом вопросов в опросе
+                    if ($surveyQuestionCount == $questionCount) {
+                        // Обновление атрибутов статуса обработки видеоинтервью в БД
+                        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_QUEUE;
+                        $videoInterviewProcessingStatus->updateAttributes(['status']);
+                        // Формирование массива возвращаемых значений
+                        $data['successfulInterviewRecording'] = true;
+                    } else
+                        // Формирование массива возвращаемых значений
+                        $data['successfulInterviewRecording'] = false;
+                    // Возвращение данных
+                    $response->data = $data;
+
+                    return $response;
+                }
 //                // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
 //                $consoleRunner->run('video-interview-analysis/start-full-video-analysis ' . $questionModel->id . ' ' .
 //                    $landmarkModel->id);
+            }
         }
 
         return false;

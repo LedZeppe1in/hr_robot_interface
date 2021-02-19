@@ -1645,9 +1645,11 @@ class AnalysisHelper
      * @param $videoInterviewId - идентификатор видеоинтервью
      * @param $additionalOptions - дополнительные параметры для запуска МОП
      * @return mixed|null - цифровая маска с определенным базовым кадром
+     * @return array - массив с определенным базовым кадром или текстом об ошибке
      */
     public static function getBaseFrame($videoInterviewId, $additionalOptions)
     {
+        $resultExist = false;
         // Базовый (нудевой) кадр с нейтральным выражением лица
         $baseFrame = null;
         // Поиск всех вопросов для конкретного видеоинтервью
@@ -1731,14 +1733,14 @@ class AnalysisHelper
                         // Создание объекта обнаружения лицевых признаков (стабильная версия нового МОП)
                         $facialFeatureDetector = new FacialFeatureDetector();
                     // Определение нулевого кадра (нейтрального состояния лица) по новому методу МОП
-                    $baseFrame = $facialFeatureDetector->makeBasicFrameWithSmoothingAndRotating(
+                    list($resultExist, $baseFrame) = $facialFeatureDetector->makeBasicFrameWithSmoothingAndRotating(
                         $faceData,
                         $andreyFaceData,
                         $options,
                         $recognizedSpeechText
                     );
                     // Если базовый кадр определен
-                    if (isset($baseFrame))
+                    if ($resultExist && isset($baseFrame))
                         // Сохранение базового кадра в виде json-файла
                         file_put_contents(Yii::$app->basePath . '/web/base-frame-' .
                             $landmark->video_interview_id . '.json', $baseFrame);
@@ -1746,7 +1748,7 @@ class AnalysisHelper
             }
         }
 
-        return $baseFrame;
+        return array($resultExist, $baseFrame);
     }
 
     /**
@@ -1804,7 +1806,9 @@ class AnalysisHelper
      * @param $baseFrame - базовый кадр
      * @param $FDMVersion - версия запускаемого МОП
      * @param $additionalOptions - дополнительные параметры для запуска МОП
-     * @return int - id результатов анализа
+     * @return array|int - массив с id результатов анализа или сообщением об ошибке
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
      */
     public static function getAnalysisResult($landmark, $landmarkProcessingType, $baseFrame,
                                              $FDMVersion, $additionalOptions)
@@ -1829,9 +1833,11 @@ class AnalysisHelper
         $andreyFaceData = null;
         // Массив фактов
         $facts = array();
+        // Переменные для хранения результатов анализа
+        $resultExist = false;
+        $facialFeatures = null;
         // Если вызывается модуль обработки видео Ивана
         if ($landmark->type == Landmark::TYPE_LANDMARK_IVAN_MODULE) {
-            $facialFeatures = null;
             // Если указан режим запуска нового МОП
             if ($FDMVersion == self::NEW_FDM) {
                 // Если запускается экспериментальная версия нового МОП
@@ -1904,10 +1910,10 @@ class AnalysisHelper
                 // Получение текста распознанной речи на основе анализа видео ответа на вопрос
                 $recognizedSpeechText = self::getRecognizedSpeechText($landmark->question_id);
                 // Выявление признаков для лица по новому методу МОП
-                $facialFeatures = $facialFeatureDetector->detectFeaturesV3($faceData, $baseFrame, $andreyFaceData,
+                list($resultExist, $facialFeatures) = $facialFeatureDetector->detectFeaturesV3($faceData, $baseFrame, $andreyFaceData,
                     $options, $recognizedSpeechText);
                 // Если сформирован результат МОП и есть цифровая маска от Андрея
-                if (isset($facialFeatures) && isset($andreyFaceData))
+                if ($resultExist && isset($facialFeatures) && isset($andreyFaceData))
                     // Обход результатов МОП по цифровой маске, полученной МОВ Ивана
                     foreach ($facialFeatures as $key => $value)
                         if ($key == 'feature_statistics') {
@@ -1937,9 +1943,10 @@ class AnalysisHelper
                     $landmarkProcessingType,
                     $baseFrame
                 );
+                $resultExist = true;
             }
             // Если сформирован результат МОП
-            if (isset($facialFeatures)) {
+            if ($resultExist && isset($facialFeatures)) {
                 // Сохранение json-файла с результатами определения признаков на Object Storage
                 $osConnector->saveFileToObjectStorage(
                     OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
@@ -2091,15 +2098,23 @@ class AnalysisHelper
                     }
             }
         }
-        // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
-        $osConnector->saveFileToObjectStorage(
-            OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
-            $analysisResultModel->id,
-            $analysisResultModel->facts_file_name,
-            $facts
-        );
+        // Если получены результаты анализа
+        if ($resultExist && isset($facialFeatures)) {
+            // Сохранение json-файла с результатами конвертации определенных признаков в набор фактов на Object Storage
+            $osConnector->saveFileToObjectStorage(
+                OSConnector::OBJECT_STORAGE_DETECTION_RESULT_BUCKET,
+                $analysisResultModel->id,
+                $analysisResultModel->facts_file_name,
+                $facts
+            );
 
-        return $analysisResultModel->id;
+            return array($resultExist, $analysisResultModel->id);
+        } else {
+            // Удаление записи о результатах анализа из БД
+            $analysisResultModel->delete();
+
+            return array($resultExist, $facialFeatures);
+        }
     }
 
     /**
