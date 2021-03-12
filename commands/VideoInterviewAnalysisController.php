@@ -22,6 +22,7 @@ use app\modules\main\models\ProfileSurvey;
 use app\modules\main\models\SurveyQuestion;
 use app\modules\main\models\VideoInterview;
 use app\modules\main\models\AnalysisResult;
+use app\modules\main\models\FinalConclusion;
 use app\modules\main\models\ProfileKnowledgeBase;
 use app\modules\main\models\CalibrationConclusion;
 use app\modules\main\models\QuestionProcessingStatus;
@@ -44,6 +45,7 @@ class VideoInterviewAnalysisController extends Controller
         echo 'yii video-interview-analysis/start-base-frame-detection' . PHP_EOL;
         echo 'yii video-interview-analysis/start-video-processing' . PHP_EOL;
         echo 'yii video-interview-analysis/start-video-interview-analysis' . PHP_EOL;
+        echo 'yii video-interview-analysis/start-fdm-and-fim' . PHP_EOL;
         echo 'yii video-interview-analysis/start-calibration-questions-processing' . PHP_EOL;
     }
 
@@ -334,14 +336,14 @@ class VideoInterviewAnalysisController extends Controller
         $questionProcessingStatuses = QuestionProcessingStatus::find()
             ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
             ->all();
-        // Определение кол-ва записей статусов обработки вопросов по id статуса обработки видеоинтервью
-        $questionProcessingStatusCount = QuestionProcessingStatus::find()
-            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
-            ->count();
         // Обход всех статусов обработки вопросов и определение завершенности каждого
         foreach ($questionProcessingStatuses as $questionProcessingStatus)
             if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
                 $completed = false;
+        // Определение кол-ва записей статусов обработки вопросов по id статуса обработки видеоинтервью
+        $questionProcessingStatusCount = QuestionProcessingStatus::find()
+            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+            ->count();
         // Если анализ всех видео ответов на калибровочные вопросы завершен
         if ($completed && $questionProcessingStatusCount == 3) {
             // Обновление атрибутов статуса обработки видеоинтервью в БД
@@ -1014,15 +1016,15 @@ class VideoInterviewAnalysisController extends Controller
                         list($resultExist, $baseFrame) = $analysisHelper->getBaseFrame($videoInterview->id, null);
                         // Если базовый кадр определен
                         if ($resultExist && isset($baseFrame)) {
-                            // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
-                            // по новому методу МОП
-                            $analysisHelper->getAnalysisResult(
-                                $landmarkModel,
-                                2, // Задание определения признаков по новому МОП
-                                $baseFrame,
-                                AnalysisHelper::NEW_FDM,
-                                null
-                            );
+//                            // Получение рузультатов анализа видеоинтервью (обработка модулем определения признаков)
+//                            // по новому методу МОП
+//                            $analysisHelper->getAnalysisResult(
+//                                $landmarkModel,
+//                                2, // Задание определения признаков по новому МОП
+//                                $baseFrame,
+//                                AnalysisHelper::NEW_FDM,
+//                                null
+//                            );
                             $fdmResultFileExists = true;
                         } else {
                             // Создание сообщения об ошибке определения базового кадра в БД
@@ -1080,6 +1082,30 @@ class VideoInterviewAnalysisController extends Controller
                     $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_PARTIALLY_COMPLETED;
                     $videoInterviewProcessingStatus->all_runtime = $videoInterviewProcessingRuntime;
                     $videoInterviewProcessingStatus->updateAttributes(['status', 'all_runtime']);
+
+                    // Поиск итогового результата для данного видеоинтервью
+                    $finalResult = FinalResult::find()
+                        ->where(['video_interview_id' => (int)$videoInterviewId])
+                        ->one();
+                    // Если итоговый результат для данного видеоинтервью существует
+                    if (!empty($finalResult)) {
+                        // Поиск итогового заключения по видеоинтервью
+                        $finalConclusion = FinalConclusion::find()
+                            ->where(['id' => $finalResult->id])
+                            ->one();
+                        // Если итоговое заключение для данного видеоинтервью не существует
+                        if (empty($finalConclusion)) {
+                            // Создание итогового заключения для данного видеоинтервью
+                            $finalConclusionModel = new FinalConclusion();
+                            $finalConclusionModel->id = $finalResult->id;
+                            $finalConclusionModel->conclusion = 'Видеоинтервью не удалось обработать! Возможная причина: низкое качество видео.';
+                            $finalConclusionModel->save();
+                        } else {
+                            // Обновление текста итогового заключения для данного видеоинтервью
+                            $finalConclusion->conclusion = 'Видеоинтервью не удалось обработать! Возможная причина: низкое качество видео.';
+                            $finalConclusion->updateAttributes(['conclusion']);
+                        }
+                    }
                 }
 
                 // Удаление файла с видеоинтервью
@@ -1559,7 +1585,8 @@ class VideoInterviewAnalysisController extends Controller
     }
 
     /**
-     * Команда запуска определения и интерпретации признаков.
+     * Вспомогательная команда для ожидания процесса обработки видео (этап МОВ) и
+     * запуска команды определения и интерпретации признаков.
      *
      * @param $videoInterviewId - идентификатор видеоинтервью
      * @throws \SoapFault
@@ -1570,14 +1597,41 @@ class VideoInterviewAnalysisController extends Controller
     {
         // Ожидание завершения обработки всех видео по обычным вопросам
         do {
+            $completed = false;
             // Задержка выполнения скрипта в 5 секунд
             sleep(5);
             // Поиск статуса обработки видеоинтервью по id видеоинтервью
             $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
                 ->where(['video_interview_id' => (int)$videoInterviewId])
                 ->one();
-        } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
+            // Если видеоинтервью обработалось
+            if ($videoInterviewProcessingStatus->status == VideoInterviewProcessingStatus::STATUS_COMPLETED ||
+                $videoInterviewProcessingStatus->status == VideoInterviewProcessingStatus::STATUS_PARTIALLY_COMPLETED)
+                $completed = true;
+        } while ($completed !== true);
 
+        // Поиск статуса обработки видеоинтервью по id видеоинтервью
+        $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+            ->where(['video_interview_id' => (int)$videoInterviewId])
+            ->one();
+        // Если видеоинтервью имеет статус "завершено"
+        if ($videoInterviewProcessingStatus->status == VideoInterviewProcessingStatus::STATUS_COMPLETED) {
+            // Создание объекта запуска консольной команды
+            $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+            // Выполнение команды запуска МОП и МИП
+            $consoleRunner->run('video-interview-analysis/start-fdm-and-fim ' . $videoInterviewId);
+        }
+    }
+
+    /**
+     * Команда запуска определения и интерпретации признаков.
+     *
+     * @param $videoInterviewId - идентификатор видеоинтервью
+     * @throws \Throwable
+     * @throws \yii\db\StaleObjectException
+     */
+    public function actionStartFdmAndFim($videoInterviewId)
+    {
         // Время начала выполнения анализа видеоинтервью
         $videoInterviewProcessingStart = microtime(true);
         // Поиск статуса обработки видеоинтервью по id видеоинтервью
@@ -1590,8 +1644,9 @@ class VideoInterviewAnalysisController extends Controller
         $videoInterviewProcessingStatus->updateAttributes(['updated_at', 'status']);
 
         $detectionResultExist = false;
+        $interpretationResultExist = false;
+        $errorMessage = '';
         $analysisResultIds = array();
-        $errorExist = false;
         // Поиск всех видео ответов на вопросы для данного видеоинтервью
         $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
         // Обход всех видео ответов на вопросы
@@ -1652,11 +1707,12 @@ class VideoInterviewAnalysisController extends Controller
                                         null
                                     );
                                     // Если нет ошибки при работе МОП
-                                    if ($resultExist)
+                                    if ($resultExist) {
+                                        $detectionResultExist = true;
                                         // Сохранение id полученного результата определения признаков в массиве
                                         array_push($analysisResultIds, $analysisResultId);
+                                    }
                                     else {
-                                        $errorExist = true;
                                         // Создание сообщения об ошибке МОП в БД
                                         $moduleMessageModel = new ModuleMessage();
                                         $moduleMessageModel->message = 'Ошибка МОП на данных Ивана для ЦМ id = ' .
@@ -1666,10 +1722,9 @@ class VideoInterviewAnalysisController extends Controller
                                         $moduleMessageModel->save();
                                     }
                                 } catch (Exception $e) {
-                                    $errorExist = true;
                                     // Создание сообщения об ошибке МОП в БД
                                     $moduleMessageModel = new ModuleMessage();
-                                    $moduleMessageModel->message = 'Ошибка МОП на данных Ивана для ЦМ id = ' .
+                                    $moduleMessageModel->message = 'Непредвиденная ошибка МОП на данных Ивана для ЦМ id = ' .
                                         $landmark->id . ' Текст ошибки: ' . $e->getMessage();
                                     $moduleMessageModel->module_name = ModuleMessage::FEATURE_DETECTION_MODULE;
                                     $moduleMessageModel->question_processing_status_id = $questionProcessingStatus->id;
@@ -1688,8 +1743,8 @@ class VideoInterviewAnalysisController extends Controller
                 }
             }
         }
-        // Если нет ошибки при работе МОП
-        if ($errorExist == false) {
+        // Если есть хотя бы один результат определения признаков
+        if ($detectionResultExist) {
             // Массив всех статистик, сформированных по всем видео на вопросы
             $featureStatistics = array();
             // Создание объекта коннектора с Yandex.Cloud Object Storage
@@ -1743,121 +1798,161 @@ class VideoInterviewAnalysisController extends Controller
                     $facts
                 );
             }
-            $detectionResultExist = true;
-        }
-        // Если есть результаты определения признаков
-        if ($detectionResultExist) {
-            // Поиск всех видео ответов на вопросы для данного видеоинтервью
-            $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
-            // Если есть видео ответы на вопросы
-            if (!empty($questions)) {
-                // Обход всех видео ответов на вопросы
-                foreach ($questions as $question) {
-                    // Поиск темы для вопроса
-                    $topicQuestion = TopicQuestion::find()
-                        ->where(['test_question_id' => $question->test_question_id])
-                        ->one();
-                    // Если тема для вопроса найдена
-                    if (!empty($topicQuestion)) {
-                        // Если вопрос не калибровочный (темы 24, 25 и 27)
-                        if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 &&
-                            $topicQuestion->topic_id != 27) {
-                            // Поиск связанной базы знаний с заданным профилем интервью
-                            $surveyQuestion = SurveyQuestion::find()
-                                ->where(['test_question_id' => $question->test_question_id])
-                                ->one();
-                            if (!empty($surveyQuestion)) {
-                                $profileSurvey = ProfileSurvey::find()
-                                    ->where(['survey_id' => $surveyQuestion->survey_id])
+
+            try {
+                $profileKnowledgeBase = null;
+                // Поиск всех видео ответов на вопросы для данного видеоинтервью
+                $questions = Question::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+                // Если есть видео ответы на вопросы
+                if (!empty($questions)) {
+                    // Обход всех видео ответов на вопросы
+                    foreach ($questions as $question) {
+                        // Поиск темы для вопроса
+                        $topicQuestion = TopicQuestion::find()
+                            ->where(['test_question_id' => $question->test_question_id])
+                            ->one();
+                        // Если тема для вопроса найдена
+                        if (!empty($topicQuestion)) {
+                            // Если вопрос не калибровочный (темы 24, 25 и 27)
+                            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 &&
+                                $topicQuestion->topic_id != 27) {
+                                // Поиск связанной базы знаний с заданным профилем интервью
+                                $surveyQuestion = SurveyQuestion::find()
+                                    ->where(['test_question_id' => $question->test_question_id])
                                     ->one();
-                                if (!empty($profileSurvey)) {
-                                    $profileKnowledgeBase = ProfileKnowledgeBase::find()
-                                        ->where(['profile_id' => $profileSurvey->profile_id])
+                                if (!empty($surveyQuestion)) {
+                                    $profileSurvey = ProfileSurvey::find()
+                                        ->where(['survey_id' => $surveyQuestion->survey_id])
                                         ->one();
-                                    break;
+                                    if (!empty($profileSurvey)) {
+                                        $profileKnowledgeBase = ProfileKnowledgeBase::find()
+                                            ->where(['profile_id' => $profileSurvey->profile_id])
+                                            ->one();
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            // Если существует связь профиля с базами знаний по данному видеоинтервью
-            if (!empty($profileKnowledgeBase)) {
-                // Если задана база знаний для интерпретации первого уровня
-                if ($profileKnowledgeBase->first_level_knowledge_base_id != null) {
-                    // Массив идентификаторов результатов анализа
-                    $analysisResultIds = '';
-                    // Поиск всех цифровых масок для данного видеоинтервью
-                    $Landmarks = Landmark::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
-                    // Обход всех найденных цифровых масок
-                    foreach ($Landmarks as $Landmark) {
-                        // Поиск всех результатов определения признаков для данной цифровой маски
-                        $analysisResults = AnalysisResult::find()->where(['landmark_id' => $Landmark->id])->all();
-                        // Обход всех результатов определения признаков
-                        foreach ($analysisResults as $analysisResult)
-                            if ($analysisResultIds == '')
-                                $analysisResultIds .= $analysisResult->id;
-                            else
-                                $analysisResultIds .= ',' . $analysisResult->id;
+                // Если существует связь профиля с базами знаний по данному видеоинтервью
+                if (isset($profileKnowledgeBase)) {
+                    // Если задана база знаний для интерпретации первого уровня
+                    if ($profileKnowledgeBase->first_level_knowledge_base_id != null) {
+                        // Массив идентификаторов результатов анализа
+                        $analysisResultIds = '';
+                        // Поиск всех цифровых масок для данного видеоинтервью
+                        $landmarks = Landmark::find()->where(['video_interview_id' => (int)$videoInterviewId])->all();
+                        // Обход всех найденных цифровых масок
+                        foreach ($landmarks as $landmark) {
+                            // Поиск всех результатов определения признаков для данной цифровой маски
+                            $analysisResults = AnalysisResult::find()->where(['landmark_id' => $landmark->id])->all();
+                            // Обход всех результатов определения признаков
+                            foreach ($analysisResults as $analysisResult)
+                                if ($analysisResultIds == '')
+                                    $analysisResultIds = $analysisResult->id;
+                                else
+                                    $analysisResultIds .= ',' . $analysisResult->id;
+                        }
+                        // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
+                        ini_set('default_socket_timeout', 60 * 30);
+                        $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                        $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                        $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
+                            $profileKnowledgeBase->first_level_knowledge_base_id;
+                        $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
+                        $idsOfInitialConditions = '[' . $analysisResultIds . ']';
+                        $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+                        $additionalDataToSend = new stdClass;
+                        $additionalDataToSend->{'IDOfFile'} = Null;
+                        $client->LaunchReasoningProcessForSetOfInitialConditions(array(
+                            'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                            'arg1' => $addressForInitialConditionsRetrieval,
+                            'arg2' => $idsOfInitialConditions,
+                            'arg3' => $addressToSendResults,
+                            'arg4' => 'ResultsOfReasoningProcess',
+                            'arg5' => 'IDOfFile',
+                            'arg6' => json_encode($additionalDataToSend)))->return;
+                        $client = Null;
+                        //
+//                    if (!empty($interpretationResults)) {
+//                        foreach ($interpretationResults as $interpretationResult) {
+//                            if (isset($interpretationResult['Status']))
+//                                if ($interpretationResult['Status'] == true)
+//                                    $interpretationResultExist = true;
+//                        }
+//                    }
+                        $interpretationResultExist = true;
                     }
-                    // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
-                    ini_set('default_socket_timeout', 60 * 30);
-                    $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-                    $client = new SoapClient($addressOfRBRWebServiceDefinition);
-                    $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
-                        $profileKnowledgeBase->first_level_knowledge_base_id;
-                    $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&ID=';
-                    $idsOfInitialConditions = '[' . $analysisResultIds . ']';
-                    $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
-                    $additionalDataToSend = new stdClass;
-                    $additionalDataToSend->{'IDOfFile'} = Null;
-                    $client->LaunchReasoningProcessForSetOfInitialConditions(array(
-                        'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-                        'arg1' => $addressForInitialConditionsRetrieval,
-                        'arg2' => $idsOfInitialConditions,
-                        'arg3' => $addressToSendResults,
-                        'arg4' => 'ResultsOfReasoningProcess',
-                        'arg5' => 'IDOfFile',
-                        'arg6' => json_encode($additionalDataToSend)))->return;
-                    $client = Null;
+                    // Если задана база знаний для интерпретации второго уровня
+                    if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
+                        // Время начала выполнения МИП (второй уровень)
+                        $emotionInterpretationStart = microtime(true);
+                        // Обновление атрибутов статуса обработки видеоинтервью в БД
+                        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_FINAL_RESULT_FORMATION;
+                        $videoInterviewProcessingStatus->updateAttributes(['status']);
+
+                        // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
+                        ini_set('default_socket_timeout', 60 * 30);
+                        $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
+                        $client = new SoapClient($addressOfRBRWebServiceDefinition);
+                        $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
+                            $profileKnowledgeBase->second_level_knowledge_base_id;
+                        $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $videoInterviewId;
+                        $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
+                        $additionalDataToSend = new stdClass;
+                        $additionalDataToSend->{'IDOfFile'} = (int)$videoInterviewId;
+                        $additionalDataToSend->{'Type'} = 'Interpretation Level II';
+                        $client->LaunchReasoningProcessAndSendResultsToURL(array(
+                            'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
+                            'arg1' => $addressForInitialConditionsRetrieval,
+                            'arg2' => $addressToSendResults,
+                            'arg3' => 'ResultsOfReasoningProcess',
+                            'arg4' => json_encode($additionalDataToSend)))->return;
+                        $client = Null;
+
+                        // Время окончания выполнения МИП (второй уровень)
+                        $emotionInterpretationEnd = microtime(true);
+                        // Вычисление времени выполнения МИП (второй уровень)
+                        $emotionInterpretationRuntime = $emotionInterpretationEnd - $emotionInterpretationStart;
+                        // Обновление атрибутов времени МИП (второй уровень) в БД
+                        $videoInterviewProcessingStatus->emotion_interpretation_runtime = $emotionInterpretationRuntime;
+                        $videoInterviewProcessingStatus->updateAttributes(['emotion_interpretation_runtime']);
+                    }
                 }
-                // Если задана база знаний для интерпретации второго уровня
-                if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
-                    // Время начала выполнения МИП (второй уровень)
-                    $emotionInterpretationStart = microtime(true);
-                    // Обновление атрибутов статуса обработки видеоинтервью в БД
-                    $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_FINAL_RESULT_FORMATION;
-                    $videoInterviewProcessingStatus->updateAttributes(['status']);
-
-                    // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
-                    ini_set('default_socket_timeout', 60 * 30);
-                    $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
-                    $client = new SoapClient($addressOfRBRWebServiceDefinition);
-                    $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
-                        $profileKnowledgeBase->second_level_knowledge_base_id;
-                    $addressForInitialConditionsRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=InitialDataOfReasoningProcess&Level=2&ID=' . $videoInterviewId;
-                    $addressToSendResults = 'http://127.0.0.1/Drools/RetrieveData.php';
-                    $additionalDataToSend = new stdClass;
-                    $additionalDataToSend->{'IDOfFile'} = (int)$videoInterviewId;
-                    $additionalDataToSend->{'Type'} = 'Interpretation Level II';
-                    $client->LaunchReasoningProcessAndSendResultsToURL(array(
-                        'arg0' => $addressForCodeOfKnowledgeBaseRetrieval,
-                        'arg1' => $addressForInitialConditionsRetrieval,
-                        'arg2' => $addressToSendResults,
-                        'arg3' => 'ResultsOfReasoningProcess',
-                        'arg4' => json_encode($additionalDataToSend)))->return;
-                    $client = Null;
-
-                    // Время окончания выполнения МИП (второй уровень)
-                    $emotionInterpretationEnd = microtime(true);
-                    // Вычисление времени выполнения МИП (второй уровень)
-                    $emotionInterpretationRuntime = $emotionInterpretationEnd - $emotionInterpretationStart;
-                    // Обновление атрибутов времени МИП (второй уровень) в БД
-                    $videoInterviewProcessingStatus->emotion_interpretation_runtime = $emotionInterpretationRuntime;
-                    $videoInterviewProcessingStatus->updateAttributes(['emotion_interpretation_runtime']);
+            } catch (Exception $e) {
+                $errorMessage = $e->getMessage();
+            }
+        }
+        //
+        if ($detectionResultExist == false || $interpretationResultExist == false) {
+            // Поиск итогового результата для данного видеоинтервью
+            $finalResult = FinalResult::find()
+                ->where(['video_interview_id' => (int)$videoInterviewId])
+                ->one();
+            // Если итоговый результат для данного видеоинтервью существует
+            if (!empty($finalResult)) {
+                // Поиск итогового заключения по видеоинтервью
+                $finalConclusion = FinalConclusion::find()
+                    ->where(['id' => $finalResult->id])
+                    ->one();
+                // Если итоговое заключение для данного видеоинтервью не существует
+                if (empty($finalConclusion)) {
+                    // Создание итогового заключения для данного видеоинтервью
+                    $finalConclusionModel = new FinalConclusion();
+                    $finalConclusionModel->id = $finalResult->id;
+                    $finalConclusionModel->conclusion = ($errorMessage == '') ? 'Видеоинтервью не удалось обработать! Возможная причина: низкое качество видео.' :
+                        'Произошла непредвиденная ошибка в блоке интерпретации! Текст ошибки: ' . $errorMessage;
+                    $finalConclusionModel->save();
+                } else {
+                    // Обновление текста итогового заключения для данного видеоинтервью
+                    $finalConclusion->conclusion = ($errorMessage == '') ? 'Видеоинтервью не удалось обработать! Возможная причина: низкое качество видео.' :
+                        'Произошла непредвиденная ошибка в блоке интерпретации! Текст ошибки: ' . $errorMessage;
+                    $finalConclusion->updateAttributes(['conclusion']);
                 }
             }
         }
+
         // Время окончания выполнения анализа видеоинтервью
         $videoInterviewProcessingEnd = microtime(true);
         // Вычисление времени выполнения анализа видеоинтервью

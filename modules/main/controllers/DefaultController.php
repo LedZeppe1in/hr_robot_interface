@@ -132,7 +132,7 @@ class DefaultController extends Controller
         $respondent->name = 'Иван Иванович-' . $videoInterviewModel->id;
         $respondent->updateAttributes(['name']);
 
-        return $this->redirect('https://84.201.129.65:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
+        return $this->redirect('https://imagesprint.ru:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
             '&IDOfRespondent=' . $mainRespondent->code . '&CodeOfRespondentInterview=' . $respondent->name .
             '&IDOfInterview=' . $id);
     }
@@ -934,16 +934,21 @@ class DefaultController extends Controller
                     do {
                         // Задержка выполнения скрипта в 1 секунду
                         sleep(1);
+                        $completed = true;
                         // Поиск статуса обработки видеоинтервью по id видеоинтервью
                         $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
                             ->where(['video_interview_id' => $videoInterview->id])
                             ->one();
-                    } while ($videoInterviewProcessingStatus->status !== VideoInterviewProcessingStatus::STATUS_COMPLETED);
-                    // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
-                    $questionProcessingStatuses = QuestionProcessingStatus::find()
-                        ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
-                        ->orderBy(['question_id' => SORT_ASC])
-                        ->all();
+                        // Поиск всех статусов обработки видео на вопрос по id статуса обработки видеоинтервью
+                        $questionProcessingStatuses = QuestionProcessingStatus::find()
+                            ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                            ->orderBy(['question_id' => SORT_ASC])
+                            ->all();
+                        // Обход всех статусов обработки вопросов и определение завершенности каждого
+                        foreach ($questionProcessingStatuses as $questionProcessingStatus)
+                            if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
+                                $completed = false;
+                    } while ($completed === false);
                     // Параметр успешности получения цифровых масок МОВ Ивана
                     $successfullyFormedLandmark = true;
                     // Параметры наличия поворота головы вправо и влево
@@ -1004,53 +1009,53 @@ class DefaultController extends Controller
 
                     return $response;
                 }
-            }
-            // Если вопросы не калибровочные
-            if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27) {
-                // Поиск статуса обработки видеоинтервью по id видеоинтервью
-                $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
-                    ->where(['video_interview_id' => $videoInterview->id])
-                    ->one();
-                // Если респондент прошел калибровочные вопросы
-                if ($videoInterviewProcessingStatus->status == VideoInterviewProcessingStatus::STATUS_COMPLETED) {
-                    // Обновление атрибутов статуса обработки видеоинтервью в БД
-                    $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_VIDEO_RECORDING;
-                    $videoInterviewProcessingStatus->updateAttributes(['status']);
-                }
-                // Если респондент ответил на последний вопрос
-                if (Yii::$app->request->post('LastQuestion')) {
-                    // Определение массива возвращаемых данных
-                    $data = array();
-                    // Установка формата JSON для возвращаемых данных
-                    $response = Yii::$app->response;
-                    $response->format = Response::FORMAT_JSON;
-                    // Поиск кол-ва вопросов в профильном опросе
-                    $surveyQuestion = SurveyQuestion::find()->where(['test_question_id' => $testQuestion->id])->one();
-                    $surveyQuestionCount = SurveyQuestion::find()
-                        ->where(['survey_id' => $surveyQuestion->survey_id])
-                        ->count();
-                    // Поиск кол-ва записанных видео по вопросам
-                    $questionCount = Question::find()
-                        ->where(['video_interview_id' => $questionModel->video_interview_id])
-                        ->count();
-                    // Если кол-во записанных видео по вопросам совпадает с фактическим кол-вом вопросов в опросе
-                    if ($surveyQuestionCount == $questionCount) {
+                // Если вопросы не калибровочные
+                if ($topicQuestion->topic_id != 24 && $topicQuestion->topic_id != 25 && $topicQuestion->topic_id != 27) {
+                    // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                    $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                        ->where(['video_interview_id' => $videoInterview->id])
+                        ->one();
+                    // Если респондент прошел калибровочные вопросы
+                    if ($videoInterviewProcessingStatus->status == VideoInterviewProcessingStatus::STATUS_COMPLETED) {
                         // Обновление атрибутов статуса обработки видеоинтервью в БД
-                        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_QUEUE;
+                        $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_VIDEO_RECORDING;
                         $videoInterviewProcessingStatus->updateAttributes(['status']);
-                        // Формирование массива возвращаемых значений
-                        $data['successfulInterviewRecording'] = true;
-                    } else
-                        // Формирование массива возвращаемых значений
-                        $data['successfulInterviewRecording'] = false;
-                    // Возвращение данных
-                    $response->data = $data;
+                    }
+                    // Если респондент ответил на последний вопрос
+                    if (Yii::$app->request->post('LastQuestion')) {
+                        // Определение массива возвращаемых данных
+                        $data = array();
+                        // Установка формата JSON для возвращаемых данных
+                        $response = Yii::$app->response;
+                        $response->format = Response::FORMAT_JSON;
+                        // Поиск кол-ва вопросов в профильном опросе
+                        $surveyQuestion = SurveyQuestion::find()->where(['test_question_id' => $testQuestion->id])->one();
+                        $surveyQuestionCount = SurveyQuestion::find()
+                            ->where(['survey_id' => $surveyQuestion->survey_id])
+                            ->count();
+                        // Поиск кол-ва записанных видео по вопросам
+                        $questionCount = Question::find()
+                            ->where(['video_interview_id' => $questionModel->video_interview_id])
+                            ->count();
+                        // Если кол-во записанных видео по вопросам совпадает с фактическим кол-вом вопросов в опросе
+                        if ($surveyQuestionCount == $questionCount) {
+                            // Обновление атрибутов статуса обработки видеоинтервью в БД
+                            $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_QUEUE;
+                            $videoInterviewProcessingStatus->updateAttributes(['status']);
+                            // Формирование массива возвращаемых значений
+                            $data['successfulInterviewRecording'] = true;
+                        } else
+                            // Формирование массива возвращаемых значений
+                            $data['successfulInterviewRecording'] = false;
+                        // Возвращение данных
+                        $response->data = $data;
 
-                    return $response;
-                }
+                        return $response;
+                    }
 //                // Выполнение команды анализа видео ответа на обычный вопрос в фоновом режиме
 //                $consoleRunner->run('video-interview-analysis/start-full-video-analysis ' . $questionModel->id . ' ' .
 //                    $landmarkModel->id);
+                }
             }
         }
 

@@ -76,11 +76,11 @@ class QuestionSearch extends Question
 
         // grid filtering conditions
         $query->andFilterWhere([
-            'id' => $this->id,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-            'test_question_id' => $this->test_question_id,
-            'video_interview_id' => $this->video_interview_id,
+            'hrrobot_question.id' => $this->id,
+            'hrrobot_question.created_at' => $this->created_at,
+            'hrrobot_question.updated_at' => $this->updated_at,
+            'hrrobot_question.test_question_id' => $this->test_question_id,
+            'hrrobot_question.video_interview_id' => $this->video_interview_id,
         ]);
 
         $query->andFilterWhere(['ilike', 'video_file_name', $this->video_file_name])

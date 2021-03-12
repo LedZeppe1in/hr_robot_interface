@@ -221,7 +221,7 @@ function upload() {
       // Отображение финальной фразы
       let finalText = document.getElementById("final-text");
 
-      if (response.success === true)
+      if (response.successfulInterviewRecording === true)
           finalText.textContent = "Спасибо, Ваши ответы приняты! Ваш код: " + respondentCode;
       else
           finalText.textContent = "Вовремя записи видео произошла ошибка!";
