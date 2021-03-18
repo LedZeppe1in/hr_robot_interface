@@ -4075,6 +4075,9 @@ class FacialFeatureDetector
             {
                 if (!isset($sourceFaceData1["feature_statistics"]))    $sourceFaceData1["feature_statistics"]=array();
 
+                $sourceFaceData1["feature_statistics"]["average_speech_frequency"]=array("count"=>0,"val"=>0);
+                $sourceFaceData1["feature_statistics"]["silence_before_response"]=array("count"=>0,"val"=>0);
+
                 $startFrom=0;
                 if (isset($voiceActingTime))$startFrom=TextFrequencyDetector::ResponseStartIndexInWords($textData,$voiceActingTime);
 
@@ -4257,16 +4260,16 @@ class FacialFeatureDetector
            $result["deviation_frown_frequency"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_frown_frequency",$curAverKey,$curCountKey,$result["average_frown_frequency"][$curAverKey]));
            $result["deviation_silence_before_response"]=array("val"=>$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"silence_before_response",$curAverKey,$curCountKey,$result["average_silence_before_response"][$curAverKey]));
 
-        /*   $curAverKey="val2";
-         //  $result["deviation_speech_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_speech_frequency",$curAverKey,$curCountKey,$result["average_speech_frequency"][$curAverKey]);
-           $result["deviation_eye_blinking_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eye_blinking_frequency",$curAverKey,$curCountKey,$result["average_eye_blinking_frequency"][$curAverKey]);
-           $result["deviation_eyebrow_lift_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eyebrow_lift_frequency",$curAverKey,$curCountKey,$result["average_eyebrow_lift_frequency"][$curAverKey]);
-           $result["deviation_nose_movement_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_nose_movement_frequency",$curAverKey,$curCountKey,$result["average_nose_movement_frequency"][$curAverKey]);
-           $result["deviation_frown_frequency"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_frown_frequency",$curAverKey,$curCountKey,$result["average_frown_frequency"][$curAverKey]);
-     //      $result["deviation_silence_before_response"][$curAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"silence_before_response",$curAverKey,$curCountKey,$result["average_silence_before_response"][$curAverKey]);
-*/
+           //$curAverKey="val2";
+           $NewcurAverKey="val2";
+           $result["deviation_speech_frequency"][$NewcurAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_speech_frequency",$curAverKey,$curCountKey,$result["average_speech_frequency"][$curAverKey]);
+           $result["deviation_eye_blinking_frequency"][$NewcurAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eye_blinking_frequency",$curAverKey,$curCountKey,$result["average_eye_blinking_frequency"][$curAverKey]);
+           $result["deviation_eyebrow_lift_frequency"][$NewcurAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_eyebrow_lift_frequency",$curAverKey,$curCountKey,$result["average_eyebrow_lift_frequency"][$curAverKey]);
+           $result["deviation_nose_movement_frequency"][$NewcurAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_nose_movement_frequency",$curAverKey,$curCountKey,$result["average_nose_movement_frequency"][$curAverKey]);
+           $result["deviation_frown_frequency"][$NewcurAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"average_frown_frequency",$curAverKey,$curCountKey,$result["average_frown_frequency"][$curAverKey]);
+           $result["deviation_silence_before_response"][$NewcurAverKey]=$this->countDeviationInSummarizedFeatureStatistics($arrayOfUnitStatistics,"silence_before_response",$curAverKey,$curCountKey,$result["average_silence_before_response"][$curAverKey]);
 
-           file_put_contents('/var/www/hr-robot-interface.com/public_html/components/SummarizedFeatureStatistics_resut.json', json_encode($result));
+
 
            return array("summarized_feature_statistics"=>$result);
        }
@@ -4912,7 +4915,7 @@ return $output;
         if (isset($theNormMask) && is_array($theNormMask) &&
                isset($theGoodIndex) && isset($theBadIndex) &&
                 isset($theNormMask[$theGoodIndex])) {
-            $theNormMask[$theBadIndex]=$theGoodIndex;
+            $theNormMask[$theBadIndex]=$theNormMask[$theGoodIndex];
             return $theNormMask;
         }
 
@@ -4977,6 +4980,76 @@ return $output;
         $result_array=array("Data"=>$sourceFaceData1,"mask_quality_statistics"=>$mask_data["mask_quality_statistics"]);
         return $result_array;
     }
+
+    function detectFailingsInOriginalSourceFormat($jsonSourceFaceData,$maxRateOfBadFrames)
+    {
+
+        if (!isset($maxRateOfBadFrames)) $maxRateOfBadFrames=0.1;
+        $outputResult=array(0=>true,1=>"");
+
+        if (!isset($jsonSourceFaceData)) {$outputResult[0]=false; $outputResult[1].="Нет входного файла МОВ-ЦМ, "; return $outputResult;}
+
+        $json = str_ireplace('Infinity','99999',$jsonSourceFaceData);
+        $FaceData_ = json_decode($json, true);
+        if ($FaceData_==null) {$outputResult[0]=false; $outputResult[1].="Невозможно преобразовать входной файл МОВ-ЦМ, "; return $outputResult;}
+
+        if (!isset($FaceData_["FPS"])) {$outputResult[0]=false; $outputResult[1].="Нет данных о FPS, "; }
+        if (!isset($FaceData_["FrameCount"]) || ($FaceData_["FrameCount"]<=0)) {
+            $outputResult[0]=false; $outputResult[1].= "Нет данных о кадрах (количество), ";}
+
+        if (!isset($FaceData_["COEF_QUALITY"])
+            || !is_array($FaceData_["COEF_QUALITY"])
+            ||    count($FaceData_["COEF_QUALITY"])<5
+        ) {
+            $outputResult[0]=false; $outputResult[1].= "Нет данных о качестве (COEF_QUALITY), ";
+        }
+
+        if ($outputResult[0]==false) return $outputResult;
+
+
+        if (isset($FaceData_["COEF_QUALITY"][1]) && $FaceData_["COEF_QUALITY"][1]>2)//т.е. выше нормы
+        {
+            if ( (isset($FaceData_["COEF_QUALITY"][0]) && $FaceData_["COEF_QUALITY"][0]<13.5) ||
+                (isset($FaceData_["COEF_QUALITY"][2]) && $FaceData_["COEF_QUALITY"][2]>0.3)
+            )  {$outputResult[0]=false; $outputResult[1].= "Низкое освещение, ";}
+
+            if (isset($FaceData_["COEF_QUALITY"][3]) && $FaceData_["COEF_QUALITY"][3]>5)  {$outputResult[0]=false; $outputResult[1].= "Мелкие движения камеры, ";}
+            if (isset($FaceData_["COEF_QUALITY"][4]) && $FaceData_["COEF_QUALITY"][4]<3)  {$outputResult[0]=false; $outputResult[1].= "Разрешение или фокусировка, ";}
+        }
+
+
+        if (isset($FaceData_["COEF_QUALITY"][1]) && $FaceData_["COEF_QUALITY"][1]<=2)//т.е. в норме
+        {
+            if ( (isset($FaceData_["COEF_QUALITY"][0]) && $FaceData_["COEF_QUALITY"][0]<10) ||
+                (isset($FaceData_["COEF_QUALITY"][2]) && $FaceData_["COEF_QUALITY"][2]>0.5)
+            )  {$outputResult[0]=false; $outputResult[1].= "Низкое освещение, ";}
+
+            if (isset($FaceData_["COEF_QUALITY"][3]) && $FaceData_["COEF_QUALITY"][3]>25)  {$outputResult[0]=false; $outputResult[1].= "Мелкие движения камеры, ";}
+            if (isset($FaceData_["COEF_QUALITY"][4]) && $FaceData_["COEF_QUALITY"][4]<2)  {$outputResult[0]=false; $outputResult[1].= "Разрешение или фокусировка, ";}
+        }
+
+
+
+
+
+        $badFramesCount=0;
+        for ($i=0;$i<$FaceData_["FrameCount"];$i++)
+        {
+            if (!isset($FaceData_["frame_#".$i])) $badFramesCount++;
+        }
+
+        if ($badFramesCount/$FaceData_["FrameCount"]>$maxRateOfBadFrames)
+        {
+            $outputResult[0]=false; $outputResult[1].= "Много битых кадров $badFramesCount из {$FaceData_['FrameCount']}" ;
+        }
+
+
+        return $outputResult;
+
+    }
+
+
+
 
 
     //стабилизация точек маски относительно инварианта (неизменной точки)
@@ -5254,6 +5327,11 @@ return $output;
 
        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/detectFeaturesV3_Andr.json', $jsonA);
 
+        $preCheck=$this->detectFailingsInOriginalSourceFormat($json,0.6);
+        if (isset($preCheck) && is_array($preCheck) && $preCheck[0]==false) return $preCheck;
+
+        //$basicFrame -проверка?
+
        //преоюразование данных Андрея
         //+ информация об эмоциях в признаки
 
@@ -5405,7 +5483,7 @@ return $output;
             $mask_quality_statistics=$repairNormMask_result["mask_quality_statistics"];
             $FaceData['normmask']=$repairNormMask_result["Data"];
 
-
+           // file_put_contents('/var/www/hr-robot-interface.com/public_html/components/$repairNormMask_result_data.json', json_encode($FaceData['normmask']));
             $FaceData['normmask'] = $this->stabilizating($FaceData['normmask'], 39, 42);
             $detectedFeatures = $this->addPointsToResults('normmask',
                 'NORM_POINTS_STABILIZED', $FaceData, $detectedFeatures, 'pp.3942');
@@ -5575,7 +5653,7 @@ return $output;
 
         if (isset($mask_quality_statistics)) $detectedFeaturesWithTrends["mask_quality_statistics"]=$mask_quality_statistics;
 
-        return $detectedFeaturesWithTrends;
+        return array(0=>true,1=>$detectedFeaturesWithTrends);
 
     }
 
@@ -6372,6 +6450,13 @@ return $output;
 
         file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_Txt.json', json_encode($text));
 
+
+        $preCheck=$this->detectFailingsInOriginalSourceFormat($theFaceData,0.6);
+        if (isset($preCheck) && is_array($preCheck) && $preCheck[0]==false) return $preCheck;
+
+
+
+
         $configData=array();
 
         $configData["pointsFlag"]=$options["pointsFlag"];
@@ -6406,13 +6491,14 @@ return $output;
 
         if (isset($basicFrameDetectionResult["FrameSource"])==True)
         {
-                return    $basicFrameDetectionResult["FrameSource"];
+                return    array(0=>true,1=>$basicFrameDetectionResult["FrameSource"]);
         }
 
 
 
 
-        return NULL;
+        //return NULL;
+        return array(0=>false,1=>"неизвестная ошибка");
 }
 
     public function makeBasicFrame($json,$configs,$theText,$theDataA)
@@ -6444,6 +6530,14 @@ return $output;
         if ((isset($FaceData['points'])) && ($pointsFlag ==0)) $curKey='points';
 
     //    var_dump($FaceData[$curKey]);
+
+
+        ///восстановление битых масок
+        $repairNormMask_result= $this->repairNormMask($FaceData['normmask'],$FaceData_["FrameCount"] );
+        $FaceData['normmask']=$repairNormMask_result["Data"];
+
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/makeBasicFrame_repairNormMask.json', json_encode($repairNormMask_result));
+
 
         if (isset($configs["GeometricTransformations"]))  $this->GeometricTransformations($FaceData[$curKey],$configs["GeometricTransformations"]);
         if (isset($configs["DataPreprocessing"]))   $this->DataPreprocessing($FaceData,$configs["DataPreprocessing"]);
@@ -6518,7 +6612,7 @@ return $output;
                 $theDataA = '[' . $theDataA . ']';
             }
             $FaceData_A = json_decode($theDataA, true);
-
+
             $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeaturesWithA($detectedFeaturesWithTrends,$FaceData_A,$coefs);
         }
 
