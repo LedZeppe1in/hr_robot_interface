@@ -39,7 +39,7 @@ $this->title = 'HR Robot';
                 foreach ($surveys as $survey)
                     if ($survey->id != 36) {
                         $items[$survey->id]['label'] = $survey->name;
-                        $items[$survey->id]['url'] = 'interview/' . $survey->id;
+                        $items[$survey->id]['url'] = 'interview/' . $survey->id . '/null/null';
                     }
                 if (Yii::$app->user->isGuest || !Yii::$app->user->identity->role == User::ROLE_PSYCHOLOGIST)
                     echo ButtonDropdown::widget([

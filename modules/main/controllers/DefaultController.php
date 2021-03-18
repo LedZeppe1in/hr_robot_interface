@@ -110,34 +110,6 @@ class DefaultController extends Controller
     }
 
     /**
-     * Переход на страницу прохождения теста Герчикова.
-     *
-     * @param $id - идентификатор опроса
-     * @return Response
-     */
-    public function actionMotivationTest($id)
-    {
-        // Поиск респондента по id
-        $mainRespondent = MainRespondent::findOne(1); // id респондента
-        // Создание нового респондента (уникальной записи прохождения интервью респондентом)
-        $respondent = new Respondent();
-        $respondent->name = 'test' . mt_rand(5, 15);
-        $respondent->main_respondent_id = $mainRespondent->id;
-        $respondent->save();
-        // Создание модели видеоинтервью
-        $videoInterviewModel = new VideoInterview();
-        $videoInterviewModel->respondent_id = $respondent->id;
-        $videoInterviewModel->save();
-        // Формирование и сохранение в БД уникального имени респондента
-        $respondent->name = 'Иван Иванович-' . $videoInterviewModel->id;
-        $respondent->updateAttributes(['name']);
-
-        return $this->redirect('https://imagesprint.ru:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
-            '&IDOfRespondent=' . $mainRespondent->code . '&CodeOfRespondentInterview=' . $respondent->name .
-            '&IDOfInterview=' . $id);
-    }
-
-    /**
      * Страница входа.
      *
      * @return Response|string
@@ -643,19 +615,15 @@ class DefaultController extends Controller
     }
 
     /**
-     * Страница интервьюирования респондента.
+     * Переход на страницу прохождения теста Герчикова.
      *
      * @param $id - идентификатор опроса
-     * @return bool|string|Response
+     * @return Response
      */
-    public function actionInterview($id)
+    public function actionMotivationTest($id)
     {
-        // Поиск профиля связанного с данным опросом
-        $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
-        $profile = Profile::findOne($profileSurvey->profile_id);
         // Поиск респондента по id
         $mainRespondent = MainRespondent::findOne(1); // id респондента
-
         // Создание нового респондента (уникальной записи прохождения интервью респондентом)
         require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
         $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
@@ -676,37 +644,65 @@ class DefaultController extends Controller
             $respondent->save();
         }
 
-        // Создание модели видеоинтервью
-        $videoInterviewModel = new VideoInterview();
-        $videoInterviewModel->description = 'Видео-интервью для профиля: ' . $profile->name;
-        $videoInterviewModel->respondent_id = $respondent->id;
-        $videoInterviewModel->save();
-        // Создание модели итогового результата
-        $finalResultModel = new FinalResult();
-        $finalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
-        $finalResultModel->video_interview_id = $videoInterviewModel->id;
-        $finalResultModel->save();
-        // Создание модели заключения по тесту Герчикова
-        $gerchikovTestConclusionModel = new GerchikovTestConclusion();
-        // Установка первичного ключа с итогового результата
-        $gerchikovTestConclusionModel->id = $finalResultModel->id;
-        // Если пришел POST-запрос
-        if (Yii::$app->request->isPost) {
-            // Если пришли параметры с модуля опроса (теста Герчикова)
-            if (Yii::$app->request->post('AcceptTest')) {
-                $gerchikovTestConclusionModel->accept_test = Yii::$app->request->post('AcceptTest');
-                $gerchikovTestConclusionModel->accept_level = Yii::$app->request->post('AcceptLevel');
-                $gerchikovTestConclusionModel->instrumental_motivation = Yii::$app->request
-                    ->post('MotivInstrumental');
-                $gerchikovTestConclusionModel->professional_motivation = Yii::$app->request
-                    ->post('MotivProfessional');
-                $gerchikovTestConclusionModel->patriot_motivation = Yii::$app->request->post('MotivPatriot');
-                $gerchikovTestConclusionModel->master_motivation = Yii::$app->request->post('MotivMaster');
-                $gerchikovTestConclusionModel->avoid_motivation = Yii::$app->request->post('MotivAvoid');
-                $gerchikovTestConclusionModel->description = 'Итоговое заключение по тесту Герчикова';
+        return $this->redirect('https://imagesprint.ru:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
+            '&IDOfRespondent=' . $mainRespondent->code . '&CodeOfRespondentInterview=' . $respondent->name .
+            '&IDOfInterview=' . $id);
+    }
+
+    /**
+     * Страница интервьюирования респондента.
+     *
+     * @param $id - идентификатор опроса
+     * @param $respondentCode - код респондента
+     * @param $interviewCode - код интервью респондента
+     * @return bool|string|Response
+     */
+    public function actionInterview($id, $respondentCode, $interviewCode)
+    {
+        // Поиск профиля связанного с данным опросом
+        $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
+        $profile = Profile::findOne($profileSurvey->profile_id);
+
+        // Если не задан код респондента
+        if ($interviewCode == 'null')
+            $mainRespondent = MainRespondent::findOne(1);
+        else
+            $mainRespondent = MainRespondent::find()->where(['code' => $respondentCode])->one();
+
+        // Если не задан код интервью респондента
+        if ($interviewCode == 'null') {
+            // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+            require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
+            $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
+            if (isset($result[1])) {
+                $respondent = Respondent::findOne($result[1]);
+                if (empty($respondent)) {
+                    // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                    $respondent = new Respondent();
+                    $respondent->name = 'test' . mt_rand(10, 15);
+                    $respondent->main_respondent_id = $mainRespondent->id;
+                    $respondent->save();
+                }
+            } else {
+                // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                $respondent = new Respondent();
+                $respondent->name = 'test' . mt_rand(10, 15);
+                $respondent->main_respondent_id = $mainRespondent->id;
+                $respondent->save();
             }
-        } else {
-            // Если не POST-запрос, то формирование данных по тесту Герчикова автоматически
+            // Создание модели видеоинтервью
+            $videoInterviewModel = new VideoInterview();
+            $videoInterviewModel->description = 'Видео-интервью для профиля: ' . $profile->name;
+            $videoInterviewModel->respondent_id = $respondent->id;
+            $videoInterviewModel->save();
+            // Создание модели итогового результата
+            $finalResultModel = new FinalResult();
+            $finalResultModel->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
+            $finalResultModel->video_interview_id = $videoInterviewModel->id;
+            $finalResultModel->save();
+            // Создание модели заключения по тесту Герчикова
+            $gerchikovTestConclusionModel = new GerchikovTestConclusion();
+            $gerchikovTestConclusionModel->id = $finalResultModel->id;
             $gerchikovTestConclusionModel->accept_test = 1;
             $gerchikovTestConclusionModel->accept_level = 100;
             $gerchikovTestConclusionModel->instrumental_motivation = 1;
@@ -715,47 +711,20 @@ class DefaultController extends Controller
             $gerchikovTestConclusionModel->master_motivation = 3;
             $gerchikovTestConclusionModel->avoid_motivation = 3;
             $gerchikovTestConclusionModel->description = 'Автоматически созданная запись';
-        }
-        // Сохранение модели заключения по тесту Герчикова
-        $gerchikovTestConclusionModel->save();
+            $gerchikovTestConclusionModel->save();
+        } else
+            // Поиск респондента по коду
+            $respondent = Respondent::find()->where(['name' => $interviewCode])->one();
 
-//        //
-//        $videoInterview = VideoInterview::findOne($videoInterviewId);
-//        $videoInterview->description = 'Видео-интервью для профиля: ' . $profile->name;
-//        $videoInterview->updateAttributes(['description']);
-//        //
-//        $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
-//        //
-//        if (empty($finalResult)) {
-//            // Создание модели итогового результата
-//            $finalResult = new FinalResult();
-//            $finalResult->description = 'Итоговый результат для интервью по профилю: ' . $profile->name;
-//            $finalResult->video_interview_id = $videoInterview->id;
-//            $finalResult->save();
-//        } else {
-//            $gerchikovTestConclusion = GerchikovTestConclusion::find()->where(['id' => $finalResult->id])->one();
-//            //
-//            if (!empty($gerchikovTestConclusion)) {
-//                // Создание модели заключения по тесту Герчикова
-//                $gerchikovTestConclusion = new GerchikovTestConclusion();
-//                // Установка первичного ключа с итогового результата
-//                $gerchikovTestConclusion->id = $finalResult->id;
-//                //
-//                $gerchikovTestConclusion->accept_test = 1;
-//                $gerchikovTestConclusion->accept_level = 100;
-//                $gerchikovTestConclusion->instrumental_motivation = 1;
-//                $gerchikovTestConclusion->professional_motivation = 2;
-//                $gerchikovTestConclusion->patriot_motivation = 3;
-//                $gerchikovTestConclusion->master_motivation = 3;
-//                $gerchikovTestConclusion->avoid_motivation = 3;
-//                $gerchikovTestConclusion->description = 'Автоматически созданная запись';
-//                // Сохранение модели заключения по тесту Герчикова
-//                $gerchikovTestConclusion->save();
-//            }
-//        }
+        // Поиск видеоинтервью по id интервью респондента
+        $videoInterview = VideoInterview::find()->where(['respondent_id' => $respondent->id])->one();
+        // Поиск итоговых результатов по id видеоинтервью
+        $finalResult = FinalResult::find()->where(['video_interview_id' => $videoInterview->id])->one();
+        // Поиск заключения по тесту Герчикова по id итоговых результатов
+        $gerchikovTestConclusion = GerchikovTestConclusion::findOne($finalResult->id);
 
         // Если респондент прошел тест Герчикова
-        if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED) {
+        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_PASSED) {
             // Создание модели цифровой маски
             $landmarkModel = new Landmark();
             // Поиск всех вопросов связанных с выбранным опросом и сортировка записей по индексу и id
@@ -806,14 +775,12 @@ class DefaultController extends Controller
                         );
                     }
 
-            // Вывод сообщения об успешном прохождении теста Герчикова
-            if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_PASSED)
-                Yii::$app->getSession()->setFlash('success',
-                    'Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name . '!');
+            Yii::$app->getSession()->setFlash('success',
+                'Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name . '!');
 
             return $this->render('interview', [
-                'videoInterviewModel' => $videoInterviewModel,
-                'gerchikovTestConclusionModel' => $gerchikovTestConclusionModel,
+                'videoInterviewModel' => $videoInterview,
+                'gerchikovTestConclusionModel' => $gerchikovTestConclusion,
                 'landmarkModel' => $landmarkModel,
                 'questionIds' => $questionIds,
                 'questionTexts' => $questionTexts,
@@ -824,18 +791,18 @@ class DefaultController extends Controller
             ]);
         }
 
-        // Вывод сообщения о не успешном прохождении теста Герчикова по профилю кассира
-        if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
+        // Вывод сообщения о не успешном прохождении теста Герчикова по профилю
+        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
             Yii::$app->getSession()->setFlash('warning',
                 'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю:' . $profile->name .
                     '! Результаты будут отправлены Вам на почту.');
         // Вывод сообщения о не успешном прохождении теста Герчикова (мало или нет ответов)
-        if ($gerchikovTestConclusionModel->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
+        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
             Yii::$app->getSession()->setFlash('warning',
                 'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name .
                     '! Результаты будут отправлены Вам на почту.');
 
-        return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusionModel->id]);
+        return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusion->id]);
     }
 
     /**
