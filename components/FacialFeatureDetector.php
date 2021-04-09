@@ -4983,7 +4983,6 @@ return $output;
 
     function detectFailingsInOriginalSourceFormat($jsonSourceFaceData,$maxRateOfBadFrames)
     {
-
         if (!isset($maxRateOfBadFrames)) $maxRateOfBadFrames=0.1;
         $outputResult=array(0=>true,1=>"");
 
@@ -5027,8 +5026,6 @@ return $output;
             if (isset($FaceData_["COEF_QUALITY"][3]) && $FaceData_["COEF_QUALITY"][3]>25)  {$outputResult[0]=false; $outputResult[1].= "Мелкие движения камеры, ";}
             if (isset($FaceData_["COEF_QUALITY"][4]) && $FaceData_["COEF_QUALITY"][4]<2)  {$outputResult[0]=false; $outputResult[1].= "Разрешение или фокусировка, ";}
         }
-
-
 
 
 
@@ -6177,8 +6174,15 @@ return $output;
         //то точки описания глаз, рта, бровей
         $resSums = array();
         $indexOfFrame=null;
+        $theLog= array();
+
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/sourceFaceData1_Basic.json', json_encode($sourceFaceData1));
+
+        $theLog["start"]="indexOfFrame is null";
+        $theLog["isArray"]=is_array($sourceFaceData1);
 
         if (is_array($sourceFaceData1)) {
+
             for ($i0 = 0; $i0 < count($sourceFaceData1) - 1; $i0++) {
                 $sumForAllFramesOfCurFrame = 0;
                 for ($i = 1; $i < count($sourceFaceData1); $i++) {
@@ -6195,7 +6199,25 @@ return $output;
                 $resSums[$i0] = $sumForAllFramesOfCurFrame;
             }
             asort($resSums);
-            //        print_r($resSums);
+            reset($resSums);   // Устанавливает внутренний указатель массива на его первый элемент
+            $indexOfFrame=key($resSums);//получение первого элемента массива - номер первого экстремального фрейма
+
+            $theLog["indexAfterSum"]=$indexOfFrame;
+
+            //исключение кадров с наклоном носа больше 5 градусов по точкам 27 и 29
+            $resSums=$this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums,27,29,5);
+            reset($resSums);
+            if (count($resSums)>0)   $indexOfFrame = key($resSums);
+            $theLog["countAfterNose5By2729"]=count($resSums);
+            $theLog["indexAfterNose5By2729"]=$indexOfFrame;
+
+            //исключение кадров с наклоном носа больше 5 градусов по точкам 27 и 30
+            $resSums=$this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums,27,30,5);
+            reset($resSums);
+            if (count($resSums)>0)   $indexOfFrame = key($resSums);
+            $theLog["indexAfterNose5By2730"]=$indexOfFrame;
+            $theLog["countAfterNose5By2730"]=count($resSums);
+
 
             //исключение экстремальных кадров с морганием и говорением
             if ($targetFaceData != null)
@@ -6219,7 +6241,7 @@ return $output;
                     }
                 }
 
-            reset($resSums); //получение первого элемента массива - номер первого экстремального фрейма
+            $theLog["Count of resSum after speaking and eys delete"]=count($resSums);
 
             //сохраняем хоть какой-то результат
             reset($resSums);   // Устанавливает внутренний указатель массива на его первый элемент
@@ -6235,21 +6257,15 @@ return $output;
             reset($resSums);
             if (count($resSums)>0)   $indexOfFrame = key($resSums);
 
-            //исключение кадров с наклоном носа больше 5 градусов по точкам 27 и 29
-            $resSums=$this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums,27,29,5);
-            reset($resSums);
-            if (count($resSums)>0)   $indexOfFrame = key($resSums);
 
-            //исключение кадров с наклоном носа больше 5 градусов по точкам 27 и 30
-            $resSums=$this->excludeNoseTurnsFromBasicFrames($sourceFaceData1,$resSums,27,30,5);
-            reset($resSums);
-            if (count($resSums)>0)   $indexOfFrame = key($resSums);
 
             //исключение кадров по данным МОВ
             //в разработке (если вообще нужно)
 
 
         }
+        $theLog["index"]=$indexOfFrame;
+        file_put_contents('/var/www/hr-robot-interface.com/public_html/components/BasicFrameNumber.json', json_encode($theLog));
         return $indexOfFrame;
     }
 
@@ -6452,7 +6468,11 @@ return $output;
 
 
         $preCheck=$this->detectFailingsInOriginalSourceFormat($theFaceData,0.6);
-        if (isset($preCheck) && is_array($preCheck) && $preCheck[0]==false) return $preCheck;
+        if (isset($preCheck) && is_array($preCheck) && $preCheck[0]==false)
+        {
+            $preCheck[1].="Проблемы в базовом кадре";
+            return $preCheck;
+        }
 
 
 
@@ -6612,7 +6632,7 @@ return $output;
                 $theDataA = '[' . $theDataA . ']';
             }
             $FaceData_A = json_decode($theDataA, true);
-
+
             $detectedFeaturesWithTrends = $this->detectAdditionalEyeFeaturesWithA($detectedFeaturesWithTrends,$FaceData_A,$coefs);
         }
 
@@ -6655,6 +6675,8 @@ return $output;
             if ($configs["BasicFrameMethod"]=="minimumDeviatedFrame")
             {
                 $res["FrameIndex"] = $this->minimumDeviatedFrame($FaceData[$curKey], $detectedFeaturesWithTrends, $arr);
+
+
                 $res["FrameArray"]=$FaceData[$curKey][$res["FrameIndex"]];
 
                 if (isset($BaseNoiseLevel))

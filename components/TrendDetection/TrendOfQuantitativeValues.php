@@ -195,7 +195,7 @@ class  TrendOfQuantitativeValues extends IndexedTrend
                 case 1:
                     if ($prevVal<=$curVal)//значения увеличиваются
                     {
-                        return true;
+                        return true;
                     }
                     else
                     {
