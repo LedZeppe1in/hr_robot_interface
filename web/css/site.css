@@ -1,6 +1,7 @@
 html,
 body {
     height: 100%;
+    font-size: 14px !important;
 }
 
 .wrap {
@@ -112,4 +113,29 @@ a.desc:after {
 
 .nav > li > form > button.logout:focus {
     outline: none;
+}
+
+table.detail-view th {
+    width: 25%;
+}
+
+table.detail-view td {
+    width: 75%;
+}
+
+.ui-timepicker-div {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+}
+
+#ui-datepicker-div {
+    width: 320px;
+}
+
+@media screen and (min-width: 768px) {
+    body { padding-top: 100px; }
+}
+
+@media screen and (min-width: 990px) {
+    body { padding-top: 0; }
 }

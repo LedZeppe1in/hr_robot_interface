@@ -21,12 +21,14 @@ $config = [
         ],
     ],
 
+    'language' => 'ru_RU',
+
     'components' => [
         'language' => 'ru-RU',
         'request' => [
             // site root directory
             'baseUrl' => '',
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
+            // secret key (this is required by cookie validation)
             'cookieValidationKey' => 'EGP0tfP_8uLB0S45rX87hIbTCv_OCYa4',
         ],
         'urlManager' => [
@@ -35,6 +37,50 @@ $config = [
             //'class' => 'app\components\LangUrlManager',
             'rules' => [
                 '/' => 'main/default/index',
+                'sing-in' => 'main/default/sing-in',
+                'test' => 'main/default/test',
+                'interview/<id:\d+>/<respondentCode>/<interviewCode>' => 'main/default/interview',
+                'motivation-test/<id:\d+>' => 'main/default/motivation-test',
+                'gerchikov-test-conclusion-view/<id:\d+>' => 'main/default/gerchikov-test-conclusion-view',
+                'interview-analysis/<id:\d+>' => 'main/default/interview-analysis',
+                'upload' => 'main/default/upload',
+                'record' => 'main/default/record',
+                'analysis' => 'main/default/analysis',
+                '/knowledge-base/<_kb:(list|upload)>' => 'main/knowledge-base/<_kb>',
+                '/knowledge-base/<_kb:(view|update|delete|knowledge-base-download)>/<id:\d+>' => 'main/knowledge-base/<_kb>',
+                '/respondent/<_res:(list|create)>' => 'main/respondent/<_res>',
+                '/respondent/<_res:(view|update|delete|interview-markup)>/<id:\d+>' => 'main/respondent/<_res>',
+                '/customer/<_cus:(list|create)>' => 'main/customer/<_cus>',
+                '/customer/<_cus:(view|update|delete)>/<id:\d+>' => 'main/customer/<_cus>',
+                '/test-question/<_tq:(list|create)>' => 'main/test-question/<_tq>',
+                '/test-question/<_tq:(view|update|delete|audio-file-download)>/<id:\d+>' => 'main/test-question/<_tq>',
+                '/question/<_ques:(list)>' => 'main/question/<_ques>',
+                '/question/<_ques:(view|delete|video-file-download|get-ivan-landmarks|get-recognized-speech|get-andrey-landmarks)>/<id:\d+>' => 'main/question/<_ques>',
+                '/video-interview/<_vi:(list|upload)>' => 'main/video-interview/<_vi>',
+                '/video-interview/<_vi:(view|update|delete|video-download|get-ivan-landmarks|get-recognized-speech|get-andrey-landmarks|run-analysis|run-features-detection|run-features-interpretation|delete-all-analysis-results|run-video-interview-processing|run-calibration-questions-processing|run-calibration-questions-processing-for-chat-bot)>/<id:\d+>' =>
+                    'main/video-interview/<_vi>',
+                '/landmark/<_lm:(list|upload)>' => 'main/landmark/<_lm>',
+                '/landmark/<_lm:(view|update|delete|landmark-file-download|processed-video-file-download)>/<id:\d+>' => 'main/landmark/<_lm>',
+                '/analysis-result/<_ar:(list)>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(detection)>/<id:\d+>/<processingType:\d+>' => 'main/analysis-result/<_ar>',
+                '/analysis-result/<_ar:(view|update|delete|detection-file-download|facts-download|interpretation-file-download|interpretation-facts-download)>/<id:\d+>' =>
+                    'main/analysis-result/<_ar>',
+                '/detection-result/<_dr:(list)>' => 'main/detection-result/<_dr>',
+                '/detection-result/<_dr:(view|update|delete|file-download|facts-download)>/<id:\d+>' =>
+                    'main/detection-result/<_dr>',
+                '/interpretation-result/<_ir:(list)>' => 'main/interpretation-result/<_ir>',
+                '/interpretation-result/<_ir:(view|update|delete|file-download)>/<id:\d+>' =>
+                    'main/interpretation-result/<_ir>',
+                '/gerchikov-test-conclusion/<_gtc:(list)>' => 'main/gerchikov-test-conclusion/<_gtc>',
+                '/gerchikov-test-conclusion/<_gtc:(view|delete)>/<id:\d+>' => 'main/gerchikov-test-conclusion/<_gtc>',
+                '/final-conclusion/<_fc:(list)>' => 'main/final-conclusion/<_fc>',
+                '/final-conclusion/<_fc:(view|delete)>/<id:\d+>' => 'main/final-conclusion/<_fc>',
+                '/video-interview-processing-status/<_vips:(list)>' => 'main/video-interview-processing-status/<_vips>',
+                '/video-interview-processing-status/<_vips:(view|delete)>/<id:\d+>' => 'main/video-interview-processing-status/<_vips>',
+                '/question-processing-status/<_qps:(list)>' => 'main/question-processing-status/<_qps>',
+                '/question-processing-status/<_qps:(view|delete)>/<id:\d+>' => 'main/question-processing-status/<_qps>',
+                '/user/<_usr:(list|create)>' => 'main/user/<_usr>',
+                '/user/<_usr:(view|update|delete|profile|update-profile|change-password)>/<id:\d+>' => 'main/user/<_usr>',
             ],
         ],
         'cache' => [
@@ -43,7 +89,7 @@ $config = [
         'user' => [
             'identityClass' => 'app\modules\main\models\User',
             'enableAutoLogin' => true,
-            //'loginUrl' => ['main/default/sing-in'],
+            'loginUrl' => ['main/default/sing-in'],
         ],
         'errorHandler' => [
             'errorAction' => 'main/default/error',
@@ -65,6 +111,21 @@ $config = [
             ],
         ],
         'db' => $db,
+        'i18n' => [
+            'translations' => [
+                'app' => [
+                    'class' => 'yii\i18n\PhpMessageSource',
+                    'basePath' => '@app/messages',
+                    'forceTranslation' => true,
+                    'sourceLanguage' => 'en-US',
+                ],
+            ],
+        ],
+        // Подключение расширения для запуска консольных команд в фоновом режиме в среде Yii
+        'consoleRunner' => [
+            'class' => 'vova07\console\ConsoleRunner',
+            'file' => '@app/yii'
+        ]
     ],
     'params' => $params,
 ];
