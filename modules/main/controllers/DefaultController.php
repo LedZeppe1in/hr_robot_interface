@@ -644,7 +644,7 @@ class DefaultController extends Controller
             $respondent->save();
         }
 
-        return $this->redirect('https://imagesprint.ru:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
+        return $this->redirect('https://test.hr-robot.ru:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
             '&IDOfRespondent=' . $mainRespondent->code . '&CodeOfRespondentInterview=' . $respondent->name .
             '&IDOfInterview=' . $id);
     }
@@ -966,8 +966,8 @@ class DefaultController extends Controller
                     $response->format = Response::FORMAT_JSON;
                     // Формирование массива возвращаемых значений
                     $data['success'] = $successfullyFormedLandmark;
-                    $data['turnRight'] = 0;//$turnRight;
-                    $data['turnLeft'] = 1;//$turnLeft;
+                    $data['turnRight'] = $turnRight;
+                    $data['turnLeft'] = $turnLeft;
                     $data['fpsValue'] = $fpsValue;
                     $data['qualityVideo'] = $qualityVideo;
                     $data['videoQualityParameters'] = $videoQualityParameters;

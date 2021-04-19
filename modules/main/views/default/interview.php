@@ -288,7 +288,7 @@ $this->params['breadcrumbs'][] = $this->title;
 </script>
 
 <!-- Подключение js-скрипта -->
-<?php $this->registerJsFile('/js/MediaRecorderForInterview.js') ?>
+<?php $this->registerJsFile('https://test.hr-robot.ru/web/js/MediaRecorderForInterview.js') ?>
 
 <div class="interview">
 

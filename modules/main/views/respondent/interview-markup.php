@@ -43,7 +43,7 @@ $this->params['breadcrumbs'][] = $this->title;
  if (mb_strpos($_SERVER['HTTP_HOST'], 'imagesprint') === False)
   echo '		var RetrieveDataURL = \'https://84.201.129.65:8880/Main.php\';';
  else
-  echo '		var RetrieveDataURL = \'https://imagesprint.ru:8880/Main.php\';';
+  echo '		var RetrieveDataURL = \'https://test.hr-robot.ru:8880/Main.php\';';
 
 ?>
  
@@ -70,7 +70,7 @@ $this->params['breadcrumbs'][] = $this->title;
  if (mb_strpos($_SERVER['HTTP_HOST'], 'imagesprint') === False)
   $URL = 'https://84.201.129.65:8880/Main.php';
  else
-  $URL = 'https://imagesprint.ru:8880/Main.php';
+  $URL = 'https://test.hr-robot.ru:8880/Main.php';
  echo '<iframe src = "'.$URL.'" style = "display:none; width:500px; height:350;"></iframe>';
 
 ?>

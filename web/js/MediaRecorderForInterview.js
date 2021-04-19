@@ -340,25 +340,25 @@ function uploadCalibrationVideo() {
                 finalText.textContent = "Спасибо за ожидание! К сожалению, Ваше видео плохого качества. Рекомендации к вашему видео:";
                 if (response.turnRight === null || response.turnLeft === null)
                     finalText.textContent = "Спасибо за ожидание! К сожалению, Вы не повернули голову, дальнейшее прохождение интервью невозможно.";
+                if (response.videoQualityParameters[3] === -1) {
+                    finalText.textContent = "Спасибо за ожидание! К сожалению, система не обнаружила Ваше изображение, дальнейшее прохождение интервью невозможно.";
+                }
                 finalText.style.display = "inline-block";
+                // Отображение слоя с рекомендациями к видео
                 if (response.fpsValue === false) {
-                    // Отображение слоя с рекомендациями к видео
                     mainRecommendations.style.display = "inline-block";
                     fpsRecommendation.style.display = "inline-block";
                 }
                 if (response.videoQualityParameters[4] < 2) {
-                    // Отображение слоя с рекомендациями к видео
                     mainRecommendations.style.display = "inline-block";
                     focusingRecommendation.style.display = "inline-block";
                 }
                 if (response.videoQualityParameters[0] < 10 && response.videoQualityParameters[1] > 2 &&
                     response.videoQualityParameters[2] > 0.5) {
-                    // Отображение слоя с рекомендациями к видео
                     mainRecommendations.style.display = "inline-block";
                     illuminationRecommendation.style.display = "inline-block";
                 }
                 if (response.videoQualityParameters[3] > 25) {
-                    // Отображение слоя с рекомендациями к видео
                     mainRecommendations.style.display = "inline-block";
                     cameraMovementsRecommendation.style.display = "inline-block";
                 }
