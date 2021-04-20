@@ -232,7 +232,7 @@ function upload() {
      }
    }
 
-  xhr.open("POST", '/interview-analysis/' + questionIds[questionIndex - 1]);
+  xhr.open("POST", 'https://test.hr-robot.ru/interview-analysis/' + questionIds[questionIndex - 1]);
   xhr.send(formData);
  }
 
@@ -266,7 +266,7 @@ function uploadVideo() {
         }
     }
 
-    xhr.open("POST", '/interview-analysis/' + questionIds[questionIndex - 1]);
+    xhr.open("POST", 'https://test.hr-robot.ru/interview-analysis/' + questionIds[questionIndex - 1]);
     xhr.send(formData);
 }
 
@@ -370,7 +370,7 @@ function uploadCalibrationVideo() {
         }
     }
 
-    xhr.open("POST", '/interview-analysis/' + questionIds[questionIndex - 1]);
+    xhr.open("POST", 'https://test.hr-robot.ru/interview-analysis/' + questionIds[questionIndex - 1]);
     xhr.send(formData);
 }
 

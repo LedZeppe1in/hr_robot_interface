@@ -1,7 +1,5 @@
 <?php
 
-header('Access-Control-Allow-Origin: *');
-
 use yii\helpers\Html;
 
 require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');

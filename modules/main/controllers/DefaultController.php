@@ -41,34 +41,58 @@ use app\modules\main\models\VideoInterviewProcessingStatus;
 class DefaultController extends Controller
 {
     public $layout = 'main';
+    public $enableCsrfValidation = false;
 
     /**
      * {@inheritdoc}
      */
     public function behaviors()
     {
-        return [
-            'access' => [
-                'class' => AccessControl::className(),
-                'only' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload', 'record', 'analysis'],
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'actions' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload',
-                            'record', 'analysis'],
-                        'roles' => ['@'],
-                    ],
-                ],
+        $behaviors = parent::behaviors();
+
+        // add CORS filter
+        $behaviors['corsFilter'] = [
+            'class' => \yii\filters\Cors::className(),
+            'cors' => [
+                // restrict access to
+                'Origin' => ['https://hr-robot.ru', 'https://test.hr-robot.ru'],
+                // Allow only POST and PUT methods
+                'Access-Control-Request-Method' => ['POST', 'PUT'],
+                // Allow only headers 'X-Wsse'
+                'Access-Control-Request-Headers' => ['X-Wsse'],
+                // Allow credentials (cookies, authorization headers, etc.) to be exposed to the browser
+                //'Access-Control-Allow-Credentials' => true,
+                // Allow OPTIONS caching
+                'Access-Control-Max-Age' => 3600,
+                // Allow the X-Pagination-Current-Page header to be exposed to the browser.
+                'Access-Control-Expose-Headers' => ['X-Pagination-Current-Page'],
             ],
-            'verbs' => [
-                'class' => VerbFilter::className(),
-                'actions' => [
-                    'logout' => ['POST'],
-                    'upload' => ['POST'],
-                    'interview-analysis' => ['POST'],
+
+        ];
+
+        $behaviors['access'] = [
+            'class' => AccessControl::className(),
+            'only' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload', 'record', 'analysis'],
+            'rules' => [
+                [
+                    'allow' => true,
+                    'actions' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload',
+                        'record', 'analysis'],
+                    'roles' => ['@'],
                 ],
             ],
         ];
+
+        $behaviors['verbs'] = [
+            'class' => VerbFilter::className(),
+            'actions' => [
+                'logout' => ['POST'],
+                'upload' => ['POST'],
+                'interview-analysis' => ['POST'],
+            ],
+        ];
+
+        return $behaviors;
     }
 
     /**
@@ -79,6 +103,9 @@ class DefaultController extends Controller
         return [
             'error' => [
                 'class' => 'yii\web\ErrorAction',
+            ],
+            'options' => [
+                'class' => 'yii\rest\OptionsAction',
             ],
         ];
     }
@@ -403,7 +430,7 @@ class DefaultController extends Controller
                     // Если есть результаты определения признаков
                     if ($analysisResultIds != '') {
                         // Интерпретация определенных лицевых признаков путем вызова МИП
-                        ini_set('default_socket_timeout', 60 * 30);
+                        ini_set('default_socket_timeout', 60 * 120);
                         $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                         $client = new SoapClient($addressOfRBRWebServiceDefinition);
                         $addressForCodeOfKnowledgeBaseRetrieval =
@@ -452,7 +479,7 @@ class DefaultController extends Controller
                     // Сохранение модели заключения по видеоинтервью
                     $finalConclusionModel->save();
                     // Формирование итогового заключения по видеоинтервью
-                    ini_set('default_socket_timeout', 60 * 30);
+                    ini_set('default_socket_timeout', 60 * 120);
                     $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                     $client = new SoapClient($addressOfRBRWebServiceDefinition);
                     $addressForCodeOfKnowledgeBaseRetrieval =
@@ -666,17 +693,36 @@ class DefaultController extends Controller
         // Если не задан код респондента
         if ($interviewCode == 'null')
             $mainRespondent = MainRespondent::findOne(1);
-        else
+        else {
             $mainRespondent = MainRespondent::find()->where(['code' => $respondentCode])->one();
+            if (empty($mainRespondent)) {
+                $mainRespondent = new MainRespondent();
+                $mainRespondent->code = $respondentCode;
+                $mainRespondent->save();
+            }
+        }
+
+        // Поиск респондента по коду
+        $respondent = null;
+        if ($interviewCode != 'null')
+            $respondent = Respondent::find()->where(['name' => $interviewCode])->one();
 
         // Если не задан код интервью респондента
-        if ($interviewCode == 'null') {
-            // Создание нового респондента (уникальной записи прохождения интервью респондентом)
-            require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
-            $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
-            if (isset($result[1])) {
-                $respondent = Respondent::findOne($result[1]);
-                if (empty($respondent)) {
+        if (empty($respondent)) {
+            if ($interviewCode == 'null') {
+                // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
+                $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
+                if (isset($result[1])) {
+                    $respondent = Respondent::findOne($result[1]);
+                    if (empty($respondent)) {
+                        // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                        $respondent = new Respondent();
+                        $respondent->name = 'test' . mt_rand(10, 15);
+                        $respondent->main_respondent_id = $mainRespondent->id;
+                        $respondent->save();
+                    }
+                } else {
                     // Создание нового респондента (уникальной записи прохождения интервью респондентом)
                     $respondent = new Respondent();
                     $respondent->name = 'test' . mt_rand(10, 15);
@@ -684,9 +730,9 @@ class DefaultController extends Controller
                     $respondent->save();
                 }
             } else {
-                // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                // Создание нового респондента
                 $respondent = new Respondent();
-                $respondent->name = 'test' . mt_rand(10, 15);
+                $respondent->name = $interviewCode;
                 $respondent->main_respondent_id = $mainRespondent->id;
                 $respondent->save();
             }
@@ -712,9 +758,7 @@ class DefaultController extends Controller
             $gerchikovTestConclusionModel->avoid_motivation = 3;
             $gerchikovTestConclusionModel->description = 'Автоматически созданная запись';
             $gerchikovTestConclusionModel->save();
-        } else
-            // Поиск респондента по коду
-            $respondent = Respondent::find()->where(['name' => $interviewCode])->one();
+        }
 
         // Поиск видеоинтервью по id интервью респондента
         $videoInterview = VideoInterview::find()->where(['respondent_id' => $respondent->id])->one();
@@ -836,7 +880,7 @@ class DefaultController extends Controller
         if (Yii::$app->request->isPost) {
 
             require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
-            \TCommonData::SaveDebugInformation('QuestionIdAndAddressIP', $id . Yii::$app->getRequest()->getUserIP());
+            \TCommonData::SaveDebugInformation('QuestionIdAndAddressIP', $id .' - '. Yii::$app->getRequest()->getUserIP());
 
             // Поиск вопроса опроса по id
             $testQuestion = TestQuestion::findOne($id);
