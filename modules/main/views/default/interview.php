@@ -5,7 +5,6 @@ use yii\bootstrap\Button;
 
 /* @var $this yii\web\View */
 /* @var $videoInterviewModel app\modules\main\models\VideoInterview */
-// /* @var $gerchikovTestConclusionModel app\modules\main\models\GerchikovTestConclusion */
 /* @var $landmarkModel app\modules\main\models\Landmark */
 /* @var $questionIds app\modules\main\controllers\DefaultController */
 /* @var $questionTexts app\modules\main\controllers\DefaultController */
@@ -13,6 +12,7 @@ use yii\bootstrap\Button;
 /* @var $questionTimes app\modules\main\controllers\DefaultController */
 /* @var $questionAudioFilePaths app\modules\main\controllers\DefaultController */
 /* @var $respondent app\modules\main\models\Respondent */
+/* @var $surveyId app\modules\main\controllers\DefaultController */
 
 $this->title = 'Запись интервью';
 $this->params['breadcrumbs'][] = $this->title;
@@ -45,6 +45,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
     // id видеоинтервью
     let videoInterviewId = '<?= $videoInterviewModel->id ?>';
+
+    // id опроса
+    let surveyId = '<?= $surveyId ?>';
 
     // Таймер времени для вопросов
     let questionTimer;

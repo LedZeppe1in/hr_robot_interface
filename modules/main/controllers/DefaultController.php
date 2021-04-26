@@ -824,7 +824,6 @@ class DefaultController extends Controller
 
             return $this->render('interview', [
                 'videoInterviewModel' => $videoInterview,
-                'gerchikovTestConclusionModel' => $gerchikovTestConclusion,
                 'landmarkModel' => $landmarkModel,
                 'questionIds' => $questionIds,
                 'questionTexts' => $questionTexts,
@@ -832,6 +831,7 @@ class DefaultController extends Controller
                 'questionTimes' => $questionTimes,
                 'questionAudioFilePaths' => $questionAudioFilePaths,
                 'respondent' => $respondent,
+                'surveyId' => $id
             ]);
         }
 
@@ -1040,9 +1040,8 @@ class DefaultController extends Controller
                         $response = Yii::$app->response;
                         $response->format = Response::FORMAT_JSON;
                         // Поиск кол-ва вопросов в профильном опросе
-                        $surveyQuestion = SurveyQuestion::find()->where(['test_question_id' => $testQuestion->id])->one();
                         $surveyQuestionCount = SurveyQuestion::find()
-                            ->where(['survey_id' => $surveyQuestion->survey_id])
+                            ->where(['survey_id' => (int)Yii::$app->request->post('surveyId')])
                             ->count();
                         // Поиск кол-ва записанных видео по вопросам
                         $questionCount = Question::find()
@@ -1054,10 +1053,10 @@ class DefaultController extends Controller
                             $videoInterviewProcessingStatus->status = VideoInterviewProcessingStatus::STATUS_QUEUE;
                             $videoInterviewProcessingStatus->updateAttributes(['status']);
                             // Формирование массива возвращаемых значений
-                            $data['successfulInterviewRecording'] = true;
+                            $data['successFullInterviewRecording'] = true;
                         } else
                             // Формирование массива возвращаемых значений
-                            $data['successfulInterviewRecording'] = false;
+                            $data['successFullInterviewRecording'] = false;
                         // Возвращение данных
                         $response->data = $data;
 

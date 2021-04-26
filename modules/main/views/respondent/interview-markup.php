@@ -38,7 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
  // else
  //  echo '		var RetrieveDataURL = \'https://bribon.ru:8880/Main.php\';';
 
- if (mb_strpos($_SERVER['HTTP_HOST'], 'imagesprint') === False)
+ if (mb_strpos($_SERVER['HTTP_HOST'], 'test.hr-robot') === False)
   echo '		var RetrieveDataURL = \'https://84.201.129.65:8880/Main.php\';';
  else
   echo '		var RetrieveDataURL = \'https://test.hr-robot.ru:8880/Main.php\';';
@@ -65,11 +65,11 @@ $this->params['breadcrumbs'][] = $this->title;
 // else
 //  $URL = 'https://bribon.ru:8880/Main.php';
 
- if (mb_strpos($_SERVER['HTTP_HOST'], 'imagesprint') === False)
+ if (mb_strpos($_SERVER['HTTP_HOST'], 'test.hr-robot') === False)
   $URL = 'https://84.201.129.65:8880/Main.php';
  else
   $URL = 'https://test.hr-robot.ru:8880/Main.php';
- echo '<iframe src = "'.$URL.'" style = "display:none; width:500px; height:350;"></iframe>';
+ //echo '<iframe src = "'.$URL.'" style = "display:none; width:500px; height:350px;"></iframe>';
 
 ?>
 
