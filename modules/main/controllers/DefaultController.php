@@ -430,7 +430,7 @@ class DefaultController extends Controller
                     // Если есть результаты определения признаков
                     if ($analysisResultIds != '') {
                         // Интерпретация определенных лицевых признаков путем вызова МИП
-                        ini_set('default_socket_timeout', 60 * 120);
+                        ini_set('default_socket_timeout', 60 * 200);
                         $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                         $client = new SoapClient($addressOfRBRWebServiceDefinition);
                         $addressForCodeOfKnowledgeBaseRetrieval =
@@ -479,7 +479,7 @@ class DefaultController extends Controller
                     // Сохранение модели заключения по видеоинтервью
                     $finalConclusionModel->save();
                     // Формирование итогового заключения по видеоинтервью
-                    ini_set('default_socket_timeout', 60 * 120);
+                    ini_set('default_socket_timeout', 60 * 200);
                     $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                     $client = new SoapClient($addressOfRBRWebServiceDefinition);
                     $addressForCodeOfKnowledgeBaseRetrieval =
