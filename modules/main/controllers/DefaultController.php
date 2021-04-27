@@ -645,30 +645,55 @@ class DefaultController extends Controller
      * Переход на страницу прохождения теста Герчикова.
      *
      * @param $id - идентификатор опроса
+     * @param $respondentCode - код респондента
+     * @param $interviewCode - код интервью респондента
      * @return Response
      */
-    public function actionMotivationTest($id)
+    public function actionMotivationTest($id, $respondentCode, $interviewCode)
     {
-        // Поиск респондента по id
-        $mainRespondent = MainRespondent::findOne(1); // id респондента
-        // Создание нового респондента (уникальной записи прохождения интервью респондентом)
-        require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
-        $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
-        if (isset($result[1])) {
-            $respondent = Respondent::findOne($result[1]);
-            if (empty($respondent)) {
+        $respondent = null;
+        // Если не задан код респондента
+        if ($interviewCode == 'null')
+            $mainRespondent = MainRespondent::findOne(1);
+        else {
+            $mainRespondent = MainRespondent::find()->where(['code' => $respondentCode])->one();
+            if (empty($mainRespondent)) {
+                $mainRespondent = new MainRespondent();
+                $mainRespondent->code = $respondentCode;
+                $mainRespondent->save();
+            }
+            // Поиск респондента по коду
+            $respondent = Respondent::find()->where(['name' => $interviewCode])->one();
+        }
+        // Если не задан код интервью респондента
+        if (empty($respondent)) {
+            if ($interviewCode == 'null') {
                 // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                require_once('/var/www/hr-robot-default.com/public_html/Common/CommonData.php');
+                $result = \TCommonData::CodeOfRespondentInterview($mainRespondent->id);
+                if (isset($result[1])) {
+                    $respondent = Respondent::findOne($result[1]);
+                    if (empty($respondent)) {
+                        // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                        $respondent = new Respondent();
+                        $respondent->name = 'test' . mt_rand(10, 15);
+                        $respondent->main_respondent_id = $mainRespondent->id;
+                        $respondent->save();
+                    }
+                } else {
+                    // Создание нового респондента (уникальной записи прохождения интервью респондентом)
+                    $respondent = new Respondent();
+                    $respondent->name = 'test' . mt_rand(10, 15);
+                    $respondent->main_respondent_id = $mainRespondent->id;
+                    $respondent->save();
+                }
+            } else {
+                // Создание нового респондента
                 $respondent = new Respondent();
-                $respondent->name = 'test' . mt_rand(10, 15);
+                $respondent->name = $interviewCode;
                 $respondent->main_respondent_id = $mainRespondent->id;
                 $respondent->save();
             }
-        } else {
-            // Создание нового респондента (уникальной записи прохождения интервью респондентом)
-            $respondent = new Respondent();
-            $respondent->name = 'test' . mt_rand(10, 15);
-            $respondent->main_respondent_id = $mainRespondent->id;
-            $respondent->save();
         }
 
         return $this->redirect('https://test.hr-robot.ru:8880/Main.php?AccessKey=J,zp11fn1tk32fvt_nh&DataSource=R1Test' .
@@ -690,6 +715,7 @@ class DefaultController extends Controller
         $profileSurvey = ProfileSurvey::find()->where(['survey_id' => $id])->one();
         $profile = Profile::findOne($profileSurvey->profile_id);
 
+        $respondent = null;
         // Если не задан код респондента
         if ($interviewCode == 'null')
             $mainRespondent = MainRespondent::findOne(1);
@@ -700,12 +726,9 @@ class DefaultController extends Controller
                 $mainRespondent->code = $respondentCode;
                 $mainRespondent->save();
             }
-        }
-
-        // Поиск респондента по коду
-        $respondent = null;
-        if ($interviewCode != 'null')
+            // Поиск респондента по коду
             $respondent = Respondent::find()->where(['name' => $interviewCode])->one();
+        }
 
         // Если не задан код интервью респондента
         if (empty($respondent)) {
