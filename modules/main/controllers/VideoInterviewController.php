@@ -998,7 +998,7 @@ class VideoInterviewController extends Controller
                             $analysisResultIds .= ',' . $analysisResult->id;
                 }
                 // Запуск интерпретации признаков по результатам МОП (интерпретация первого уровня)
-                ini_set('default_socket_timeout', 60 * 30);
+                ini_set('default_socket_timeout', 60 * 200);
                 $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                 $client = new SoapClient($addressOfRBRWebServiceDefinition);
                 $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .
@@ -1021,7 +1021,7 @@ class VideoInterviewController extends Controller
             // Если задана база знаний для интерпретации второго уровня
             if ($profileKnowledgeBase->second_level_knowledge_base_id != null) {
                 // Запуск вывода по результатам интерпретации признаков (интерпретация второго уровня)
-                ini_set('default_socket_timeout', 60 * 30);
+                ini_set('default_socket_timeout', 60 * 200);
                 $addressOfRBRWebServiceDefinition = 'http://127.0.0.1:8888/RBRWebService?wsdl';
                 $client = new SoapClient($addressOfRBRWebServiceDefinition);
                 $addressForCodeOfKnowledgeBaseRetrieval = 'http://127.0.0.1/Drools/RetrieveData.php?DataSource=CodeOfKnowledgeBase&IDOfKnowledgeBase=' .

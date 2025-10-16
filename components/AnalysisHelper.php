@@ -1367,6 +1367,9 @@ class AnalysisHelper
                             $videoQualityParameters[2] < 0.3 && $videoQualityParameters[3] < 5 &&
                             $videoQualityParameters[4] > 3)
                             $qualityVideo = true;
+                        // Если K4 равен -1 (лицо не в кадре)
+                        if ($videoQualityParameters[3] == -1)
+                            $qualityVideo = false;
                     }
                 }
             }

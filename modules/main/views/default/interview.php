@@ -5,7 +5,6 @@ use yii\bootstrap\Button;
 
 /* @var $this yii\web\View */
 /* @var $videoInterviewModel app\modules\main\models\VideoInterview */
-/* @var $gerchikovTestConclusionModel app\modules\main\models\GerchikovTestConclusion */
 /* @var $landmarkModel app\modules\main\models\Landmark */
 /* @var $questionIds app\modules\main\controllers\DefaultController */
 /* @var $questionTexts app\modules\main\controllers\DefaultController */
@@ -13,6 +12,7 @@ use yii\bootstrap\Button;
 /* @var $questionTimes app\modules\main\controllers\DefaultController */
 /* @var $questionAudioFilePaths app\modules\main\controllers\DefaultController */
 /* @var $respondent app\modules\main\models\Respondent */
+/* @var $surveyId app\modules\main\controllers\DefaultController */
 
 $this->title = 'Запись интервью';
 $this->params['breadcrumbs'][] = $this->title;
@@ -45,6 +45,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
     // id видеоинтервью
     let videoInterviewId = '<?= $videoInterviewModel->id ?>';
+
+    // id опроса
+    let surveyId = '<?= $surveyId ?>';
 
     // Таймер времени для вопросов
     let questionTimer;
@@ -169,7 +172,8 @@ $this->params['breadcrumbs'][] = $this->title;
         // Обработка закрытия модульного окна с инструкциями по настройке оборудования
         $("#cameraSettingForm").on('hidden.bs.modal', function (e) {
             // Проигрывание аудио-файла с озвучкой не вопроса
-            audioSource.src = "/web/audio/interview-preparation-audio.mp3";
+            // audioSource.src = "/web/audio/interview-preparation-audio.mp3";
+            audioSource.src = "https://test.hr-robot.ru/web/audio/interview-preparation-audio.mp3";
             audioPlayer.load();
             audioPlayer.play();
         })
@@ -183,7 +187,7 @@ $this->params['breadcrumbs'][] = $this->title;
             // Определение нового времени активации кнопки следующего вопроса
             buttonActivationTime = parseInt(questionTimes[questionIndex]) + answerDuration;
             // Проигрывание аудио-файла с озвучкой вопроса
-            audioSource.src = "/web/audio/" + questionAudioFilePaths[questionIndex];
+            audioSource.src = "https://test.hr-robot.ru/web/audio/" + questionAudioFilePaths[questionIndex];
             audioPlayer.load();
             audioPlayer.play();
             // Запуск таймера вопросов
@@ -218,7 +222,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 // Определение нового времени активации кнопки следующего вопроса
                 buttonActivationTime = finishTime + parseInt(questionTimes[questionIndex]) + answerDuration;
                 // Проигрывание аудио-файла с озвучкой вопроса
-                audioSource.src = "/web/audio/" + questionAudioFilePaths[questionIndex];
+                audioSource.src = "https://test.hr-robot.ru/web/audio/" + questionAudioFilePaths[questionIndex];
                 audioPlayer.load();
                 audioPlayer.play();
                 // Запоминание времени для текущего ответа
@@ -288,7 +292,7 @@ $this->params['breadcrumbs'][] = $this->title;
 </script>
 
 <!-- Подключение js-скрипта -->
-<?php $this->registerJsFile('/js/MediaRecorderForInterview.js') ?>
+<?php $this->registerJsFile('https://test.hr-robot.ru/web/js/MediaRecorderForInterview.js') ?>
 
 <div class="interview">
 
@@ -313,6 +317,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 &bull; Необходимо зафиксировать оборудование для съемки.
             </div>
         </div>
+
+        <div id="main-recommendations" class="col-md-11 well-sm well" style="font-weight: bold; padding-left: 30px; margin-left: 20px; display: none;"></div>
+
         <div class="col-md-2">
             <?= Button::widget([
                 'label' => Yii::t('app', 'Начать интервью'),
