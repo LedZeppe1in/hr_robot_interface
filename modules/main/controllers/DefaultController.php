@@ -72,12 +72,11 @@ class DefaultController extends Controller
 
         $behaviors['access'] = [
             'class' => AccessControl::className(),
-            'only' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload', 'record', 'analysis'],
+            'only' => ['sing-out', 'test', 'upload', 'record', 'analysis'],
             'rules' => [
                 [
                     'allow' => true,
-                    'actions' => ['sing-out', 'test', 'gerchikov-test-conclusion-view', 'upload',
-                        'record', 'analysis'],
+                    'actions' => ['sing-out', 'test', 'upload', 'record', 'analysis'],
                     'roles' => ['@'],
                 ],
             ],
@@ -790,86 +789,81 @@ class DefaultController extends Controller
         // Поиск заключения по тесту Герчикова по id итоговых результатов
         $gerchikovTestConclusion = GerchikovTestConclusion::findOne($finalResult->id);
 
-        // Если респондент прошел тест Герчикова
-        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_PASSED) {
-            // Создание модели цифровой маски
-            $landmarkModel = new Landmark();
-            // Поиск всех вопросов связанных с выбранным опросом и сортировка записей по индексу и id
-            $surveyQuestions = SurveyQuestion::find()->where(['survey_id' => $id])->orderBy([
-                'index' => SORT_ASC,
-                'test_question_id' => SORT_ASC
-            ])->all();
-            // Формирование массива c id вопросов опроса
-            $testQuestionIds = array();
-                foreach ($surveyQuestions as $surveyQuestion)
-                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
+        // Создание модели цифровой маски
+        $landmarkModel = new Landmark();
+        // Поиск всех вопросов связанных с выбранным опросом и сортировка записей по индексу и id
+        $surveyQuestions = SurveyQuestion::find()->where(['survey_id' => $id])->orderBy([
+            'index' => SORT_ASC,
+            'test_question_id' => SORT_ASC
+        ])->all();
+        // Формирование массива c id вопросов опроса
+        $testQuestionIds = array();
+            foreach ($surveyQuestions as $surveyQuestion)
+                array_push($testQuestionIds, $surveyQuestion->test_question_id);
 //            $num = 0;
 //            foreach ($surveyQuestions as $surveyQuestion) {
 //                if ($num < 5)
 //                    array_push($testQuestionIds, $surveyQuestion->test_question_id);
 //                $num++;
 //            }
-            // Поиск вопросов опросов по набору id
-            $testQuestions = TestQuestion::find()->where(['id' => $testQuestionIds])->all();
-            // Массивы с параметрами вопросов
-            $questionIds = array();
-            $questionTexts = array();
-            $questionMaximumTimes = array();
-            $questionTimes = array();
-            $questionAudioFilePaths = array();
-            // Создание объекта коннектора с Yandex.Cloud Object Storage
-            $osConnector = new OSConnector();
-            // Обход вопросов опроса
-            foreach ($surveyQuestions as $surveyQuestion)
-                foreach ($testQuestions as $testQuestion)
-                    if ($surveyQuestion->test_question_id == $testQuestion->id) {
-                        // Формирование массивов с параметрами вопроса
-                        array_push($questionIds, $testQuestion->id);
-                        array_push($questionTexts, $testQuestion->text);
-                        array_push($questionMaximumTimes, $testQuestion->maximum_time);
-                        array_push($questionTimes, $testQuestion->time);
-                        array_push($questionAudioFilePaths, $testQuestion->id . '/' .
-                            $testQuestion->audio_file_name);
-                        // Создание директории для аудио-файла с озвучкой вопроса опроса
-                        if (!file_exists(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id))
-                            mkdir(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id, 0777);
-                        // Сохранение аудио-файла с озвучкой вопроса опроса из Object Storage на сервер
-                        $osConnector->saveFileToServer(
-                            OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
-                            $testQuestion->id,
-                            $testQuestion->audio_file_name,
-                            Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id . '/'
-                        );
-                    }
+        // Поиск вопросов опросов по набору id
+        $testQuestions = TestQuestion::find()->where(['id' => $testQuestionIds])->all();
+        // Массивы с параметрами вопросов
+        $questionIds = array();
+        $questionTexts = array();
+        $questionMaximumTimes = array();
+        $questionTimes = array();
+        $questionAudioFilePaths = array();
+        // Создание объекта коннектора с Yandex.Cloud Object Storage
+        $osConnector = new OSConnector();
+        // Обход вопросов опроса
+        foreach ($surveyQuestions as $surveyQuestion)
+            foreach ($testQuestions as $testQuestion)
+                if ($surveyQuestion->test_question_id == $testQuestion->id) {
+                    // Формирование массивов с параметрами вопроса
+                    array_push($questionIds, $testQuestion->id);
+                    array_push($questionTexts, $testQuestion->text);
+                    array_push($questionMaximumTimes, $testQuestion->maximum_time);
+                    array_push($questionTimes, $testQuestion->time);
+                    array_push($questionAudioFilePaths, $testQuestion->id . '/' .
+                        $testQuestion->audio_file_name);
+                    // Создание директории для аудио-файла с озвучкой вопроса опроса
+                    if (!file_exists(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id))
+                        mkdir(Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id, 0777);
+                    // Сохранение аудио-файла с озвучкой вопроса опроса из Object Storage на сервер
+                    $osConnector->saveFileToServer(
+                        OSConnector::OBJECT_STORAGE_AUDIO_BUCKET,
+                        $testQuestion->id,
+                        $testQuestion->audio_file_name,
+                        Yii::getAlias('@webroot') . '/audio/' . $testQuestion->id . '/'
+                    );
+                }
 
+        // Вывод сообщения об успешном прохождении теста Герчикова по профилю
+        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_PASSED)
             Yii::$app->getSession()->setFlash('success',
                 'Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name . '!');
 
-            return $this->render('interview', [
-                'videoInterviewModel' => $videoInterview,
-                'landmarkModel' => $landmarkModel,
-                'questionIds' => $questionIds,
-                'questionTexts' => $questionTexts,
-                'questionMaximumTimes' => $questionMaximumTimes,
-                'questionTimes' => $questionTimes,
-                'questionAudioFilePaths' => $questionAudioFilePaths,
-                'respondent' => $respondent,
-                'surveyId' => $id
-            ]);
-        }
-
         // Вывод сообщения о не успешном прохождении теста Герчикова по профилю
-        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE)
+        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_FAILED_PROFILE ||
+            $gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
             Yii::$app->getSession()->setFlash('warning',
                 'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю:' . $profile->name .
-                    '! Результаты будут отправлены Вам на почту.');
-        // Вывод сообщения о не успешном прохождении теста Герчикова (мало или нет ответов)
-        if ($gerchikovTestConclusion->accept_test == GerchikovTestConclusion::TYPE_NOT_ANSWER)
-            Yii::$app->getSession()->setFlash('warning',
-                'Спасибо! Вы успешно прошли тест по мотивации к труду по профилю: ' . $profile->name .
-                    '! Результаты будут отправлены Вам на почту.');
+                '! Результаты будут отправлены Вам на почту.');
 
-        return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusion->id]);
+        return $this->render('interview', [
+            'videoInterviewModel' => $videoInterview,
+            'landmarkModel' => $landmarkModel,
+            'questionIds' => $questionIds,
+            'questionTexts' => $questionTexts,
+            'questionMaximumTimes' => $questionMaximumTimes,
+            'questionTimes' => $questionTimes,
+            'questionAudioFilePaths' => $questionAudioFilePaths,
+            'respondent' => $respondent,
+            'surveyId' => $id
+        ]);
+
+        //return $this->redirect(['gerchikov-test-conclusion-view', 'id' => $gerchikovTestConclusion->id]);
     }
 
     /**
