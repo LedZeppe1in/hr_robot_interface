@@ -1200,18 +1200,37 @@ class VideoInterviewAnalysisController extends Controller
                                 $landmark->delete();
                             }
 
-//                        // Создание объекта запуска консольной команды
-//                        $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
-//                        // Выполнение команды анализа видео ответа на вопрос в фоновом режиме (этапы МОВ и МОП)
-//                        $consoleRunner->run('video-interview-analysis/start-video-processing ' . $question->id .
-//                            ' ' . $mirroring);
+                        // Создание объекта запуска консольной команды
+                        $consoleRunner = new ConsoleRunner(['file' => '@app/yii']);
+                        // Выполнение команды анализа видео ответа на вопрос в фоновом режиме (этапы МОВ и МОП)
+                        $consoleRunner->run('video-interview-analysis/start-video-processing ' . $question->id .
+                            ' ' . $mirroring);
 
-                        //
-                        $analysisHelperExperiment = new AnalysisHelperExperiment();
-                        $analysisHelperExperiment->startVideoProcessing($question->id, $mirroring);
+                        // Ожидание завершения обработки видео ответов на вопросы
+                        do {
+                            $questionNumber = 0;
+                            // Задержка выполнения скрипта в 5 секунд
+                            sleep(5);
+                            // Поиск статуса обработки видеоинтервью по id видеоинтервью
+                            $videoInterviewProcessingStatus = VideoInterviewProcessingStatus::find()
+                                ->where(['video_interview_id' => (int)$videoInterviewId])
+                                ->one();
+                            // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
+                            $questionProcessingStatuses = QuestionProcessingStatus::find()
+                                ->where(['video_interview_processing_status_id' => $videoInterviewProcessingStatus->id])
+                                ->all();
+                            // Обход всех статусов обработки вопросов и определение не завершенности каждого
+                            foreach ($questionProcessingStatuses as $questionProcessingStatus)
+                                if ($questionProcessingStatus->status != QuestionProcessingStatus::STATUS_COMPLETED)
+                                    $questionNumber++;
+                        } while ($questionNumber >= 10);
+
+//                        // Последовательный запуск МОВ Ивана и Андрея
+//                        $analysisHelperExperiment = new AnalysisHelperExperiment();
+//                        $analysisHelperExperiment->startVideoProcessing($question->id, $mirroring);
                     }
             }
-            //
+
             $completed = true;
             // Поиск статусов обработки вопросов по id статуса обработки видеоинтервью
             $questionProcessingStatuses = QuestionProcessingStatus::find()
