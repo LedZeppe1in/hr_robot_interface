@@ -2,19 +2,11 @@
 
 namespace app\components;
 
-
-use app\components\TextDetection\TextFrequencyDetector;
 use app\components\TextDetection\PhraseDetector;
-
-
-use app\components\TrendDetection\IndexedTrend;
+use app\components\TextDetection\TextFrequencyDetector;
 use app\components\TrendDetection\TrendSequence;
 use app\components\TrendDetection\TrendOfQuantitativeValues;
 use app\components\TrendDetection\TrendOfQualitativeValues;
-
-use stdClass;
-
-
 
 /**
  * FacialFeatureDetector - класс обнаружения лицевых признаков.
