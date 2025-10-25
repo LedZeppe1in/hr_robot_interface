@@ -107,6 +107,4 @@ class TextFrequencyDetector
         }
         return null;
     }
-
-
 }
